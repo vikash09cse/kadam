@@ -1,0 +1,53 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.12.35514.174
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "docs", "docs", "{692DCF95-EB7A-4525-BAEC-3BEE27A5F341}"
+	ProjectSection(SolutionItems) = preProject
+		C:\Users\vikas\Downloads\Field_classifications.kadam.android.app.xlsx = C:\Users\vikas\Downloads\Field_classifications.kadam.android.app.xlsx
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{30972102-EA7E-4704-A193-96FE80C537F9}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Core", "src\Core\Core.csproj", "{AE7504C7-5014-48CB-BE45-F6E610269367}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Infrastructure", "src\Infrastructure\Infrastructure.csproj", "{72AEBDBF-8C57-4F0D-8D63-445D0C7F5A0A}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WebUI", "src\WebUI\WebUI.csproj", "{3D9E1DF4-8C52-44D0-9371-271A47B6C3C0}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WebAPI", "src\WebAPI\WebAPI.csproj", "{9E12CB5A-99A3-43EC-AE06-6C9805F40C7D}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{AE7504C7-5014-48CB-BE45-F6E610269367}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{AE7504C7-5014-48CB-BE45-F6E610269367}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{AE7504C7-5014-48CB-BE45-F6E610269367}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{AE7504C7-5014-48CB-BE45-F6E610269367}.Release|Any CPU.Build.0 = Release|Any CPU
+		{72AEBDBF-8C57-4F0D-8D63-445D0C7F5A0A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{72AEBDBF-8C57-4F0D-8D63-445D0C7F5A0A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{72AEBDBF-8C57-4F0D-8D63-445D0C7F5A0A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{72AEBDBF-8C57-4F0D-8D63-445D0C7F5A0A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{3D9E1DF4-8C52-44D0-9371-271A47B6C3C0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3D9E1DF4-8C52-44D0-9371-271A47B6C3C0}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3D9E1DF4-8C52-44D0-9371-271A47B6C3C0}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3D9E1DF4-8C52-44D0-9371-271A47B6C3C0}.Release|Any CPU.Build.0 = Release|Any CPU
+		{9E12CB5A-99A3-43EC-AE06-6C9805F40C7D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{9E12CB5A-99A3-43EC-AE06-6C9805F40C7D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{9E12CB5A-99A3-43EC-AE06-6C9805F40C7D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{9E12CB5A-99A3-43EC-AE06-6C9805F40C7D}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{AE7504C7-5014-48CB-BE45-F6E610269367} = {30972102-EA7E-4704-A193-96FE80C537F9}
+		{72AEBDBF-8C57-4F0D-8D63-445D0C7F5A0A} = {30972102-EA7E-4704-A193-96FE80C537F9}
+		{3D9E1DF4-8C52-44D0-9371-271A47B6C3C0} = {30972102-EA7E-4704-A193-96FE80C537F9}
+		{9E12CB5A-99A3-43EC-AE06-6C9805F40C7D} = {30972102-EA7E-4704-A193-96FE80C537F9}
+	EndGlobalSection
+EndGlobal

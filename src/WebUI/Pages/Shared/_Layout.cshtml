@@ -1,0 +1,288 @@
+﻿<!DOCTYPE html>
+<html lang="en" data-layout="vertical" data-sidebar="light" data-sidebar-size="lg">
+<head>
+    <title>KADAM Portal - Dashboard</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <!-- App favicon -->
+    <link rel="shortcut icon" href="~/assets/images/favicon.ico">
+    <!-- Layout config Js -->
+    <script src="~/assets/js/layout.js"></script>
+    <!-- Bootstrap Css -->
+    <link href="~/assets/css/bootstrap.min.css" rel="stylesheet" type="text/css" />
+    <!-- Icons Css -->
+    <link href="~/assets/css/icons.min.css" rel="stylesheet" type="text/css" />
+    <!-- App Css-->
+    <link href="~/assets/css/app.min.css" rel="stylesheet" type="text/css" />
+    <!-- custom Css-->
+    <link href="~/assets/css/custom.min.css" rel="stylesheet" type="text/css" />
+    <link rel="stylesheet" href="//cdn.datatables.net/1.12.1/css/jquery.dataTables.min.css">
+    <link rel="stylesheet" href="//cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css" />
+    <script src="https://code.jquery.com/jquery-3.6.0.js"></script>
+</head>
+<body>
+    <!-- Navigation-->
+    <div id="layout-wrapper">
+        <header id="page-topbar">
+            <div class="layout-width">
+                <div class="navbar-header">
+                    <div class="d-flex">
+                        <!-- LOGO -->
+                        <div class="navbar-brand-box horizontal-logo">
+                            <a href="/Admin" class="logo logo-dark">
+                                KADAM PORTAL
+                            </a>
+                            <a href="/Admin" class="logo logo-light">
+                                KADAM PORTAL
+                            </a>
+                        </div>
+                        <button type="button" class="btn btn-sm px-3 fs-16 header-item vertical-menu-btn topnav-hamburger"
+                                id="topnav-hamburger-icon">
+                            <span class="hamburger-icon">
+                                <span></span>
+                                <span></span>
+                                <span></span>
+                            </span>
+                        </button>
+                    </div>
+                    <div class="d-flex align-items-center">
+                        <div class="dropdown d-md-none topbar-head-dropdown header-item">
+                            <button type="button" class="btn btn-icon btn-topbar btn-ghost-secondary rounded-circle"
+                                    id="page-header-search-dropdown" data-bs-toggle="dropdown" aria-haspopup="true"
+                                    aria-expanded="false">
+                                <i class="bx bx-search fs-22"></i>
+                            </button>
+                            <div class="dropdown-menu dropdown-menu-lg dropdown-menu-end p-0"
+                                 aria-labelledby="page-header-search-dropdown">
+                                <form class="p-3">
+                                    <div class="form-group m-0">
+                                        <div class="input-group">
+                                            <input type="text" class="form-control" placeholder="Search ..."
+                                                   aria-label="Recipient's username">
+                                            <button class="btn btn-primary" type="submit">
+                                                <i class="mdi mdi-magnify"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+
+                        
+
+                        <!--  Setting Menu -->
+                        <div class="dropdown ms-1 topbar-head-dropdown header-item">
+                            <button type="button" class="btn btn-icon btn-topbar btn-ghost-secondary rounded-circle" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                @*<i class="ri-settings-4-fill"></i>*@
+                                <i class="ri-user-settings-line fs-4"></i>
+                            </button>
+                            <div class="dropdown-menu dropdown-menu-end">
+                                <h6 class="dropdown-header">
+                                    @await Component.InvokeAsync("UserName")
+                                </h6>
+                                <ul class="nav nav-sm flex-column">
+                                    <li class="nav-item">
+                                        <a href="/Admin/UpdateProfile" class="dropdown-item" data-key="t-crm">
+                                            <i class="mdi mdi-account-outline text-muted fs-16 align-middle me-1"></i>
+                                            <span class="align-middle">Profile</span>
+                                        </a>
+                                    </li>
+                                    <li class="nav-item">
+                                        <a href="/Admin/ChangePassword" class="dropdown-item" data-key="t-crm">
+                                            <i class="mdi mdi-lock-check-outline text-muted fs-16 align-middle me-1"></i>
+                                            <span class="align-middle">Change Password</span>
+                                        </a>
+                                    </li>
+                                    <li class="nav-item">
+                                        <a class="dropdown-item" href="/Logout">
+                                            <i class="mdi mdi-logout text-muted fs-16 align-middle me-1"></i>
+                                            <span class="align-middle" data-key="t-logout">Logout</span>
+                                        </a>
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </header>
+        <div class="app-menu navbar-menu">
+            <!-- LOGO -->
+            <div class="navbar-brand-box">
+                <!-- Dark Logo-->
+                <a href="/Admin" class="logo logo-dark">
+                    <span class="logo-sm">
+                        KADAM
+                    </span>
+                    <span class="logo-lg">
+                        KADAM PORTAL
+                    </span>
+                </a>
+                <!-- Light Logo-->
+                <a href="/Admin" class="logo logo-light">
+                    <span class="logo-sm">
+                        TFP
+                    </span>
+                    <span class="logo-lg">
+                        KADAM PORTAL
+                    </span>
+                </a>
+                <button type="button" class="btn btn-sm p-0 fs-20 header-item float-end btn-vertical-sm-hover"
+                        id="vertical-hover">
+                    <i class="ri-record-circle-line"></i>
+                </button>
+            </div>
+            <div id="scrollbar">
+                <div class="container-fluid">
+
+                    <div id="two-column-menu">
+                    </div>
+                    <ul class="navbar-nav" id="navbar-nav">
+                        <li class="nav-item">
+                            <a class="nav-link menu-link" href="/Admin">
+                                <i class="ri-dashboard-2-line"></i> <span data-key="t-widgets">Dashboard</span>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link menu-link" href="#clientmanagement" data-bs-toggle="collapse" role="button" aria-expanded="false" aria-controls="clientmanagement">
+                                <i class="ri-user-settings-line"></i> <span data-key="t-dashboards">Client Management</span>
+                            </a>
+                            <div class="collapse menu-dropdown" id="clientmanagement">
+                                <ul class="nav nav-sm flex-column">
+                                    <li class="nav-item">
+                                        <a id="viewclient-link" href="\Admin\ClientList" class="nav-link" data-key="t-analytics">View Clients</a>
+                                    </li>
+                                    
+                                </ul>
+                            </div>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link menu-link" href="#ordermanagement" data-bs-toggle="collapse" role="button" aria-expanded="false" aria-controls="ordermanagement">
+                                <i class="ri-file-settings-line"></i> <span data-key="t-dashboards">Order Management</span>
+                            </a>
+                            <div class="collapse menu-dropdown" id="ordermanagement">
+                                <ul class="nav nav-sm flex-column">
+                                    <li class="nav-item">
+                                        <a id="add-new-order" href="\Admin\OrderMaster" class="nav-link" data-key="t-analytics">Add New Order</a>
+                                    </li>
+                                    <li class="nav-item">
+                                        <a id="view-new-orders" href="\Admin\OrderList?statusId=1" class="nav-link" data-key="t-crm">View New Orders</a>
+                                    </li>
+                                    <li class="nav-item">
+                                        <a href="\Admin\OrderList?statusId=2" class="nav-link" data-key="t-crm">View Processing Orders</a>
+                                    </li>
+
+                                    <li class="nav-item">
+                                        <a href="\Admin\OrderList?statusId=3" class="nav-link" data-key="t-crm">View Shipped Orders</a>
+                                    </li>
+                                    @*<li class="nav-item">
+                                    <a href="\Admin\OrderList?statusId=4" class="nav-link" data-key="t-crm">View Completed Orders</a>
+                                    </li>*@
+
+
+                                    <li class="nav-item">
+                                        <a href="\Admin\OrderList?statusId=7" class="nav-link" data-key="t-crm">View Delivered Orders</a>
+                                    </li>
+                                    <li class="nav-item">
+                                        <a href="\Admin\OrderList?statusId=10" class="nav-link" data-key="t-crm">View Cancelled Orders</a>
+                                    </li>
+                                    @*<li class="nav-item">
+                                    <a href="\Admin\OrderList?statusId=8" class="nav-link" data-key="t-crm">View Closed Orders</a>
+                                    </li>*@
+                                    <li class="nav-item">
+                                        <a href="\Admin\SearchOrders" class="nav-link" data-key="t-crm">Search Orders</a>
+                                    </li>
+                                    <li class="nav-item">
+                                        <a id="update-return-items" href="\Admin\OrderListForReturn" class="nav-link" data-key="t-crm">Update Return Items</a>
+                                    </li>
+                                    <li class="nav-item">
+                                        <a href="\Admin\ViewMiscFees" class="nav-link" data-key="t-crm">View Misc. Fees</a>
+                                    </li>
+                                </ul>
+                            </div>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link menu-link" href="#settinglist" data-bs-toggle="collapse" role="button" aria-expanded="false" aria-controls="settinglist">
+                                <i class="ri-settings-3-line"></i> <span data-key="t-dashboards">Settings</span>
+                            </a>
+                            <div class="collapse menu-dropdown" id="settinglist">
+                                <ul class="nav nav-sm flex-column">
+                                    <li class="nav-item">
+                                        <a id="backoffice-link" href="/Admin/Peoples" class="nav-link" data-key="t-crm">Peoples</a>
+                                    </li>
+                                    
+                                </ul>
+                            </div>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link menu-link" href="#reportlist" data-bs-toggle="collapse" role="button" aria-expanded="false" aria-controls="reportlist">
+                                <i class="ri-file-edit-line"></i> <span data-key="t-dashboards">Reports</span>
+                            </a>
+                            <div class="collapse menu-dropdown" id="reportlist">
+                                <ul class="nav nav-sm flex-column">
+                                    <li class="nav-item">
+                                        <a href="\Admin\Reports\SalesByClients" class="nav-link" data-key="t-analytics">Sales by Clients</a>
+                                    </li>
+                                    
+
+                                    <li class="nav-item">
+                                        <a href="\Admin\PendingOrderList" class="nav-link" data-key="t-crm">Pending Approval Orders</a>
+                                    </li>
+
+                                </ul>
+                            </div>
+                        </li>
+                    </ul>
+                </div>
+                <!-- Sidebar -->
+            </div>
+        </div>
+        <div class="vertical-overlay"></div>
+        <div class="main-content">
+            <partial name="_Notification" />
+            @RenderBody()
+        </div>
+        <!-- /.container-fluid-->
+        <!-- /.content-wrapper-->
+        <!-- Scroll to Top Button-->
+
+        <footer class="footer">
+            <div class="container-fluid">
+                <div class="row">
+                    <div class="col-sm-12 text-center">
+                        <script>document.write(new Date().getFullYear())</script> © KADAM Portal.
+                    </div>
+                </div>
+            </div>
+        </footer>
+
+    </div>
+    <!-- END layout-wrapper -->
+    <!--start back-to-top-->
+    <button onclick="topFunction()" class="btn btn-secondary btn-icon" id="back-to-top">
+        <i class="ri-arrow-up-line"></i>
+    </button>
+    <!--end back-to-top-->
+    <!-- JAVASCRIPT -->
+    <script src="~/assets/libs/bootstrap/js/bootstrap.bundle.min.js"></script>
+    <script src="~/assets/libs/simplebar/simplebar.min.js"></script>
+    <script src="~/assets/libs/node-waves/waves.min.js"></script>
+    <script src="~/assets/libs/feather-icons/feather.min.js"></script>
+    <script src="~/assets/js/plugins.js"></script>
+
+    <!-- init js -->
+    
+    <!-- App js -->
+    <script src="~/assets/js/app.js"></script>
+
+    <script src="//cdn.datatables.net/1.12.1/js/jquery.dataTables.min.js"></script>
+
+    <!-- Custom js File -->
+    <script src="~/js/main.js"></script>
+
+
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>
+
+

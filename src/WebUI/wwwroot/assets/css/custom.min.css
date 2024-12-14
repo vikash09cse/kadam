@@ -1,0 +1,510 @@
+
+/*# sourceMappingURL=custom.min.css.map */
+
+/*--- custom scrollbar for chrome ---*/
+::-webkit-scrollbar {
+    width: 8px;
+}
+
+/* Track */
+::-webkit-scrollbar-track {
+    -webkit-box-shadow: inset 0 0 6px rgba(0,0,0,0.3);
+    -webkit-border-radius: 10px;
+    border-radius: 10px;
+}
+
+/* Handle */
+::-webkit-scrollbar-thumb {
+    -webkit-border-radius: 10px;
+    border-radius: 10px;
+    background: rgba(169,169,169,0.8);
+    -webkit-box-shadow: inset 0 0 6px rgba(169,169,169,0.5);
+}
+
+::-webkit-scrollbar-thumb:window-inactive {
+    background: rgba(169,169,169,0.2);
+}
+
+.page-content .dashboard-main {
+    margin-top: -.65rem;
+}
+
+.topbar-user .dropdown-menu {
+    transform: translate3d(0px, 47px, 0px) !important;
+}
+
+.navbar-menu .navbar-nav .nav-sm .nav-link::before {
+    opacity: 0;
+    visibility: hidden;
+}
+
+.page-content .table-responsive {
+    background: #ffffff;
+    margin: 0rem;
+}
+
+.page-content .form-containr {
+    background: #ffffff;
+    padding: 1rem;
+}
+
+.dashboard-listing .table-responsive .table td {
+    vertical-align: middle;
+    word-break: break-all;
+    text-wrap: wrap;
+}
+.edit_invound_table tr th ,.edit_invound_table tr td { 
+    max-width: 180px;
+
+}
+.edit_invound_table tr th:nth-child(2){ 
+    max-width: 300px;
+
+}
+.edit_invound_table tr td .quantity_input{
+    width: 166px;
+}
+.dashboard-listing .table-card {
+    background: #ffffff;
+    padding: 1rem;
+}
+
+.dashboard-listing .checkout-tab .table-card {
+    padding: 0;
+}
+
+#back-to-top {
+    bottom: 15px;
+}
+
+.page-title-box .breadcrumb {
+    display: none;
+}
+
+.simplebar-content .menu-title span {
+    font-weight: bold;
+    font-size: 14px;
+}
+
+.viewLoading {
+    background: #ffffff;
+    opacity: .5;
+    color: #666666;
+    position: fixed;
+    height: 100%;
+    width: 100%;
+    z-index: 5000;
+    top: 0;
+    left: 0;
+    float: left;
+    text-align: center;
+    padding-top: 25%;
+}
+.form-check.form-check-inline label {
+    padding-left: 36px;
+}
+.form-group label {
+    margin-bottom: 0;
+}
+
+
+.navbar-header, .header-item {
+    height: 50px;
+}
+
+.main-content .page-content {
+    padding: calc(50px + 1.5rem) calc(1.5rem / 2) 50px calc(1.5rem / 2);
+    padding-left: 0;
+    padding-right: 0;
+    overflow-x: hidden;
+}
+
+.main-content .page-title-box {
+    margin-bottom: .8rem;
+}
+
+.footer {
+    padding: 15px calc(1.5rem / 2);
+    height: 50px;
+}
+
+.toastify {
+    font-size: 15px;
+}
+
+/**--- table styles ---**/
+.main-content .table-disdata {
+    vertical-align: middle;
+    margin-bottom: .5rem;
+}
+
+.main-content .table-disdata th, .main-content .table-disdata td {
+    padding: .35rem .5rem;
+}
+
+.main-content .table.table-sm th, .main-content .table.table-sm td {
+    padding: .5rem .5rem;
+}
+
+.main-content .table.table-sm td label {
+    margin-bottom: 0;
+}
+
+/**--- data table and search box ---**/
+.main-content .dataTables_wrapper .table {
+    border-color: var(--vz-border-color);
+}
+
+.main-content .dataTables_wrapper .dataTables_filter input {
+    padding: .35rem .9rem;
+    font-size: .875rem;
+    font-weight: 400;
+    line-height: 1.25;
+    color: var(--vz-body-color);
+    background-color: var(--vz-input-bg);
+    background-clip: padding-box;
+    border: 1px solid var(--vz-input-border);
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+    border-radius: .25rem;
+    -webkit-transition: border-color .15s ease-in-out,-webkit-box-shadow .15s ease-in-out;
+    transition: border-color .15s ease-in-out,-webkit-box-shadow .15s ease-in-out;
+    transition: border-color .15s ease-in-out,box-shadow .15s ease-in-out;
+    transition: border-color .15s ease-in-out,box-shadow .15s ease-in-out,-webkit-box-shadow .15s ease-in-out;
+    width: 400px;
+}
+
+.main-content .dataTables_wrapper .table#DT_Load {
+    margin-bottom: 10px;
+}
+
+.main-content .dataTables_wrapper .dataTables_paginate .paginate_button.current {
+    z-index: 3;
+    background-color: #3d78e3;
+    border-color: #3d78e3;
+    border-radius: 0;
+    color: #ffffff !important;
+    padding: .25rem .75rem;
+}
+
+.main-content .dataTables_wrapper > table {
+    padding-top: 8px;
+}
+
+.main-content .dataTables_wrapper tr:last-child td {
+    border-bottom: none;
+}
+
+.main-content .dataTables_wrapper tr td {
+    padding: 4px 10px;
+    border-color: var(--vz-border-color);
+}
+
+/**--- Modal CSS ---**/
+
+body.modal-open .modal {
+    overflow: hidden;
+}
+
+body.modal-open .modal .modal-body {
+    overflow-y: auto;
+    max-height: 360px;
+    padding-top: 16px;
+    padding-bottom: 16px;
+}
+
+body.modal-open .modal .modal-footer {
+    padding: 0 1rem .5rem;
+}
+
+body.modal-open .modal .modal-body::-webkit-scrollbar {
+    width: 4px;
+}
+
+.modal .modal-content .modal-header {
+   /* padding: .5rem;*/
+    padding-top: .5rem;
+    padding-bottom: .5rem;
+    border-bottom: 1px solid var(--vz-input-border);
+}
+
+.modal .modal-body .card-body {
+    padding: .5rem;
+}
+
+.modal .modal-content .modal-body {
+    padding: .5rem 1rem;
+    /*padding: .5rem 1.25rem;*/
+}
+
+.modal .modal-searchbx .row > div {
+    margin-top: 0;
+}
+
+.modal .modal-content .modal-body .table-card {
+    padding: 0;
+    margin: 0;
+    overflow-x: hidden;
+}
+
+body.modal-open .modal .modal-body {
+    max-height: 480px;
+}
+
+body.modal-open .modal .modal-body .img-fluid {
+    max-height: 360px;
+    display: block;
+    margin: auto;
+}
+
+.setting-bo-listing .modal-searchbx {
+    margin-top: 0rem;
+    margin-bottom: 0rem;
+}
+
+.setting-bo-listing .modal-searchbx .row > div {
+    margin-top: 0;
+}
+
+.navbar-header .user-name-text {
+    text-transform: capitalize;
+}
+
+.pc-ordermaster .tab-content .product > .card-body {
+    padding: .5rem;
+}
+
+.break-long-urls {
+    /* These are technically the same, but use both */
+    overflow-wrap: break-word;
+    word-wrap: break-word;
+    word-break: break-word;
+}
+
+.main-content .table .no-word-wrap, .main-content .table .no-word-wrap label {
+    white-space: normal !important;
+    word-wrap: break-word;
+    word-break: break-word;
+}
+
+/***----- Report Page -------***/
+
+.main-content .pc-reports .dataTables_wrapper > .dt-buttons {
+    float: right;
+    margin-top: 2px;
+}
+
+.main-content .pc-reports .dataTables_wrapper > .dataTables_filter {
+    float: left;
+}
+
+.main-content .pc-reports .dataTables_wrapper > .table {
+    clear: both;
+}
+
+.main-content .page-content .custom-hr, .main-content .page-content hr {
+    border: solid 1px var(--vz-input-border);
+    background-color: var(--vz-input-border);
+    opacity: .35;
+}
+
+.main-content .pc-reports .dashboard-listing .table-card {
+    padding-top: .2rem;
+}
+
+/***----- Login Form -------***/
+
+.auth-page-wrapper .auth-one-bg {
+    background-size: 45%;
+    background-repeat: no-repeat;
+    background-color: #d29ecc;
+}
+
+.auth-page-wrapper .auth-one-bg .bg-overlay {
+    opacity: .85;
+}
+
+.auth-page-wrapper .auth-one-bg-position {
+    height: 420px;
+}
+
+.auth-page-wrapper .login-row-box {
+    margin-top: 20px;
+}
+
+.auth-page-content .auth-pass-inputgroup input[type="text"] ~ .btn .ri-eye-fill::before {
+    content: "\ecb6";
+}
+
+/***----- hot fixes css -------***/
+
+#updateLogsTable .btn {
+    background: white;
+    color: #333 !important;
+    border: 0;
+    margin: 10px 5px 0;
+    padding: 5px 10px;
+    border-radius: 0;
+    transition: all 250ms ease 0s;
+}
+
+#updateLogsTable .membership-tab-btns {
+    padding: 0 15px;
+    border-bottom: solid 1px #adbedd;
+}
+
+#updateLogsTable .btn:hover {
+    color: #0c4dc2 !important;
+}
+
+#updateLogsTable .btn.active {
+    border-bottom: 1px solid transparent !important;
+    background: #fcfcfc;
+    color: #0c4dc2 !important;
+    border: solid 1px #6a91d6;
+    border-top-left-radius: 2px;
+    border-top-right-radius: 2px;
+    border-bottom: 0;
+}
+
+
+/***----- theme typography and color -------***/
+
+body .navbar-menu .navbar-nav .nav-link {
+    color: var(--vz-heading-color);
+}
+
+.navbar-menu .navbar-nav .nav-sm .nav-link {
+    color: var(--vz-vertical-menu-item-color);
+}
+
+.main-content .page-content .form-control-sm, .main-content .page-content .form-select-sm, .main-content .page-content .btn-sm {
+    font-size: 14px;
+}
+
+.dashboard-listing .tab-content .ri-information-fill {
+    font-size: 18px;
+    vertical-align: -4px;
+    line-height:normal;
+}
+
+.dashboard-listing .tab-content #review-order #ddlProject2 {
+    width: calc(100% - 25px);
+    display: inline-block;
+}
+
+.tooltip .tooltip-inner {
+    background: var(--vz-heading-color);
+    max-width: 330px;
+    text-align: left;
+}
+
+.tooltip.bs-tooltip-top .tooltip-arrow::before {
+    border-top-color: var(--vz-heading-color);
+}
+
+.tooltip.bs-tooltip-bottom .tooltip-arrow::before {
+    border-bottom-color: var(--vz-heading-color);
+}
+
+.tooltip.bs-tooltip-start .tooltip-arrow::before {
+    border-left-color: var(--vz-heading-color);
+}
+
+.tooltip.bs-tooltip-end .tooltip-arrow::before {
+    border-right-color: var(--vz-heading-color);
+}
+
+
+/***----- custom css classes -------***/
+.pl-75 {
+    padding-left: 64px;
+}
+
+.page-content .table tr .tbw-10 {
+    width:10%!important;
+}
+.page-content .table tr .tbw-15 {
+    width: 15% !important;
+}
+.page-content .table tr .tbw-20 {
+    width: 20% !important;
+}
+.page-content .table tr .tbw-25 {
+    width: 25% !important;
+}
+.page-content .table tr .tbw-30 {
+    width: 30% !important;
+}
+.trash-icon {
+    background: transparent !important;
+    border: none;
+}
+
+.trash-icon i {
+    color: red!important;
+}
+
+.file-name-position {
+    position: absolute;
+    margin-top: 2px;
+}
+.tab-pane .img-product img {
+    width: 60px !important; height:60px!important;
+}
+.card-body.modal-searchbx.px-0.py-2.misc {
+    max-height: 60vh;
+    overflow-y: auto;
+}
+/*Shorting CSS*/
+.thead-shorting {
+}
+.thead-shorting th {
+    white-space: nowrap!important;
+}
+.pl-r-0 #membershipForm {
+    margin-top: 10px !important;
+}
+.pl-r-0 #membershipForm p{ margin-bottom:8px!important;}
+    .pl-r-0 #membershipForm .mb-3 {
+        margin-bottom: 0px !important;
+    }
+.pl-r-0 #membershipForm p {
+    margin-bottom: 8px !important;
+}
+.pl-r-0 {
+    padding: 0px !important;
+    margin: 0px !important
+}
+table.dataTable thead > tr > th.sorting:before, table.dataTable thead > tr > th.sorting:after, table.dataTable thead > tr > th.sorting_asc:before, table.dataTable thead > tr > th.sorting_asc:after, table.dataTable thead > tr > th.sorting_desc:before, table.dataTable thead > tr > th.sorting_desc:after, table.dataTable thead > tr > th.sorting_asc_disabled:before, table.dataTable thead > tr > th.sorting_asc_disabled:after, table.dataTable thead > tr > th.sorting_desc_disabled:before, table.dataTable thead > tr > th.sorting_desc_disabled:after, table.dataTable thead > tr > td.sorting:before, table.dataTable thead > tr > td.sorting:after, table.dataTable thead > tr > td.sorting_asc:before, table.dataTable thead > tr > td.sorting_asc:after, table.dataTable thead > tr > td.sorting_desc:before, table.dataTable thead > tr > td.sorting_desc:after, table.dataTable thead > tr > td.sorting_asc_disabled:before, table.dataTable thead > tr > td.sorting_asc_disabled:after, table.dataTable thead > tr > td.sorting_desc_disabled:before, table.dataTable thead > tr > td.sorting_desc_disabled:after{ opacity:.5!important; font-size:1.2em!important}
+
+
+.fc-daygrid-dot-event.fc-event-mirror, .fc-daygrid-dot-event {
+    
+    background-color: #5b71b9 !important;
+    border-color: #5b71b9 !important;
+}
+
+.fc-event, .fc-event-dot {
+    background-color: #5d70b6;
+}
+
+    .fc-daygrid-dot-event.fc-event-mirror, .fc-daygrid-dot-event:hover, .fc-event:hover {
+        color: #fff !important;
+        opacity: 0.8;
+        background-color: #5b71b9;
+        border-color: #5b71b9;
+    }
+
+._custom_setlect_client {
+    padding: .35rem .9rem !important;
+    font-size: .875rem !important;
+    font-weight: 400;
+    line-height: 1.25;
+    color: var(--vz-body-color) !important;
+    background-color: var(--vz-input-bg) !important;
+    background-clip: padding-box;
+    border: 1px solid var(--vz-input-border) !important;
+    margin-bottom:15px !important;
+}
