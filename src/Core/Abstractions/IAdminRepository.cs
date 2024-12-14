@@ -1,4 +1,5 @@
-﻿using Core.DTOs.Users;
+﻿using Core.DTOs;
+using Core.DTOs.Users;
 using Core.Entities;
 
 namespace Core.Abstractions
@@ -13,6 +14,15 @@ namespace Core.Abstractions
         Task<bool> SaveUser(Users user);
         Task<bool> DeleteUser(int id);
         Task<UserLoginValidateDTO> ValidateUser(string email);
+        #endregion
+
+        #region "Division"
+        Task<bool> SaveDivision(Division division);
+        Task<Division> GetDivision(int id);
+        Task<IEnumerable<DivisionListDTO>> GetDivisionList(int pageNumber, int pageSize, string searchTerm);
+        Task<bool> DeleteDivision(int id, int deletedBy);
+        Task<bool> CheckDuplicateDivisionName(string divisionName, int id);
+        Task<bool> CheckDuplicateDivisionCode(string divisionCode, int id);
         #endregion
     }
 }

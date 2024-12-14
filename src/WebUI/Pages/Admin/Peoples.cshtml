@@ -155,223 +155,247 @@
     </div>
 </div>
 
-
+ @* <button class="btn btn-sm btn-success" title="View Assigned Institution" onclick="viewAssignedInstitution(${row.id})">
+      <i class="mdi mdi-eye"></i>
+</button>
+      <button class="btn btn-sm btn-info" title="Email" onclick="emailPerson(${row.id})">
+       <i class="fas fa-envelope"></i>
+</button> 
+<button class="btn btn-sm btn-primary mt-1" onclick="assignProgram(${row.id})">
+                                    Assign Program
+                                </button>
+*@
 <script src="//cdn.jsdelivr.net/npm/toastify-js"></script>
 <script src="~/js/custom-notification.js"></script>
+<script src="/assets/libs/cleave.js/cleave.min.js"></script>
 @section Scripts {
     <script src="~/js/angular.js"></script>
     <script src="~/js/angular-sanitize.js"></script>
+
+    <script type="text/javascript">
+         $(document).ready(function() {
+
+             if (document.querySelector("#phone")) {
+                 var cleaveBlocks = new Cleave('#phone', {
+                     delimiters: [' ', '-'],
+                     blocks: [0, 5, 5]
+                 });
+             }
+
+            if (document.querySelector("#alternatePhone")) {
+                var cleaveBlocks = new Cleave('#alternatePhone', {
+                     delimiters: [' ', '-'],
+                     blocks: [0, 5, 5]
+                 });
+             }
+         });
+
+       
+    </script>
     <script>
-                var app = angular.module('peopleApp', []);
-                app.controller('peopleController', function ($scope, $http) {
-                    var dataTable = $('#peopleTable').DataTable({
-                        serverSide: true,
-                        processing: true,
-                        paging: true,
-                        ajax: function (data, callback, settings) {
-                            $http({
-                                method: 'GET',
-                                url: '?handler=UserList',
-                                params: {
-                                    draw: data.draw,
-                                    start: data.start,
-                                    length: data.length,
-                                    searchValue: data.search.value
-                                },
-                                headers: {
-                                    'RequestVerificationToken': $('input:hidden[name="__RequestVerificationToken"]').val()
-                                }
-                            }).then(function (response) {
-                                callback(response.data);
-                            }, function (error) {
-                                console.error('Error fetching data:', error);
-                            });
+        var app = angular.module('peopleApp', []);
+        app.controller('peopleController', function ($scope, $http) {
+            var dataTable = $('#peopleTable').DataTable({
+                serverSide: true,
+                processing: true,
+                paging: true,
+                ajax: function (data, callback, settings) {
+                    $http({
+                        method: 'GET',
+                        url: '?handler=UserList',
+                        params: {
+                            draw: data.draw,
+                            start: data.start,
+                            length: data.length,
+                            searchValue: data.search.value
                         },
-                        columns: [
-                            { data: 'rowNumber' },
-                            { data: 'fullName' },
-                            { data: 'userName' },
-                            { data: 'gender' },
-                            { data: 'phone' },
-                            { data: 'email' },
-                            { data: 'roleId' },
-                            { data: 'reporteeRoleId' },
-                            {
-                                data: null,
-                                orderable: false,
-                                render: function (data, type, row) {
-                                    var buttons = `
-                                        <div class="btn-group">
-                                            <button class="btn btn-sm btn-warning" title="Edit" onclick="editPerson(${row.id})">
-                                                <i class="fas fa-edit"></i>
-                                            </button>
-                                            <button class="btn btn-sm btn-success" title="View" onclick="viewPerson(${row.id})">
-                                                <i class="fas fa-eye"></i>
-                                            </button>
-                                            <button class="btn btn-sm btn-info" title="Email" onclick="emailPerson(${row.id})">
-                                                <i class="fas fa-envelope"></i>
-                                            </button>
-                                            <button class="btn btn-sm btn-danger" title="Remove" onclick="removePerson(${row.id})">
-                                                <i class="fas fa-times"></i> Remove Institution
-                                            </button>
-                                        </div>
-                                        <button class="btn btn-sm btn-primary mt-1" onclick="assignProgram(${row.id})">
-                                            Assign Program
-                                        </button>`;
-                                    return buttons;
-                                }
-                            }
-                        ],
-                        lengthMenu: [
-                            [10, 25, 50, 100],
-                            [10, 25, 50, 100]
-                        ],
-                        language: {
-                            searchPlaceholder: "Search records",
-                            info: "Showing _START_ to _END_ of _TOTAL_ records",
-                            lengthMenu: "Show _MENU_ records",
-                            infoEmpty: "Showing 0 to 0 of 0 records",
-                            emptyTable: "No records found!"
-                        },
-                        bStateSave: true,
-                        fnStateSave: function (oSettings, oData) {
-                            localStorage.setItem('PeopleTable_' + window.location.pathname, JSON.stringify(oData));
-                        },
-                        fnStateLoad: function (oSettings) {
-                            return JSON.parse(localStorage.getItem('PeopleTable_' + window.location.pathname));
+                        headers: {
+                            'RequestVerificationToken': $('input:hidden[name="__RequestVerificationToken"]').val()
                         }
+                    }).then(function (response) {
+                        callback(response.data);
+                    }, function (error) {
+                        console.error('Error fetching data:', error);
                     });
-
-                    // Global functions for action buttons
-                    window.editPerson = function(id) {
-                        // Implement edit logic
-                    };
-
-                    window.viewPerson = function(id) {
-                        // Implement view logic
-                    };
-
-                    window.emailPerson = function(id) {
-                        // Implement email logic
-                    };
-
-                    window.removePerson = function(id) {
-                        if (confirm('Are you sure you want to remove this person?')) {
-                            $http.delete('/api/peoples/' + id)
-                                .then(function() {
-                                    dataTable.ajax.reload();
-                                })
-                                .catch(function(error) {
-                                    console.error('Error removing person:', error);
-                                });
+                },
+                columns: [
+                    { data: 'rowNumber' },
+                    { data: 'fullName' },
+                    { data: 'userName' },
+                    { data: 'gender' },
+                    { data: 'phone' },
+                    { data: 'email' },
+                    { data: 'roleId' },
+                    { data: 'reporteeRoleId' },
+                    {
+                        data: null,
+                        orderable: false,
+                        render: function (data, type, row) {
+                            var buttons = `
+                                <div class="btn-group">
+                                    <button class="btn btn-sm btn-warning" title="Edit" onclick="editPerson(${row.id})">
+                                        <i class="mdi mdi-pencil"></i>
+                                    </button>
+                                    <button class="btn btn-sm btn-danger" title="Remove" onclick="removePerson(${row.id})">
+                                        <i class="mdi mdi-close-thick"></i>
+                                    </button>
+                                </div>
+                                
+                                `;
+                            return buttons;
                         }
-                    };
+                    }
+                ],
+                lengthMenu: [
+                    [10, 25, 50, 100],
+                    [10, 25, 50, 100]
+                ],
+                language: {
+                    searchPlaceholder: "Search records",
+                    info: "Showing _START_ to _END_ of _TOTAL_ records",
+                    lengthMenu: "Show _MENU_ records",
+                    infoEmpty: "Showing 0 to 0 of 0 records",
+                    emptyTable: "No records found!"
+                },
+                bStateSave: true,
+                fnStateSave: function (oSettings, oData) {
+                    localStorage.setItem('PeopleTable_' + window.location.pathname, JSON.stringify(oData));
+                },
+                fnStateLoad: function (oSettings) {
+                    return JSON.parse(localStorage.getItem('PeopleTable_' + window.location.pathname));
+                }
+            });
 
-                    window.assignProgram = function(id) {
-                        // Implement assign program logic
-                    };
+            // Global functions for action buttons
+            window.editPerson = function(id) {
+                // Implement edit logic
+            };
 
-                    $scope.userInfo = {
-                        firstName: '',
-                        lastName: '',
-                        email: '',
-                        userName: '',
-                        phone: '',
-                        alternatePhone: '',
-                        gender: '',
-                        roleId: '',
-                        reporteeRoleId: '',
-                        userStatus: 1,
-                        isDeleted: false
-                    };
+            window.viewPerson = function(id) {
+                // Implement view logic
+            };
+
+            window.emailPerson = function(id) {
+                // Implement email logic
+            };
+
+            window.removePerson = function(id) {
+                if (confirm('Are you sure you want to remove this person?')) {
+                    $http.delete('/api/peoples/' + id)
+                        .then(function() {
+                            dataTable.ajax.reload();
+                        })
+                        .catch(function(error) {
+                            console.error('Error removing person:', error);
+                        });
+                }
+            };
+
+            window.assignProgram = function(id) {
+                // Implement assign program logic
+            };
+
+            $scope.userInfo = {
+                firstName: '',
+                lastName: '',
+                email: '',
+                userName: '',
+                phone: '',
+                alternatePhone: '',
+                gender: '',
+                roleId: '',
+                reporteeRoleId: '',
+                userStatus: 1,
+                isDeleted: false
+            };
 
 
-                    // In the peopleController, add/update the submitForm function:
+            // In the peopleController, add/update the submitForm function:
 
-                        $scope.submitForm = function() {
-                        var userData = {
-                            firstName: $scope.userInfo.firstName,
-                            lastName: $scope.userInfo.lastName,
-                            email: $scope.userInfo.email,
-                            userName: $scope.userInfo.userName,
-                            phone: $scope.userInfo.phone,
-                            alternatePhone: $scope.userInfo.alternatePhone,
-                            gender: parseInt($scope.userInfo.gender),
-                            roleId: parseInt($scope.userInfo.roleId),
-                            reporteeRoleId: parseInt($scope.userInfo.reporteeRoleId),
+                $scope.submitForm = function() {
+                var userData = {
+                    firstName: $scope.userInfo.firstName,
+                    lastName: $scope.userInfo.lastName,
+                    email: $scope.userInfo.email,
+                    userName: $scope.userInfo.userName,
+                    phone: $scope.userInfo.phone,
+                    alternatePhone: $scope.userInfo.alternatePhone,
+                    gender: parseInt($scope.userInfo.gender),
+                    roleId: parseInt($scope.userInfo.roleId),
+                    reporteeRoleId: parseInt($scope.userInfo.reporteeRoleId),
+                    userStatus: 1,
+                    isDeleted: false
+                };
+
+                var url = '?handler=SaveUser';
+
+                $http({
+                    method: 'POST',
+                    url: url,
+                    data: userData, // Send user data in the request body
+                    headers: {
+                        'RequestVerificationToken': $('input:hidden[name="__RequestVerificationToken"]').val()
+                    },
+                    contentType: "application/json; charset=utf-8",
+                }).then(function(response) {
+                    if (response.data.success) {
+                        ShowNotification(response.data.message, 0);
+                        $('#addPeopleModal').modal('hide');
+                        $scope.userInfo = {
+                            firstName: '',
+                            lastName: '',
+                            email: '',
+                            userName: '',
+                            phone: '',
+                            alternatePhone: '',
+                            gender: '',
+                            roleId: '',
+                            reporteeRoleId: '',
                             userStatus: 1,
                             isDeleted: false
                         };
-
-                        var url = '?handler=SaveUser';
-
-                        $http({
-                            method: 'POST',
-                            url: url,
-                            data: userData, // Send user data in the request body
-                            headers: {
-                                'RequestVerificationToken': $('input:hidden[name="__RequestVerificationToken"]').val()
-                            },
-                            contentType: "application/json; charset=utf-8",
-                        }).then(function(response) {
-                            if (response.data.success) {
-                                ShowNotification(response.data.message, 0);
-                                $('#addPeopleModal').modal('hide');
-                                $scope.userInfo = {
-                                    firstName: '',
-                                    lastName: '',
-                                    email: '',
-                                    userName: '',
-                                    phone: '',
-                                    alternatePhone: '',
-                                    gender: '',
-                                    roleId: '',
-                                    reporteeRoleId: '',
-                                    userStatus: 1,
-                                    isDeleted: false
-                                };
-                                $('#peopleTable').DataTable().ajax.reload();
-                            } else {
-                                ShowNotification(response.data.message, 1);
-                            }
-                        }).catch(function(error) {
-                            ShowNotification(error.message, 1);
-                        });
-                    };
-
-                    // Add function to load initial data
-                    $scope.loadInitialData = function(id = 0) {
-                        $http({
-                            method: 'GET',
-                            url: '?handler=InitialData',
-                            params: { id: id },
-                            headers: {
-                                'RequestVerificationToken': $('input:hidden[name="__RequestVerificationToken"]').val()
-                            }
-                        }).then(function(response) {
-                            console.log('Response received:', response.data);
-                            $scope.genders = response.data.genders;
-                            $scope.roles = response.data.roles;
-                            $scope.reportRoles = response.data.reportRoles;
-                            $scope.userInfo = response.data.userInfo;
-                            $('#addPeopleModal').modal('show');
-                        }).catch(function(error) {
-                            console.error('Error loading initial data:', error);
-                            // Add user feedback
-                            alert('Failed to load initial data. Please try again.');
-                        });
-                    };
-
-                    // Ensure the modal is properly initialized
-                    $scope.openAddPeopleModal = function(id = 0) {
-                        console.log('Opening modal for id:', id);
-                        $scope.loadInitialData(id);
-                    };
-
-                    // Initialize the modal
-                    $(document).ready(function() {
-                        var modal = new bootstrap.Modal(document.getElementById('addPeopleModal'));
-                    });
+                        $('#peopleTable').DataTable().ajax.reload();
+                    } else {
+                        ShowNotification(response.data.message, 1);
+                    }
+                }).catch(function(error) {
+                    ShowNotification(error.message, 1);
                 });
+            };
+
+            // Add function to load initial data
+            $scope.loadInitialData = function(id = 0) {
+                $http({
+                    method: 'GET',
+                    url: '?handler=InitialData',
+                    params: { id: id },
+                    headers: {
+                        'RequestVerificationToken': $('input:hidden[name="__RequestVerificationToken"]').val()
+                    }
+                }).then(function(response) {
+                    console.log('Response received:', response.data);
+                    $scope.genders = response.data.genders;
+                    $scope.roles = response.data.roles;
+                    $scope.reportRoles = response.data.reportRoles;
+                    $scope.userInfo = response.data.userInfo;
+                    $('#addPeopleModal').modal('show');
+                }).catch(function(error) {
+                    console.error('Error loading initial data:', error);
+                    // Add user feedback
+                    alert('Failed to load initial data. Please try again.');
+                });
+            };
+
+            // Ensure the modal is properly initialized
+            $scope.openAddPeopleModal = function(id = 0) {
+                console.log('Opening modal for id:', id);
+                $scope.loadInitialData(id);
+            };
+
+            // Initialize the modal
+            $(document).ready(function() {
+                var modal = new bootstrap.Modal(document.getElementById('addPeopleModal'));
+            });
+        });
     </script>
 }

@@ -1,16 +1,20 @@
 ﻿using Core.Abstractions;
+using Core.DTOs;
 using Core.DTOs.Users;
 using Core.Entities;
 using Core.Utilities;
 using Dapper;
+using Microsoft.EntityFrameworkCore;
 using System.Data;
 
 namespace Infrastructure
 {
-    public class AdminRepository(IDbSession db) : IAdminRepository
+    public class AdminRepository(IDbSession db, DatabaseContext context) : IAdminRepository
     {
         private readonly IDbSession _db = db;
+        private readonly DatabaseContext _context = context;
 
+        #region "Users"
         public async Task<bool> CheckUserExist(string email, int id)
         {
             var SP = DBConstant.SP.usp_Users;
@@ -117,5 +121,80 @@ namespace Infrastructure
 
             return result;
         }
+
+
+        #endregion
+
+        #region "Division"
+        public async Task<bool> SaveDivision(Division division)
+        {
+            if (division.Id > 0)
+            {
+                var filterDivision = _context.Divisions.FirstOrDefault(x => x.Id == division.Id);
+                if (filterDivision != null)
+                {
+                    filterDivision.DivisionName = division.DivisionName;
+                    filterDivision.DivisionCode = division.DivisionCode;
+                    filterDivision.ModifyDate = DateTime.UtcNow;
+                    filterDivision.ModifyBy = division.ModifyBy;
+                    _context.Divisions.Update(filterDivision);
+                }
+            }
+            else
+            {
+                _context.Divisions.Add(division);
+            }
+            return await _context.SaveChangesAsync() > 0;
+        }
+
+        public async Task<Division> GetDivision(int id)
+        {
+            return await _context.Divisions.FirstOrDefaultAsync(x => x.Id == id) ?? new Division();
+        }
+
+        public async Task<IEnumerable<DivisionListDTO>> GetDivisionList(int pageNumber, int pageSize, string searchTerm)
+        {
+            var storedProcedure = "dbo.usp_DivisionList";
+            var parameters = new DynamicParameters();
+            parameters.Add("@PageNumber", pageNumber);
+            parameters.Add("@PageSize", pageSize);
+            parameters.Add("@SearchTerm", searchTerm);
+
+            var divisions = await _db.Connection.QueryAsync<DivisionListDTO>(
+                storedProcedure,
+                parameters,
+                _db.Transaction,
+                commandType: CommandType.StoredProcedure
+            );
+
+            return divisions;
+        }
+
+        public async Task<bool> DeleteDivision(int id,int deletedBy)
+        {
+            var division = await _context.Divisions.FirstOrDefaultAsync(x => x.Id == id);
+            if (division != null)
+            {
+                division.IsDeleted = true;
+                division.DeletedBy = deletedBy;
+                division.DeletedDate = DateTime.UtcNow;
+                return await _context.SaveChangesAsync() > 0;
+            }
+            return false;
+        }
+
+        public async Task<bool> CheckDuplicateDivisionName(string divisionName, int id)
+        {
+            var division = await _context.Divisions.FirstOrDefaultAsync(x => x.DivisionName == divisionName && x.Id != id);
+            return division != null;
+
+        }
+
+        public async Task<bool> CheckDuplicateDivisionCode(string divisionCode, int id)
+        {
+            var division = await _context.Divisions.FirstOrDefaultAsync(x => x.DivisionCode == divisionCode && x.Id != id);
+            return division != null;
+        }
+        #endregion
     }
 }

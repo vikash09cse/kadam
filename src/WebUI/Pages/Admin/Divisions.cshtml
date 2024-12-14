@@ -1,0 +1,232 @@
+﻿@page
+@model WebUI.Pages.Admin.DivisionsModel
+@{
+    ViewData["Title"] = "Division Management";
+}
+@Html.AntiForgeryToken()
+
+<div class="page-content" ng-app="divisionApp" ng-controller="divisionController">
+    <div class="container-fluid">
+
+        <!-- start page title -->
+        <div class="row">
+            <div class="col-12">
+                <div class="page-title-box d-sm-flex align-items-center justify-content-between">
+                    <h4 class="mb-sm-0">Divisions</h4>
+                    <div class="text-end">
+                        <button type="button" class="btn btn-primary" ng-click="openAddDivisionModal()">
+                            Add Division
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- end page title -->
+
+        <div class="row dashboard-listing">
+            <div class="col">
+                <div class="h-100">
+                    <div class="row mb-3 pb-1">
+                        <div class="col-12">
+                            <div class="table-responsive table-card">
+
+                                <table id="divisionTable" class="table table-nowrap w-100" aria-label="Divisions">
+                                    <thead class="table-primary">
+                                        <tr>
+                                            <th>Sr.No.</th>
+                                            <th>Division Name</th>
+                                            <th>Division Code</th>
+                                            <th>Action</th>
+                                        </tr>
+                                    </thead>
+                                </table>
+
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+    <!-- container-fluid -->
+
+    <!-- Add Division Modal -->
+    <div id="addDivisionModal" class="modal fade" tabindex="-1" aria-labelledby="divisionModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="divisionModalLabel">Add/Edit Division</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <form ng-submit="submitDivisionForm()">
+                    <div class="modal-body py-2">
+                        <div class="form-group">
+                            <label for="divisionName">Division Name<span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="divisionName" ng-model="divisionInfo.divisionName" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="divisionCode">Division Code<span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="divisionCode" ng-model="divisionInfo.divisionCode" required>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button class="btn btn-sm btn-primary" type="submit">Save</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="//cdn.jsdelivr.net/npm/toastify-js"></script>
+<script src="~/js/custom-notification.js"></script>
+@section Scripts {
+    <script src="~/js/angular.js"></script>
+    <script src="~/js/angular-sanitize.js"></script>
+
+    <script type="text/javascript">
+        var app = angular.module('divisionApp', []);
+        app.controller('divisionController', function ($scope, $http) {
+            var dataTable = $('#divisionTable').DataTable({
+                serverSide: true,
+                processing: true,
+                paging: true,
+                ajax: function (data, callback, settings) {
+                    $http({
+                        method: 'GET',
+                        url: '?handler=DivisionList',
+                        params: {
+                            draw: data.draw,
+                            start: data.start,
+                            length: data.length,
+                            searchValue: data.search.value
+                        },
+                        headers: {
+                            'RequestVerificationToken': $('input:hidden[name="__RequestVerificationToken"]').val()
+                        }
+                    }).then(function (response) {
+                        callback(response.data);
+                    }, function (error) {
+                        console.error('Error fetching data:', error);
+                    });
+                },
+                columns: [
+                    { data: 'rowNumber' },
+                    { data: 'divisionName' },
+                    { data: 'divisionCode' },
+                    {
+                        data: null,
+                        orderable: false,
+                        render: function (data, type, row) {
+                            var buttons = `
+                                <div class="btn-group">
+                                    <button class="btn btn-sm btn-warning" title="Edit" onclick="editDivision(${row.id})">
+                                        <i class="mdi mdi-pencil"></i>
+                                    </button>
+                                    <button class="btn btn-sm btn-danger" title="Remove" onclick="removeDivision(${row.id})">
+                                        <i class="mdi mdi-close-thick"></i>
+                                    </button>
+                                </div>
+                            `;
+                            return buttons;
+                        }
+                    }
+                ],
+                lengthMenu: [
+                    [10, 25, 50, 100],
+                    [10, 25, 50, 100]
+                ],
+                language: {
+                    searchPlaceholder: "Search records",
+                    info: "Showing _START_ to _END_ of _TOTAL_ records",
+                    lengthMenu: "Show _MENU_ records",
+                    infoEmpty: "Showing 0 to 0 of 0 records",
+                    emptyTable: "No records found!"
+                },
+                bStateSave: true,
+                fnStateSave: function (oSettings, oData) {
+                    localStorage.setItem('DivisionTable_' + window.location.pathname, JSON.stringify(oData));
+                },
+                fnStateLoad: function (oSettings) {
+                    return JSON.parse(localStorage.getItem('DivisionTable_' + window.location.pathname));
+                }
+            });
+
+            // Global functions for action buttons
+            window.editDivision = function(id) {
+                console.log('Editing division with ID:', id);
+                 $http({
+                    method: 'GET',
+                    url: '?handler=DivisionDetail&id=' + id,
+                    headers: {
+                        'RequestVerificationToken': $('input:hidden[name="__RequestVerificationToken"]').val()
+                    }
+                }).then(function(response) {
+                    $scope.divisionInfo = response.data;
+                    $('#addDivisionModal').modal('show');
+                }).catch(function(error) {
+                    ShowNotification(error.message, 1);
+                });
+            };
+
+            window.removeDivision = function(id) {
+                if (confirm('Are you sure you want to remove this division?')) {
+                    $http.delete('/api/divisions/' + id)
+                        .then(function() {
+                            dataTable.ajax.reload();
+                        })
+                        .catch(function(error) {
+                            console.error('Error removing division:', error);
+                        });
+                }
+            };
+
+            $scope.divisionInfo = {
+                id: 0,
+                divisionName: '',
+                divisionCode: '',
+                stateId: 0,
+                divisionStatus: 0,
+                closeDate: null,
+            };
+
+            $scope.submitDivisionForm = function() {
+                var divisionData = {
+                    id: $scope.divisionInfo.id,
+                    divisionName: $scope.divisionInfo.divisionName,
+                    divisionCode: $scope.divisionInfo.divisionCode,
+                    stateId: $scope.divisionInfo.stateId,
+                    divisionStatus: $scope.divisionInfo.divisionStatus,
+                    closeDate: $scope.divisionInfo.closeDate
+                };
+
+                $http({
+                    method: 'POST',
+                    url: '?handler=SaveDivision',
+                    data: divisionData,
+                    headers: {
+                        'RequestVerificationToken': $('input:hidden[name="__RequestVerificationToken"]').val()
+                    },
+                    contentType: "application/json; charset=utf-8",
+                }).then(function(response) {
+                    if (response.data.success) {
+                        ShowNotification(response.data.message, 0);
+                        $('#addDivisionModal').modal('hide');
+                        $scope.divisionInfo = {}; // Reset form
+                        $('#divisionTable').DataTable().ajax.reload();
+                    } else {
+                        ShowNotification(response.data.message, 1);
+                    }
+                }).catch(function(error) {
+                    ShowNotification(error.message, 1);
+                });
+            };
+
+            $scope.openAddDivisionModal = function() {
+                $('#addDivisionModal').modal('show');
+            };
+        });
+    </script>
+}
+

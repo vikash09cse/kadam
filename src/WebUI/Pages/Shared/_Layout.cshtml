@@ -143,7 +143,7 @@
                                 <i class="ri-dashboard-2-line"></i> <span data-key="t-widgets">Dashboard</span>
                             </a>
                         </li>
-                        <li class="nav-item">
+                        @* <li class="nav-item">
                             <a class="nav-link menu-link" href="#clientmanagement" data-bs-toggle="collapse" role="button" aria-expanded="false" aria-controls="clientmanagement">
                                 <i class="ri-user-settings-line"></i> <span data-key="t-dashboards">Client Management</span>
                             </a>
@@ -155,8 +155,8 @@
                                     
                                 </ul>
                             </div>
-                        </li>
-                        <li class="nav-item">
+                        </li> *@
+                        @* <li class="nav-item">
                             <a class="nav-link menu-link" href="#ordermanagement" data-bs-toggle="collapse" role="button" aria-expanded="false" aria-controls="ordermanagement">
                                 <i class="ri-file-settings-line"></i> <span data-key="t-dashboards">Order Management</span>
                             </a>
@@ -165,42 +165,10 @@
                                     <li class="nav-item">
                                         <a id="add-new-order" href="\Admin\OrderMaster" class="nav-link" data-key="t-analytics">Add New Order</a>
                                     </li>
-                                    <li class="nav-item">
-                                        <a id="view-new-orders" href="\Admin\OrderList?statusId=1" class="nav-link" data-key="t-crm">View New Orders</a>
-                                    </li>
-                                    <li class="nav-item">
-                                        <a href="\Admin\OrderList?statusId=2" class="nav-link" data-key="t-crm">View Processing Orders</a>
-                                    </li>
-
-                                    <li class="nav-item">
-                                        <a href="\Admin\OrderList?statusId=3" class="nav-link" data-key="t-crm">View Shipped Orders</a>
-                                    </li>
-                                    @*<li class="nav-item">
-                                    <a href="\Admin\OrderList?statusId=4" class="nav-link" data-key="t-crm">View Completed Orders</a>
-                                    </li>*@
-
-
-                                    <li class="nav-item">
-                                        <a href="\Admin\OrderList?statusId=7" class="nav-link" data-key="t-crm">View Delivered Orders</a>
-                                    </li>
-                                    <li class="nav-item">
-                                        <a href="\Admin\OrderList?statusId=10" class="nav-link" data-key="t-crm">View Cancelled Orders</a>
-                                    </li>
-                                    @*<li class="nav-item">
-                                    <a href="\Admin\OrderList?statusId=8" class="nav-link" data-key="t-crm">View Closed Orders</a>
-                                    </li>*@
-                                    <li class="nav-item">
-                                        <a href="\Admin\SearchOrders" class="nav-link" data-key="t-crm">Search Orders</a>
-                                    </li>
-                                    <li class="nav-item">
-                                        <a id="update-return-items" href="\Admin\OrderListForReturn" class="nav-link" data-key="t-crm">Update Return Items</a>
-                                    </li>
-                                    <li class="nav-item">
-                                        <a href="\Admin\ViewMiscFees" class="nav-link" data-key="t-crm">View Misc. Fees</a>
-                                    </li>
+                                    
                                 </ul>
                             </div>
-                        </li>
+                        </li> *@
                         <li class="nav-item">
                             <a class="nav-link menu-link" href="#settinglist" data-bs-toggle="collapse" role="button" aria-expanded="false" aria-controls="settinglist">
                                 <i class="ri-settings-3-line"></i> <span data-key="t-dashboards">Settings</span>
@@ -209,6 +177,9 @@
                                 <ul class="nav nav-sm flex-column">
                                     <li class="nav-item">
                                         <a id="backoffice-link" href="/Admin/Peoples" class="nav-link" data-key="t-crm">Peoples</a>
+                                    </li>
+                                    <li class="nav-item">
+                                        <a id="backoffice-link" href="/Admin/Divisions" class="nav-link" data-key="t-crm">Divisions</a>
                                     </li>
                                     
                                 </ul>
@@ -221,14 +192,8 @@
                             <div class="collapse menu-dropdown" id="reportlist">
                                 <ul class="nav nav-sm flex-column">
                                     <li class="nav-item">
-                                        <a href="\Admin\Reports\SalesByClients" class="nav-link" data-key="t-analytics">Sales by Clients</a>
+                                        <a href="#" class="nav-link" data-key="t-analytics">Report 1</a>
                                     </li>
-                                    
-
-                                    <li class="nav-item">
-                                        <a href="\Admin\PendingOrderList" class="nav-link" data-key="t-crm">Pending Approval Orders</a>
-                                    </li>
-
                                 </ul>
                             </div>
                         </li>

@@ -134,39 +134,49 @@ public class AuthenticationService
     }
     public int GetCurrentUserId()
     {
-        var httpContext = _httpContextAccessor.HttpContext;
-        if (httpContext?.User?.Identity?.IsAuthenticated == true)
+        //var httpContext = _httpContextAccessor.HttpContext;
+        //if (httpContext?.User?.Identity?.IsAuthenticated == true)
+        //{
+        //    var userIdClaim = httpContext.User.Claims.FirstOrDefault(c => c.Type == "UserId");
+        //    if (userIdClaim != null && int.TryParse(userIdClaim.Value, out int userId))
+        //    {
+        //        return userId;
+        //    }
+        //}
+        //throw new UnauthorizedAccessException("User is not authenticated or userId not found");
+
+        var userInfo = GetCurrentUser();
+        if (userInfo != null)
         {
-            var userIdClaim = httpContext.User.Claims.FirstOrDefault(c => c.Type == "UserId");
-            if (userIdClaim != null && int.TryParse(userIdClaim.Value, out int userId))
-            {
-                return userId;
-            }
+            return userInfo.Id;
         }
-        throw new UnauthorizedAccessException("User is not authenticated or userId not found");
-    }
-    public int? GetUserIdFromToken()
-    {
-        var tokenHandler = new JwtSecurityTokenHandler();
-        try
-        {
-            var token = _httpContextAccessor.HttpContext?.Request.Cookies["RememberMe_Token"];
-            if (token != null)
-            {
-                var jwtToken = tokenHandler.ReadJwtToken(token);
-                var userIdClaim = jwtToken.Claims.FirstOrDefault(c => c.Type == JwtRegisteredClaimNames.Sub);
-                if (userIdClaim != null && int.TryParse(userIdClaim.Value, out int userId))
-                {
-                    return userId;
-                }
-            }
-        }
-        catch
+        else
         {
             return 0;
         }
-        return 0;
     }
+    //public int? GetUserIdFromToken()
+    //{
+    //    var tokenHandler = new JwtSecurityTokenHandler();
+    //    try
+    //    {
+    //        var token = _httpContextAccessor.HttpContext?.Request.Cookies["RememberMe_Token"];
+    //        if (token != null)
+    //        {
+    //            var jwtToken = tokenHandler.ReadJwtToken(token);
+    //            var userIdClaim = jwtToken.Claims.FirstOrDefault(c => c.Type == JwtRegisteredClaimNames.Sub);
+    //            if (userIdClaim != null && int.TryParse(userIdClaim.Value, out int userId))
+    //            {
+    //                return userId;
+    //            }
+    //        }
+    //    }
+    //    catch
+    //    {
+    //        return 0;
+    //    }
+    //    return 0;
+    //}
     public async Task Logout()
     {
         var httpContext = _httpContextAccessor.HttpContext;
@@ -184,10 +194,41 @@ public class AuthenticationService
         }
     }
 
-    public UserLoginValidateDTO GetUserFromToken()
+    //public UserLoginValidateDTO GetUserFromToken()
+    //{
+    //    var user = new UserLoginValidateDTO();
+    //    var token = _httpContextAccessor.HttpContext?.Request.Cookies["RememberMe_Token"];
+    //    if (!string.IsNullOrEmpty(token))
+    //    {
+    //        try
+    //        {
+    //            var tokenHandler = new JwtSecurityTokenHandler();
+    //            var jwtToken = tokenHandler.ReadJwtToken(token);
+
+    //            user.Id = int.Parse(jwtToken.Claims.FirstOrDefault(c => c.Type == JwtRegisteredClaimNames.Sub)?.Value ?? "0");
+    //            user.Email = jwtToken.Claims.FirstOrDefault(c => c.Type == JwtRegisteredClaimNames.Email)?.Value ?? string.Empty;
+    //            user.FirstName = jwtToken.Claims.FirstOrDefault(c => c.Type == "FirstName")?.Value ?? string.Empty;
+    //            user.LastName = jwtToken.Claims.FirstOrDefault(c => c.Type == "LastName")?.Value ?? string.Empty;
+    //            user.RoleId = int.Parse(jwtToken.Claims.FirstOrDefault(c => c.Type == "RoleId")?.Value ?? "0");
+    //        }
+    //        catch (Exception ex)
+    //        {
+    //            // Handle exceptions, such as parsing errors or missing claims
+    //            throw new InvalidOperationException("Failed to parse token and extract user information.", ex);
+    //        }
+    //    }
+    //    return user;
+    //}
+    public UserLoginValidateDTO? GetCurrentUser()
     {
-        var user = new UserLoginValidateDTO();
-        var token = _httpContextAccessor.HttpContext?.Request.Cookies["RememberMe_Token"];
+        var httpContext = _httpContextAccessor.HttpContext;
+        if (httpContext == null)
+        {
+            throw new UnauthorizedAccessException("HttpContext is null");
+        }
+
+        // Check if the user is authenticated via JWT token
+        var token = httpContext.Request.Cookies["RememberMe_Token"];
         if (!string.IsNullOrEmpty(token))
         {
             try
@@ -195,19 +236,38 @@ public class AuthenticationService
                 var tokenHandler = new JwtSecurityTokenHandler();
                 var jwtToken = tokenHandler.ReadJwtToken(token);
 
-                user.Id = int.Parse(jwtToken.Claims.FirstOrDefault(c => c.Type == JwtRegisteredClaimNames.Sub)?.Value ?? "0");
-                user.Email = jwtToken.Claims.FirstOrDefault(c => c.Type == JwtRegisteredClaimNames.Email)?.Value ?? string.Empty;
-                user.FirstName = jwtToken.Claims.FirstOrDefault(c => c.Type == "FirstName")?.Value ?? string.Empty;
-                user.LastName = jwtToken.Claims.FirstOrDefault(c => c.Type == "LastName")?.Value ?? string.Empty;
-                user.RoleId = int.Parse(jwtToken.Claims.FirstOrDefault(c => c.Type == "RoleId")?.Value ?? "0");
+                return new UserLoginValidateDTO
+                {
+                    Id = int.Parse(jwtToken.Claims.FirstOrDefault(c => c.Type == JwtRegisteredClaimNames.Sub)?.Value ?? "0"),
+                    Email = jwtToken.Claims.FirstOrDefault(c => c.Type == JwtRegisteredClaimNames.Email)?.Value ?? string.Empty,
+                    FirstName = jwtToken.Claims.FirstOrDefault(c => c.Type == "FirstName")?.Value ?? string.Empty,
+                    LastName = jwtToken.Claims.FirstOrDefault(c => c.Type == "LastName")?.Value ?? string.Empty,
+                    RoleId = int.Parse(jwtToken.Claims.FirstOrDefault(c => c.Type == "RoleId")?.Value ?? "0")
+                };
             }
             catch (Exception ex)
             {
-                // Handle exceptions, such as parsing errors or missing claims
                 throw new InvalidOperationException("Failed to parse token and extract user information.", ex);
             }
         }
-        return user;
+        // Check if the user is authenticated via cookie
+        else if (httpContext.User?.Identity?.IsAuthenticated == true)
+        {
+            var userIdClaim = httpContext.User.Claims.FirstOrDefault(c => c.Type == "UserId");
+            if (userIdClaim != null && int.TryParse(userIdClaim.Value, out int userId))
+            {
+                return new UserLoginValidateDTO
+                {
+                    Id = userId,
+                    Email = httpContext.User.Claims.FirstOrDefault(c => c.Type == "Email")?.Value ?? string.Empty,
+                    FirstName = httpContext.User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Name)?.Value.Split(' ')[0] ?? string.Empty,
+                    LastName = httpContext.User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Name)?.Value.Split(' ')[1] ?? string.Empty,
+                    RoleId = int.Parse(httpContext.User.Claims.FirstOrDefault(c => c.Type == "RoleId")?.Value ?? "0")
+                };
+            }
+        }
+        return null;
+        //throw new UnauthorizedAccessException("User is not authenticated or userId not found");
     }
 }
 

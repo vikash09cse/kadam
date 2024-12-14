@@ -1,5 +1,6 @@
 ﻿using Core.Abstractions;
 using Microsoft.Extensions.DependencyInjection;
+using System;
 
 namespace Infrastructure;
 
@@ -16,5 +17,6 @@ public static class DependencyInject
         services.AddScoped<ITechnicianRepository, TechnicianRepository>();
         services.AddScoped<IDbSession, DbSession>();
         services.AddScoped<IUnitOfWork, UnitOfWork>();
+        services.AddDbContext<DatabaseContext>();
     }
 }

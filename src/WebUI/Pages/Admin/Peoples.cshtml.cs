@@ -79,32 +79,16 @@ namespace WebUI.Pages.Admin
                 if (user.Id == 0)
                 {
                     user.DateCreated = DateTime.UtcNow;
-                    user.CreatedBy = _authenticationService.GetUserIdFromToken();
+                    user.CreatedBy = _authenticationService.GetCurrentUserId();
                 }
                 else
                 {
                     user.ModifyDate = DateTime.UtcNow;
-                    user.ModifyBy = _authenticationService.GetUserIdFromToken();
+                    user.ModifyBy = _authenticationService.GetCurrentUserId();
                 }
 
                 var result = await _adminService.SaveUser(user);
-                if(result.StatusCode == AppStatusCodes.Success)
-                {
-                    return new JsonResult(new
-                    {
-                        success = true,
-                        message = MessageSuccess.Saved,
-                        data = result
-                    });
-                }
-                else
-                {
-                    return new JsonResult(new
-                    {
-                        success = false,
-                        message = result.Message
-                    });
-                }
+                return new JsonResult(result);
             }
             catch (Exception ex)
             {

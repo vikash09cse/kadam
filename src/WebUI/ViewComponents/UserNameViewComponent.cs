@@ -14,10 +14,15 @@ namespace WebUI.ViewComponents
 
         public IViewComponentResult Invoke()
         {
-            UserLoginValidateDTO user;
+            UserLoginValidateDTO? user;
             try
             {
-                user = _authenticationService.GetUserFromToken();
+                user = _authenticationService.GetCurrentUser();
+                if (user == null)
+                {
+                    HttpContext.Response.Redirect("/login");
+                    return Content(string.Empty);
+                }
             }
             catch (Exception)
             {
