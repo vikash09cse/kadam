@@ -1,0 +1,341 @@
+﻿@page
+@model WebUI.Pages.Admin.MenuPermissionsModel
+@{
+    ViewData["Title"] = "Menu Permission Management";
+}
+@Html.AntiForgeryToken()
+
+<div class="page-content" ng-app="menuPermissionApp" ng-controller="MenuPermissionController as vm">
+    <div class="container-fluid">
+        <!-- start page title -->
+        <div class="row">
+            <div class="col-12">
+                <div class="page-title-box d-sm-flex align-items-center justify-content-between">
+                    <h4 class="mb-sm-0">Menu Permissions</h4>
+                    <div class="text-end">
+                        <button type="button" class="btn btn-primary" ng-click="vm.openAddMenuPermissionModal()">
+                            Add Menu Permission
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- end page title -->
+
+        <div class="row dashboard-listing">
+            <div class="col">
+                <div class="h-100">
+                    <div class="row mb-3 pb-1">
+                        <div class="col-12">
+                            <div class="table-responsive table-card">
+                                <table id="menuPermissionTable" class="table table-nowrap w-100" aria-label="Menu Permissions">
+                                    <thead class="table-primary">
+                                        <tr>
+                                            <th style="width: 8%;">Sr.No.</th>
+                                            <th>Menu Name</th>
+                                            <th>Parent Menu</th>
+                                            <th style="width: 8%;">Status</th>
+                                            <th style="width: 8%;">Action</th>
+                                        </tr>
+                                    </thead>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Menu Permission Modal -->
+    <div id="addMenuPermissionModal" class="modal fade" tabindex="-1" aria-labelledby="menuPermissionModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="menuPermissionModalLabel">Add/Edit Menu Permission</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                
+                <form name="vm.menuPermissionForm" ng-submit="vm.submitMenuPermissionForm(vm.menuPermissionForm)" novalidate>
+                    <div class="modal-body py-2">
+                        <div class="form-group row mb-3">
+                            <div class="col">
+                                <label for="menuName">Menu Name<span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="menuName" name="menuName" 
+                                       ng-model="vm.menuPermissionInfo.menuName" required>
+                                <span class="text-danger" ng-show="vm.isSubmit && vm.menuPermissionForm.menuName.$error.required">Required.</span>
+                            </div>
+                        </div>
+                        <div class="form-group row">
+                            <div class="col">
+                                <label for="parentId">Parent Menu</label>
+                                <select class="form-select" id="parentId" name="parentId" 
+                                        ng-model="vm.menuPermissionInfo.parentId"
+                                        ng-options="menu.value as menu.text for menu in vm.parentMenus">
+                                    <option value="">Select Parent Menu</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button class="btn btn-sm btn-primary" type="submit" ng-disabled="vm.isSaving">
+                            <span ng-if="vm.isSaving" class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                            <span ng-if="!vm.isSaving">Save</span>
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    <!-- Loader Element -->
+    <div id="loader" class="loader" ng-show="vm.isLoading"></div>
+</div>
+
+@section Scripts {
+    <script src="//cdn.jsdelivr.net/npm/toastify-js"></script>
+    <script src="~/js/custom-notification.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="~/js/angular.js"></script>
+    <script src="~/js/angular-sanitize.js"></script>
+    <script src="~/js/loaderInterceptor.js"></script>
+
+    <script type="text/javascript">
+        (function() {
+            'use strict';
+
+            var app = angular.module('menuPermissionApp', ['app']);
+
+            app.config(['$httpProvider', function($httpProvider) {
+                $httpProvider.interceptors.push('loaderInterceptor');
+            }]);
+
+            app.run(['$rootScope', function($rootScope) {
+                $rootScope.isLoading = false;
+            }]);
+
+            // Menu Permission Service
+            app.service('MenuPermissionService', ['$http', '$q', function($http, $q) {
+                var service = {};
+
+                service.getParentMenus = function() {
+                    return $http.get('?handler=ParentMenus')
+                        .then(response => response.data)
+                        .catch(error => $q.reject(error));
+                };
+
+                service.getMenuPermissionList = function(params) {
+                    return $http.get('?handler=MenuPermissionList', { params: params })
+                        .then(response => response.data)
+                        .catch(error => $q.reject(error));
+                };
+
+                service.getMenuPermission = function(id) {
+                    return $http.get('?handler=MenuPermissionDetail&id=' + id)
+                        .then(response => response.data)
+                        .catch(error => $q.reject(error));
+                };
+
+                service.saveMenuPermission = function(data) {
+                    return $http.post('?handler=SaveMenuPermission', data, {
+                        headers: { 'RequestVerificationToken': $('input:hidden[name="__RequestVerificationToken"]').val() }
+                    })
+                    .then(response => response.data)
+                    .catch(error => $q.reject(error));
+                };
+
+                service.deleteMenuPermission = function(id) {
+                    return $http.post('?handler=DeleteMenuPermission&id=' + id, null, {
+                        headers: { 'RequestVerificationToken': $('input:hidden[name="__RequestVerificationToken"]').val() }
+                    })
+                    .then(response => response.data)
+                    .catch(error => $q.reject(error));
+                };
+
+                return service;
+            }]);
+
+            // Menu Permission Controller
+            app.controller('MenuPermissionController', ['MenuPermissionService', '$scope', '$compile', function(MenuPermissionService, $scope, $compile) {
+                var vm = this;
+
+                // Initialize variables
+                vm.parentMenus = [];
+                vm.menuPermissionInfo = {};
+                vm.isSaving = false;
+                vm.isSubmit = false;
+
+                // Initialize DataTable
+                vm.initDataTable = function() {
+                    vm.dataTable = $('#menuPermissionTable').DataTable({
+                        serverSide: true,
+                        processing: true,
+                        ajax: function(data, callback, settings) {
+                            MenuPermissionService.getMenuPermissionList({
+                                draw: data.draw,
+                                start: data.start,
+                                length: data.length,
+                                searchValue: data.search.value
+                            })
+                            .then(function(response) {
+                                callback(response);
+                            })
+                            .catch(function(error) {
+                                console.error('Error fetching data:', error);
+                            });
+                        },
+                        columns: [
+                            { data: 'rowNumber' },
+                            { data: 'menuName' },
+                            { data: 'parentMenuName' },
+                            { data: 'currentStatusText' },
+                            {
+                                data: null,
+                                orderable: false,
+                                createdCell: function(td, cellData, rowData, row, col) {
+                                    var template = `
+                                        <div class="btn-group">
+                                            <button class="btn btn-sm btn-warning" title="Edit" ng-click="vm.editMenuPermission(${rowData.id})">
+                                                <i class="mdi mdi-pencil"></i>
+                                            </button>
+                                            <button class="btn btn-sm btn-danger" title="Remove" ng-click="vm.removeMenuPermission(${rowData.id})">
+                                                <i class="mdi mdi-trash-can"></i>
+                                            </button>
+                                        </div>
+                                    `;
+                                    var compiledHtml = $compile(template)($scope);
+                                    angular.element(td).empty().append(compiledHtml);
+                                }
+                            }
+                        ],
+                        lengthMenu: [[10, 25, 50, 100], [10, 25, 50, 100]],
+                        language: {
+                            searchPlaceholder: "Search records",
+                            info: "Showing _START_ to _END_ of _TOTAL_ records",
+                            lengthMenu: "Show _MENU_ records",
+                            infoEmpty: "Showing 0 to 0 of 0 records",
+                            emptyTable: "No records found!"
+                        }
+                    });
+                };
+
+                // Load parent menus
+                vm.loadParentMenus = function() {
+                    return MenuPermissionService.getParentMenus()
+                        .then(function(data) {
+                            vm.parentMenus = data;
+                        })
+                        .catch(function(error) {
+                            console.error('Error loading parent menus:', error);
+                        });
+                };
+
+                // Reset form
+                vm.resetForm = function() {
+                    vm.menuPermissionInfo = {
+                        id: 0,
+                        menuName: '',
+                        parentId: null
+                    };
+                };
+
+                // Open add modal
+                vm.openAddMenuPermissionModal = function() {
+                    vm.loadParentMenus()
+                        .then(function() {
+                            vm.resetForm();
+                            $('#addMenuPermissionModal').modal('show');
+                        });
+                };
+
+                // Submit form
+                vm.submitMenuPermissionForm = function(form) {
+                    vm.isSubmit = true;
+                    if (form.$invalid) {
+                        return;
+                    }
+
+                    vm.isSaving = true;
+                    MenuPermissionService.saveMenuPermission(vm.menuPermissionInfo)
+                        .then(function(response) {
+                            vm.isSaving = false;
+                            vm.isSubmit = false;
+                            if (response.success) {
+                                ShowNotification(response.message, 0);
+                                $('#addMenuPermissionModal').modal('hide');
+                                vm.dataTable.ajax.reload();
+                            } else {
+                                ShowNotification(response.message, 1);
+                            }
+                        })
+                        .catch(function(error) {
+                            vm.isSaving = false;
+                            vm.isSubmit = false;
+                            ShowNotification(error.message, 1);
+                        });
+                };
+
+                // Edit menu permission
+                vm.editMenuPermission = function(id) {
+                    vm.loadParentMenus()
+                        .then(function() {
+                            return MenuPermissionService.getMenuPermission(id);
+                        })
+                        .then(function(data) {
+                            vm.menuPermissionInfo = data;
+                            $('#addMenuPermissionModal').modal('show');
+                        })
+                        .catch(function(error) {
+                            ShowNotification(error.message, 1);
+                        });
+                };
+
+                // Remove menu permission
+                vm.removeMenuPermission = function(id) {
+                    Swal.fire({
+                        title: 'Are you sure?',
+                        text: "You won't be able to revert this!",
+                        icon: 'warning',
+                        showCancelButton: true,
+                        confirmButtonColor: '#3085d6',
+                        cancelButtonColor: '#d33',
+                        confirmButtonText: 'Yes, delete it!'
+                    }).then((result) => {
+                        if (result.isConfirmed) {
+                            MenuPermissionService.deleteMenuPermission(id)
+                                .then(function(response) {
+                                    if (response.success) {
+                                        vm.dataTable.ajax.reload();
+                                        ShowNotification(response.message, 0);
+                                    } else {
+                                        ShowNotification(response.message, 1);
+                                    }
+                                })
+                                .catch(function(error) {
+                                    ShowNotification(error.message, 1);
+                                });
+                        }
+                    });
+                };
+
+                // Initialize controller
+                vm.init = function() {
+                    vm.resetForm();
+                    vm.initDataTable();
+                };
+
+                vm.init();
+
+                // Add click event handlers after DataTable initialization
+                $('#menuPermissionTable').on('click', '.edit-btn', function() {
+                    var id = $(this).data('id');
+                    vm.editMenuPermission(id);
+                });
+
+                $('#menuPermissionTable').on('click', '.delete-btn', function() {
+                    var id = $(this).data('id');
+                    vm.removeMenuPermission(id);
+                });
+            }]);
+        })();
+    </script>
+}

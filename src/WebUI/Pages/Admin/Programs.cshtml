@@ -1,0 +1,268 @@
+﻿@page
+@model WebUI.Pages.Admin.ProgramsModel
+@{
+    ViewData["Title"] = "Program Management";
+}
+@Html.AntiForgeryToken()
+
+<div class="page-content" ng-app="programApp" ng-controller="programController">
+    <div class="container-fluid">
+        <!-- start page title -->
+        <div class="row">
+            <div class="col-12">
+                <div class="page-title-box d-sm-flex align-items-center justify-content-between">
+                    <h4 class="mb-sm-0">Programs</h4>
+                    <div class="text-end">
+                        <button type="button" class="btn btn-primary" ng-click="openAddProgramModal()">
+                            Add Program
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- end page title -->
+
+        <div class="row dashboard-listing">
+            <div class="col">
+                <div class="h-100">
+                    <div class="row mb-3 pb-1">
+                        <div class="col-12">
+                            <div class="table-responsive table-card">
+                                <table id="programTable" class="table table-nowrap w-100" aria-label="Programs">
+                                    <thead class="table-primary">
+                                        <tr>
+                                            <th style="width: 8%;">Sr.No.</th>
+                                            <th>Program Name</th>
+                                            <th style="width: 8%;">Status</th>
+                                            <th style="width: 8%;">Action</th>
+                                        </tr>
+                                    </thead>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Program Modal -->
+    <div id="addProgramModal" class="modal fade" tabindex="-1" aria-labelledby="programModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="programModalLabel">Add/Edit Program</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                
+                <form method="post" name="programForm" novalidate>
+                    <div class="modal-body py-2">
+                        <div class="form-group row">
+                            <div class="col">
+                                <label for="programName">Program Name<span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="programName" name="programName" ng-model="programInfo.programName" required>
+                                <span class="text-danger" ng-show="IsSubmit && programForm.programName.$error.required">Required.</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button class="btn btn-sm btn-primary" type="submit" ng-click="submitProgramForm()" ng-disabled="isSaving">
+                            <span ng-if="isSaving" class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                            <span ng-if="!isSaving">Save</span>
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    <!-- Loader Element -->
+    <div id="loader" class="loader" ng-show="isLoading"></div>
+</div>
+
+<script src="//cdn.jsdelivr.net/npm/toastify-js"></script>
+<script src="~/js/custom-notification.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+@section Scripts {
+    <script src="~/js/angular.js"></script>
+    <script src="~/js/angular-sanitize.js"></script>
+    <script src="~/js/loaderInterceptor.js"></script>
+
+    <script type="text/javascript">
+        var app = angular.module('programApp', ['app']);
+
+        app.config(['$httpProvider', function($httpProvider) {
+            $httpProvider.interceptors.push('loaderInterceptor');
+        }]);
+
+        app.run(['$rootScope', function($rootScope) {
+            $rootScope.isLoading = false;
+        }]);
+
+        app.controller('programController', function ($scope, $http) {
+            var dataTable = $('#programTable').DataTable({
+                serverSide: true,
+                processing: true,
+                paging: true,
+                ajax: function (data, callback, settings) {
+                    $http({
+                        method: 'GET',
+                        url: '?handler=ProgramList',
+                        params: {
+                            draw: data.draw,
+                            start: data.start,
+                            length: data.length,
+                            searchValue: data.search.value
+                        },
+                        headers: {
+                            'RequestVerificationToken': $('input:hidden[name="__RequestVerificationToken"]').val()
+                        }
+                    }).then(function (response) {
+                        callback(response.data);
+                    }, function (error) {
+                        console.error('Error fetching data:', error);
+                    });
+                },
+                columns: [
+                    { data: 'rowNumber' },
+                    { data: 'programName' },
+                    { data: 'currentStatusText' },
+                    {
+                        data: null,
+                        orderable: false,
+                        render: function (data, type, row) {
+                            var buttons = `
+                                <div class="btn-group">
+                                    <button class="btn btn-sm btn-warning" title="Edit" onclick="editProgram(${row.id})">
+                                        <i class="mdi mdi-pencil"></i>
+                                    </button>
+                                    <button class="btn btn-sm btn-danger" title="Remove" onclick="removeProgram(${row.id})">
+                                        <i class="mdi mdi-trash-can"></i>
+                                    </button>
+                                </div>
+                            `;
+                            return buttons;
+                        }
+                    }
+                ],
+                lengthMenu: [[10, 25, 50, 100], [10, 25, 50, 100]],
+                language: {
+                    searchPlaceholder: "Search records",
+                    info: "Showing _START_ to _END_ of _TOTAL_ records",
+                    lengthMenu: "Show _MENU_ records",
+                    infoEmpty: "Showing 0 to 0 of 0 records",
+                    emptyTable: "No records found!"
+                },
+                bStateSave: true,
+                fnStateSave: function (oSettings, oData) {
+                    localStorage.setItem('ProgramTable_' + window.location.pathname, JSON.stringify(oData));
+                },
+                fnStateLoad: function (oSettings) {
+                    return JSON.parse(localStorage.getItem('ProgramTable_' + window.location.pathname));
+                }
+            });
+
+            // Action button functions
+            window.editProgram = function(id) {
+                $http({
+                    method: 'GET',
+                    url: '?handler=ProgramDetail&id=' + id,
+                    headers: {
+                        'RequestVerificationToken': $('input:hidden[name="__RequestVerificationToken"]').val()
+                    }
+                }).then(function(response) {
+                    $scope.programInfo = response.data;
+                    $('#addProgramModal').modal('show');
+                }).catch(function(error) {
+                    ShowNotification(error.message, 1);
+                });
+            };
+
+            window.removeProgram = function(id) {
+                Swal.fire({
+                    title: 'Are you sure?',
+                    text: "You won't be able to revert this!",
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#3085d6',
+                    cancelButtonColor: '#d33',
+                    confirmButtonText: 'Yes, delete it!'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        $http({
+                            method: 'POST',
+                            url: '?handler=DeleteProgram&id=' + id,
+                            headers: {
+                                'RequestVerificationToken': $('input:hidden[name="__RequestVerificationToken"]').val()
+                            }
+                        }).then(function(response) {
+                            if(response.data.success){
+                                dataTable.ajax.reload();
+                                ShowNotification(response.data.message, 0);
+                            }else{
+                                ShowNotification(response.data.message, 1);
+                            }
+                        }).catch(function(error) {
+                            ShowNotification(error.message, 1);
+                        });
+                    }
+                });
+            };
+
+            
+
+            $scope.programInfo = {
+                id: 0,
+                programName: '',
+            };
+
+            $scope.isSaving = false;
+            $scope.IsSubmit = false;
+
+            $scope.submitProgramForm = function() {
+                $scope.IsSubmit = true;
+                if (!$scope.programForm.$valid) {
+                    angular.element("[name='" + $scope.programForm.$name + "']").find('.ng-invalid:visible:first').focus();
+                    return;
+                }
+                $scope.isSaving = true;
+
+                var programData = {
+                    id: $scope.programInfo.id,
+                    programName: $scope.programInfo.programName,
+                };
+
+                $http({
+                    method: 'POST',
+                    url: '?handler=SaveProgram',
+                    data: programData,
+                    headers: {
+                        'RequestVerificationToken': $('input:hidden[name="__RequestVerificationToken"]').val()
+                    }
+                }).then(function(response) {
+                    $scope.isSaving = false;
+                    $scope.IsSubmit = false;
+                    if (response.data.success) {
+                        ShowNotification(response.data.message, 0);
+                        $('#addProgramModal').modal('hide');
+                        $scope.programInfo = {};
+                        dataTable.ajax.reload();
+                    } else {
+                        ShowNotification(response.data.message, 1);
+                    }
+                }).catch(function(error) {
+                    $scope.isSaving = false;
+                    $scope.IsSubmit = false;
+                    ShowNotification(error.message, 1);
+                });
+            };
+
+            $scope.openAddProgramModal = function() {
+                $scope.programInfo = {
+                    id: 0,
+                    programName: '',
+                };
+                $('#addProgramModal').modal('show');
+            };
+        });
+    </script>
+}

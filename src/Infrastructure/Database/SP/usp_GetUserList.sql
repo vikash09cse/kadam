@@ -9,13 +9,15 @@ BEGIN
     DECLARE @Offset INT = (@PageNumber - 1) * @PageSize;
 
     SELECT 
-        ROW_NUMBER() OVER(ORDER BY Id) AS RowNumber,
-        Id, Email, UserName, FirstName, LastName, 
+        ROW_NUMBER() OVER(ORDER BY u.Id) AS RowNumber,
+         u.Id, Email, UserName, FirstName, LastName, 
         Phone, Gender, 
-        RoleId, ReporteeRoleId,
+        r.RoleName AS RoleName, rr.RoleName AS ReporteeRoleName,
         COUNT(*) OVER() AS TotalCount
-    FROM Users 
-    WHERE IsDeleted = 0
+    FROM Users u 
+    LEFT JOIN Roles r ON u.RoleId = r.Id
+    LEFT JOIN Roles rr ON u.ReporteeRoleId = rr.Id
+    WHERE u.IsDeleted = 0
         AND (@SearchTerm IS NULL 
             OR Email LIKE '%' + @SearchTerm + '%'
             OR UserName LIKE '%' + @SearchTerm + '%'

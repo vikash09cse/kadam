@@ -1,0 +1,464 @@
+﻿@page
+@model WebUI.Pages.Admin.RolesModel
+@{
+    ViewData["Title"] = "Role Management";
+}
+@Html.AntiForgeryToken()
+
+<style>
+    .permissions-list {
+    max-height: 300px;
+    overflow-y: auto;
+    padding: 10px;
+    border: 1px solid #dee2e6;
+    border-radius: 4px;
+}
+
+.permissions-list .form-check {
+    margin-bottom: 8px;
+}
+</style>
+<div class="page-content" ng-app="roleApp" ng-controller="roleController as vm">
+    <div class="container-fluid">
+        <!-- start page title -->
+        <div class="row">
+            <div class="col-12">
+                <div class="page-title-box d-sm-flex align-items-center justify-content-between">
+                    <h4 class="mb-sm-0">Roles</h4>
+                    <div class="text-end">
+                        <button type="button" class="btn btn-primary" ng-click="vm.openAddRoleModal()">
+                            Add Role
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row dashboard-listing">
+            <div class="col">
+                <div class="h-100">
+                    <div class="row mb-3 pb-1">
+                        <div class="col-12">
+                            <div class="table-responsive table-card">
+                                <table id="roleTable" class="table table-nowrap w-100" aria-label="Roles">
+                                    <thead class="table-primary">
+                                        <tr>
+                                            <th style="width: 8%;">Sr.No.</th>
+                                            <th>Role Name</th>
+                                            <th style="width: 8%;">Status</th>
+                                            <th style="width: 8%;">Action</th>
+                                        </tr>
+                                    </thead>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Role Modal -->
+    <div id="addRoleModal" class="modal fade" tabindex="-1" aria-labelledby="roleModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="roleModalLabel">Add/Edit Role</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                
+                <form name="roleForm" ng-submit="vm.submitRoleForm(roleForm)" novalidate>
+                    <div class="modal-body py-2">
+                        <div class="form-group row">
+                            <div class="col">
+                                <label for="roleName">Role Name<span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="roleName" name="roleName" 
+                                       ng-model="vm.roleInfo.roleName" required>
+                                <span class="text-danger" ng-show="vm.isSubmit && roleForm.roleName.$error.required">Required.</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button class="btn btn-sm btn-primary" type="submit" ng-disabled="vm.isSaving">
+                            <span ng-if="vm.isSaving" class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                            <span ng-if="!vm.isSaving">Save</span>
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    <!-- Assign Permissions Modal -->
+    <div id="assignPermissionsModal" class="modal fade" tabindex="-1" aria-labelledby="permissionsModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="permissionsModalLabel">Assign Permission to Role</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                
+                <form name="permissionForm" novalidate>
+                    <div class="modal-body py-2">
+                        <div class="form-group row mb-3">
+                            <div class="col">
+                                <label for="selectedRole">Role<span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="selectedRole" 
+                                       ng-model="vm.selectedRole.roleName" readonly>
+                            </div>
+                        </div>
+                        <div class="form-group row">
+                            <div class="col">
+                                <label class="d-block">Assign Permission<span class="text-danger">*</span></label>
+                                <div class="permissions-list">
+                                    <!-- Add debug info -->
+                                    <div ng-if="!vm.availablePermissions.length" class="text-muted">
+                                        No permissions available
+                                    </div>
+                                    
+                                    <div class="form-check" ng-repeat="permission in vm.availablePermissions track by permission.id">
+                                        <input type="checkbox" 
+                                               class="form-check-input" 
+                                               id="permission_{{permission.id}}"
+                                               ng-model="permission.isSelected"
+                                               ng-checked="permission.isSelected === true">
+                                        <label class="form-check-label" for="permission_{{permission.id}}">
+                                            {{permission.menuName}} 
+                                            
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button class="btn btn-sm btn-primary" type="button" 
+                                ng-click="vm.submitPermissions()" 
+                                ng-disabled="vm.isSaving">
+                            <span ng-if="vm.isSaving" class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                            <span ng-if="!vm.isSaving">Submit</span>
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    <!-- Loader Element -->
+    <div id="loader" class="loader" ng-show="isLoading"></div>
+</div>
+
+<script src="//cdn.jsdelivr.net/npm/toastify-js"></script>
+<script src="~/js/custom-notification.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+@section Scripts {
+    <script src="~/js/angular.js"></script>
+    <script src="~/js/angular-sanitize.js"></script>
+    <script src="~/js/loaderInterceptor.js"></script>
+
+    <script type="text/javascript">
+        (function() {
+            'use strict';
+
+            var app = angular.module('roleApp', ['app']);
+
+            app.config(['$httpProvider', function($httpProvider) {
+                $httpProvider.interceptors.push('loaderInterceptor');
+            }]);
+
+            app.run(['$rootScope', function($rootScope) {
+                $rootScope.isLoading = false;
+            }]);
+
+            // Role Service
+            app.service('RoleService', ['$http', '$q', function($http, $q) {
+                var service = {};
+
+                service.getRoleList = function(params) {
+                    return $http.get('?handler=RoleList', { params: params })
+                        .then(response => response.data)
+                        .catch(error => $q.reject(error));
+                };
+
+                service.getRole = function(id) {
+                    return $http.get('?handler=RoleDetail&id=' + id)
+                        .then(response => response.data)
+                        .catch(error => $q.reject(error));
+                };
+
+                service.saveRole = function(data) {
+                    return $http.post('?handler=SaveRole', data, {
+                        headers: { 'RequestVerificationToken': $('input:hidden[name="__RequestVerificationToken"]').val() }
+                    })
+                    .then(response => response.data)
+                    .catch(error => $q.reject(error));
+                };
+
+                service.deleteRole = function(id) {
+                    return $http.post('?handler=DeleteRole&id=' + id, null, {
+                        headers: { 'RequestVerificationToken': $('input:hidden[name="__RequestVerificationToken"]').val() }
+                    })
+                    .then(response => response.data)
+                    .catch(error => $q.reject(error));
+                };
+
+                service.getRolePermissions = function(roleId) {
+                    return $http.get('?handler=RolePermissions&roleId=' + roleId, {
+                        headers: { 'RequestVerificationToken': $('input:hidden[name="__RequestVerificationToken"]').val() }
+                    })
+                    .then(function(response) {
+                        console.log('API Response:', response.data);
+                        if (!response.data) {
+                            return [];
+                        }
+                        return response.data;
+                    })
+                    .catch(function(error) {
+                        console.error('API Error:', error);
+                        return $q.reject(error);
+                    });
+                };
+
+                service.saveRolePermissions = function(data) {
+                    return $http.post('?handler=SaveRolePermissions', data, {
+                        headers: { 'RequestVerificationToken': $('input:hidden[name="__RequestVerificationToken"]').val() }
+                    })
+                    .then(response => response.data)
+                    .catch(error => $q.reject(error));
+                };
+
+                return service;
+            }]);
+
+            // Role Controller
+            app.controller('roleController', ['RoleService', '$scope', '$compile', function(RoleService, $scope, $compile) {
+                var vm = this;
+
+                // Initialize variables
+                vm.roleInfo = {};
+                vm.selectedRole = null;
+                vm.availablePermissions = [];
+                vm.isSaving = false;
+                vm.isSubmit = false;
+
+                // Initialize DataTable
+                vm.initDataTable = function() {
+                    vm.dataTable = $('#roleTable').DataTable({
+                        serverSide: true,
+                        processing: true,
+                        ajax: function(data, callback, settings) {
+                            RoleService.getRoleList({
+                                draw: data.draw,
+                                start: data.start,
+                                length: data.length,
+                                searchValue: data.search.value
+                            })
+                            .then(function(response) {
+                                callback(response);
+                            })
+                            .catch(function(error) {
+                                console.error('Error fetching data:', error);
+                            });
+                        },
+                        columns: [
+                            { data: 'rowNumber' },
+                            { data: 'roleName' },
+                            { data: 'currentStatusText' },
+                            {
+                                data: null,
+                                orderable: false,
+                                createdCell: function(td, cellData, rowData, row, col) {
+                                    var template = `
+                                        <div class="btn-group">
+                                            <button class="btn btn-sm btn-warning" title="Edit" ng-click="vm.editRole(${rowData.id})">
+                                                <i class="mdi mdi-pencil"></i>
+                                            </button>
+                                            <button class="btn btn-sm btn-info" title="Assign Permissions" ng-click="vm.assignPermissions(${rowData.id})">
+                                                <i class="mdi mdi-key"></i>
+                                            </button>
+                                            <button class="btn btn-sm btn-danger" title="Remove" ng-click="vm.removeRole(${rowData.id})">
+                                                <i class="mdi mdi-trash-can"></i>
+                                            </button>
+                                        </div>
+                                    `;
+                                    var compiledHtml = $compile(template)($scope);
+                                    angular.element(td).empty().append(compiledHtml);
+                                }
+                            }
+                        ],
+                        lengthMenu: [[10, 25, 50, 100], [10, 25, 50, 100]],
+                        language: {
+                            searchPlaceholder: "Search records",
+                            info: "Showing _START_ to _END_ of _TOTAL_ records",
+                            lengthMenu: "Show _MENU_ records",
+                            infoEmpty: "Showing 0 to 0 of 0 records",
+                            emptyTable: "No records found!"
+                        }
+                    });
+                };
+
+                // Reset form
+                vm.resetForm = function() {
+                    vm.roleInfo = {
+                        id: 0,
+                        roleName: ''
+                    };
+                };
+
+                // Open add modal
+                vm.openAddRoleModal = function() {
+                    vm.resetForm();
+                    $('#addRoleModal').modal('show');
+                };
+
+                // Submit role form
+                vm.submitRoleForm = function(form) {
+                    vm.isSubmit = true;
+                    if (form.$invalid) {
+                        return;
+                    }
+
+                    vm.isSaving = true;
+                    RoleService.saveRole(vm.roleInfo)
+                        .then(function(response) {
+                            vm.isSaving = false;
+                            vm.isSubmit = false;
+                            if (response.success) {
+                                ShowNotification(response.message, 0);
+                                $('#addRoleModal').modal('hide');
+                                vm.dataTable.ajax.reload();
+                            } else {
+                                ShowNotification(response.message, 1);
+                            }
+                        })
+                        .catch(function(error) {
+                            vm.isSaving = false;
+                            vm.isSubmit = false;
+                            ShowNotification(error.message, 1);
+                        });
+                };
+
+                // Edit role
+                vm.editRole = function(id) {
+                    RoleService.getRole(id)
+                        .then(function(data) {
+                            vm.roleInfo = data;
+                            $('#addRoleModal').modal('show');
+                        })
+                        .catch(function(error) {
+                            ShowNotification(error.message, 1);
+                        });
+                };
+
+                // Remove role
+                vm.removeRole = function(id) {
+                    Swal.fire({
+                        title: 'Are you sure?',
+                        text: "You won't be able to revert this!",
+                        icon: 'warning',
+                        showCancelButton: true,
+                        confirmButtonColor: '#3085d6',
+                        cancelButtonColor: '#d33',
+                        confirmButtonText: 'Yes, delete it!'
+                    }).then((result) => {
+                        if (result.isConfirmed) {
+                            RoleService.deleteRole(id)
+                                .then(function(response) {
+                                    if (response.success) {
+                                        vm.dataTable.ajax.reload();
+                                        ShowNotification(response.message, 0);
+                                    } else {
+                                        ShowNotification(response.message, 1);
+                                    }
+                                })
+                                .catch(function(error) {
+                                    ShowNotification(error.message, 1);
+                                });
+                        }
+                    });
+                };
+
+                // Assign permissions
+                vm.assignPermissions = function(id) {
+                    console.log('Assigning permissions for role:', id);
+                    
+                    // First get the role details
+                    RoleService.getRole(id)
+                        .then(function(response) {
+                            console.log('Role details:', response);
+                            vm.selectedRole = response;
+                            
+                            // Then get the permissions for this role
+                            return RoleService.getRolePermissions(id);
+                        })
+                        .then(function(permissions) {
+                            console.log('Received permissions:', permissions);
+                            
+                            // Ensure isSelected is a boolean and handle null/undefined
+                            vm.availablePermissions = permissions.map(function(permission) {
+                                return {
+                                    id: permission.id,
+                                    menuName: permission.menuName,
+                                    isSelected: Boolean(permission.isSelected)
+                                };
+                            });
+                            
+                            console.log('Processed permissions:', vm.availablePermissions);
+                            
+                            // Open the modal after data is loaded
+                            $('#assignPermissionsModal').modal('show');
+                            
+                            // Force Angular to update the view
+                            if (!$scope.$$phase) {
+                                $scope.$apply();
+                            }
+                        })
+                        .catch(function(error) {
+                            console.error('Error loading permissions:', error);
+                            ShowNotification(error.message, 1);
+                        });
+                };
+
+                // Submit permissions
+                vm.submitPermissions = function() {
+                    if (!vm.selectedRole) return;
+                    
+                    vm.isSaving = true;
+                    var selectedPermissions = vm.availablePermissions
+                        .filter(function(p) { return p.isSelected === true; })
+                        .map(function(p) { return p.id; });
+
+                    var data = {
+                        roleId: vm.selectedRole.id,
+                        permissionIds: selectedPermissions
+                    };
+
+                    RoleService.saveRolePermissions(data)
+                        .then(function(response) {
+                            vm.isSaving = false;
+                            if (response.success) {
+                                ShowNotification(response.message, 0);
+                                $('#assignPermissionsModal').modal('hide');
+                            } else {
+                                ShowNotification(response.message, 1);
+                            }
+                        })
+                        .catch(function(error) {
+                            vm.isSaving = false;
+                            ShowNotification(error.message, 1);
+                        });
+                };
+
+                // Initialize controller
+                vm.init = function() {
+                    vm.resetForm();
+                    vm.initDataTable();
+                };
+
+                vm.init();
+
+                // Expose functions to window for button clicks
+                $scope.vm = vm;
+            }]);
+        })();
+    </script>
+}

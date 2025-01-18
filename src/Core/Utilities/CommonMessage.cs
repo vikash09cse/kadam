@@ -13,12 +13,30 @@ public static class MessageSuccess
     public const string FileUploaded = "File has been uploaded successfully.";
     public const string NoRecordFound = "No record found.";
     public const string RecordFound = "Record found.";
-   
-    
+    public const string Closed = "Record has been closed successfully.";
+
+
 }
 public static class MessageError
 {
     public const string DuplicateEmail = "Email already exists, please try using different email.";
+    public const string DuplicateDivisionName = "Division name already exists, please try using different name.";
+    public const string DuplicateDivisionCode = "Division code already exists, please try using different code.";
+    public const string DuplicateStateName = "State name already exists, please try using different name.";
+    public const string DuplicateStateCode = "State code already exists, please try using different code.";
+    public const string DuplicateDistrictName = "District name already exists, please try using different name.";
+    public const string DuplicateDistrictCode = "District code already exists, please try using different code.";
+    public const string DuplicateBlockName = "Block name already exists, please try using different name.";
+    public const string DuplicateVillageName = "Village name already exists, please try using different name.";
+    public const string DuplicateInstitutionName = "Institution name already exists, please try using different name.";
+    public const string DuplicateInstitutionCode = "Institution code already exists, please try using different code.";
+    public const string DuplicateProgramName = "Program name already exists, please try using different name.";
+    public const string DuplicateRoleName = "Role name already exists, please try using different name.";
+    public const string DuplicateMenuName = "Menu name already exists, please try using different name.";
+    public const string DuplicateSubjectName = "Subject name already exists, please try using different name.";
+    public const string DuplicateStepName = "Step name already exists, please try using different name.";
+    public const string DuplicateThemeName = "Theme name already exists, please try using different name.";
+
     public const string NoDataFound = "Sorry! no data found, please try again.";
     public const string CodeIssue = "Server error: Contact administrator.";
     public const string EmailNotFound = "Email does not exists in our system, please try using different email.";

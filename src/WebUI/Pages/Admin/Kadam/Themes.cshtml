@@ -1,0 +1,299 @@
+﻿@page
+@model WebUI.Pages.Admin.Kadam.ThemesModel
+@{
+    ViewData["Title"] = "Theme Management";
+}
+@Html.AntiForgeryToken()
+
+<style>
+    .permissions-list {
+        max-height: 300px;
+        overflow-y: auto;
+        padding: 10px;
+        border: 1px solid #dee2e6;
+        border-radius: 4px;
+    }
+</style>
+
+<div class="page-content" ng-app="themeApp" ng-controller="themeController as vm">
+    <div class="container-fluid">
+        <!-- start page title -->
+        <div class="row">
+            <div class="col-12">
+                <div class="page-title-box d-sm-flex align-items-center justify-content-between">
+                    <h4 class="mb-sm-0">Themes</h4>
+                    <div class="text-end">
+                        <button type="button" class="btn btn-primary" ng-click="vm.openAddThemeModal()">
+                            Add Theme
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row dashboard-listing">
+            <div class="col">
+                <div class="h-100">
+                    <div class="row mb-3 pb-1">
+                        <div class="col-12">
+                            <div class="table-responsive table-card">
+                                <table id="themeTable" class="table table-nowrap w-100" aria-label="Themes">
+                                    <thead class="table-primary">
+                                        <tr>
+                                            <th style="width: 8%;">Sr.No.</th>
+                                            <th>Theme Name</th>
+                                            <th style="width: 8%;">Status</th>
+                                            <th style="width: 8%;">Action</th>
+                                        </tr>
+                                    </thead>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Theme Modal -->
+    <div id="addThemeModal" class="modal fade" tabindex="-1" aria-labelledby="themeModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="themeModalLabel">Add/Edit Theme</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                
+                <form name="themeForm" ng-submit="vm.submitThemeForm(themeForm)" novalidate>
+                    <div class="modal-body py-2">
+                        <div class="form-group row">
+                            <div class="col">
+                                <label for="themeName">Theme Name<span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="themeName" name="themeName" 
+                                       ng-model="vm.themeInfo.themeName" required>
+                                <span class="text-danger" ng-show="vm.isSubmit && themeForm.themeName.$error.required">Required.</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button class="btn btn-sm btn-primary" type="submit" ng-disabled="vm.isSaving">
+                            <span ng-if="vm.isSaving" class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                            <span ng-if="!vm.isSaving">Save</span>
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Loader Element -->
+    <div id="loader" class="loader" ng-show="isLoading"></div>
+</div>
+
+<script src="//cdn.jsdelivr.net/npm/toastify-js"></script>
+<script src="~/js/custom-notification.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+@section Scripts {
+    <script src="~/js/angular.js"></script>
+    <script src="~/js/angular-sanitize.js"></script>
+    <script src="~/js/loaderInterceptor.js"></script>
+
+    <script type="text/javascript">
+        (function() {
+            'use strict';
+
+            var app = angular.module('themeApp', ['app']);
+
+            app.config(['$httpProvider', function($httpProvider) {
+                $httpProvider.interceptors.push('loaderInterceptor');
+            }]);
+
+            app.run(['$rootScope', function($rootScope) {
+                $rootScope.isLoading = false;
+            }]);
+
+            // Theme Service
+            app.service('ThemeService', ['$http', '$q', function($http, $q) {
+                var service = {};
+
+                service.getThemeList = function(params) {
+                    return $http.get('?handler=ThemeList', { params: params })
+                        .then(response => response.data)
+                        .catch(error => $q.reject(error));
+                };
+
+                service.getTheme = function(id) {
+                    return $http.get('?handler=ThemeDetail&id=' + id)
+                        .then(response => response.data)
+                        .catch(error => $q.reject(error));
+                };
+
+                service.saveTheme = function(data) {
+                    return $http.post('?handler=SaveTheme', data, {
+                        headers: { 'RequestVerificationToken': $('input:hidden[name="__RequestVerificationToken"]').val() }
+                    })
+                    .then(response => response.data)
+                    .catch(error => $q.reject(error));
+                };
+
+                service.deleteTheme = function(id) {
+                    return $http.post('?handler=DeleteTheme&id=' + id, null, {
+                        headers: { 'RequestVerificationToken': $('input:hidden[name="__RequestVerificationToken"]').val() }
+                    })
+                    .then(response => response.data)
+                    .catch(error => $q.reject(error));
+                };
+
+                return service;
+            }]);
+
+            // Theme Controller
+            app.controller('themeController', ['ThemeService', '$scope', '$compile', function(ThemeService, $scope, $compile) {
+                var vm = this;
+
+                // Initialize variables
+                vm.themeInfo = {};
+                vm.isSaving = false;
+                vm.isSubmit = false;
+
+                // Initialize DataTable
+                vm.initDataTable = function() {
+                    vm.dataTable = $('#themeTable').DataTable({
+                        serverSide: true,
+                        processing: true,
+                        ajax: function(data, callback, settings) {
+                            ThemeService.getThemeList({
+                                draw: data.draw,
+                                start: data.start,
+                                length: data.length,
+                                searchValue: data.search.value
+                            })
+                            .then(function(response) {
+                                callback(response);
+                            })
+                            .catch(function(error) {
+                                console.error('Error fetching data:', error);
+                            });
+                        },
+                        columns: [
+                            { data: 'rowNumber' },
+                            { data: 'themeName' },
+                            { data: 'currentStatusText' },
+                            {
+                                data: null,
+                                orderable: false,
+                                createdCell: function(td, cellData, rowData, row, col) {
+                                    var template = `
+                                        <div class="btn-group">
+                                            <button class="btn btn-sm btn-warning" title="Edit" ng-click="vm.editTheme(${rowData.id})">
+                                                <i class="mdi mdi-pencil"></i>
+                                            </button>
+                                            <button class="btn btn-sm btn-danger" title="Remove" ng-click="vm.removeTheme(${rowData.id})">
+                                                <i class="mdi mdi-trash-can"></i>
+                                            </button>
+                                        </div>
+                                    `;
+                                    var compiledHtml = $compile(template)($scope);
+                                    angular.element(td).empty().append(compiledHtml);
+                                }
+                            }
+                        ]
+                    });
+                };
+
+                // Reset form
+                vm.resetForm = function() {
+                    vm.themeInfo = {
+                        id: 0,
+                        themeName: ''
+                    };
+                };
+
+                // Open add modal
+                vm.openAddThemeModal = function() {
+                    vm.resetForm();
+                    $('#addThemeModal').modal('show');
+                };
+
+                // Submit theme form
+                vm.submitThemeForm = function(form) {
+                    vm.isSubmit = true;
+                    if (form.$invalid) {
+                        return;
+                    }
+
+                    vm.isSaving = true;
+                    ThemeService.saveTheme(vm.themeInfo)
+                        .then(function(response) {
+                            vm.isSaving = false;
+                            vm.isSubmit = false;
+                            if (response.success) {
+                                ShowNotification(response.message, 0);
+                                $('#addThemeModal').modal('hide');
+                                vm.dataTable.ajax.reload();
+                            } else {
+                                ShowNotification(response.message, 1);
+                            }
+                        })
+                        .catch(function(error) {
+                            vm.isSaving = false;
+                            vm.isSubmit = false;
+                            ShowNotification(error.message, 1);
+                        });
+                };
+
+                // Edit theme
+                vm.editTheme = function(id) {
+                    ThemeService.getTheme(id)
+                        .then(function(data) {
+                            vm.themeInfo = data;
+                            $('#addThemeModal').modal('show');
+                        })
+                        .catch(function(error) {
+                            ShowNotification(error.message, 1);
+                        });
+                };
+
+                // Remove theme
+                vm.removeTheme = function(id) {
+                    Swal.fire({
+                        title: 'Are you sure?',
+                        text: "You won't be able to revert this!",
+                        icon: 'warning',
+                        showCancelButton: true,
+                        confirmButtonColor: '#3085d6',
+                        cancelButtonColor: '#d33',
+                        confirmButtonText: 'Yes, delete it!'
+                    }).then((result) => {
+                        if (result.isConfirmed) {
+                            ThemeService.deleteTheme(id)
+                                .then(function(response) {
+                                    if (response.success) {
+                                        vm.dataTable.ajax.reload();
+                                        ShowNotification(response.message, 0);
+                                    } else {
+                                        ShowNotification(response.message, 1);
+                                    }
+                                })
+                                .catch(function(error) {
+                                    ShowNotification(error.message, 1);
+                                });
+                        }
+                    });
+                };
+
+                // Initialize controller
+                vm.init = function() {
+                    vm.resetForm();
+                    vm.initDataTable();
+                };
+
+                vm.init();
+
+                // Expose functions to window for button clicks
+                $scope.vm = vm;
+            }]);
+        })();
+    </script>
+}

@@ -11,5 +11,6 @@ public static class DependencyInject
     public static void InjectCore(this IServiceCollection services)
     {
         services.AddScoped<AdminService>();
+        services.AddScoped<InstitutionService>();
     }
 }

@@ -1,4 +1,5 @@
-﻿using System.ComponentModel;
+﻿using Core.DTOs;
+using System.ComponentModel;
 using System.Reflection;
 
 namespace Core.Utilities
@@ -20,7 +21,13 @@ namespace Core.Utilities
                        .Select(e => (e, GetDescription(e)))
                        .ToList();
         }
+        public static List<DropdownDTO> GetEnumDropdownList()
+        {
+            return EnumHelper<T>.GetEnumList()
+                .Select(e => new DropdownDTO { Value = ((int)(object)e.Value), Text = e.Description })
+                .ToList();
+        }
 
-       
+
     }
 }

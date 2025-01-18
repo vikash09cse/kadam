@@ -1,0 +1,148 @@
+<div id="assignInstitutionModal" class="modal fade" tabindex="-1" aria-labelledby="assignInstitutionModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="assignInstitutionModalLabel">Assign Institution</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form name="vm.institutionForm" ng-submit="vm.submitAssignInstitution()" novalidate>
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label">Person Name</label>
+                            <div class="form-control bg-light">{{vm.selectedPerson.fullName}}</div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Assigned Role</label>
+                            <div class="form-control bg-light">{{vm.selectedPerson.roleName}}</div>
+                        </div>
+                    </div>
+
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label">Division<span class="text-danger">*</span></label>
+                            <select class="form-select"
+                                    ng-model="vm.institutionData.divisionId"
+                                    ng-change="vm.onDivisionChange()"
+                                    required>
+                                <option value="">Select</option>
+                                <option ng-repeat="division in vm.divisions" value="{{division.value}}">
+                                    {{division.text}}
+                                </option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">State<span class="text-danger">*</span></label>
+                            <select class="form-select"
+                                    ng-model="vm.institutionData.stateId"
+                                    ng-change="vm.onStateChange()"
+                                    required>
+                                <option value="">Select</option>
+                                <option ng-repeat="state in vm.states" value="{{state.value}}">
+                                    {{state.text}}
+                                </option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label">District<span class="text-danger">*</span></label>
+                            <select class="form-select"
+                                    ng-model="vm.institutionData.districtId"
+                                    ng-change="vm.onDistrictChange()"
+                                    required>
+                                <option value="">Select</option>
+                                <option ng-repeat="district in vm.districts" value="{{district.value}}">
+                                    {{district.text}}
+                                </option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Block<span class="text-danger">*</span></label>
+                            <select class="form-select"
+                                    ng-model="vm.institutionData.blockId"
+                                    ng-change="vm.onBlockChange()"
+                                    required>
+                                <option value="">Select</option>
+                                <option ng-repeat="block in vm.blocks" value="{{block.value}}">
+                                    {{block.text}}
+                                </option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label">Village<span class="text-danger">*</span></label>
+                            <select class="form-select"
+                                    ng-model="vm.institutionData.villageId"
+                                    ng-change="vm.onVillageChange()"
+                                    required>
+                                <option value="">Select</option>
+                                <option ng-repeat="village in vm.villages" value="{{village.value}}">
+                                    {{village.text}}
+                                </option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Institution Type<span class="text-danger">*</span></label>
+                            <select class="form-select"
+                                    ng-model="vm.institutionData.institutionTypeId"
+                                    ng-change="vm.onInstitutionTypeChange()"
+                                    required>
+                                <option value="">Select</option>
+                                <option ng-repeat="type in vm.institutionTypes" value="{{type.value}}">
+                                    {{type.text}}
+                                </option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Institutions<span class="text-danger">*</span></label>
+                        <select class="form-select select2-multiple"
+                                id="institutionSelect"
+                                ng-model="vm.institutionData.selectedInstitutions"
+                                multiple
+                                required>
+                            <option ng-repeat="institution in vm.institutions" value="{{institution.value}}">
+                                {{institution.text}}
+                            </option>
+                        </select>
+                        <div ng-if="vm.institutions.length === 0" class="text-muted mt-2">
+                            No institutions available for the selected criteria
+                        </div>
+                    </div>
+
+                    <div class="text-end">
+                        <button type="submit" class="btn btn-primary">Assign</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .select2-container {
+        width: 100% !important;
+    }
+
+    .select2-container--default .select2-selection--multiple {
+        border: 1px solid #ced4da;
+        min-height: 38px;
+    }
+
+        .select2-container--default .select2-selection--multiple .select2-selection__choice {
+            background-color: #0d6efd;
+            color: white;
+            border: none;
+            padding: 2px 8px;
+        }
+
+        .select2-container--default .select2-selection--multiple .select2-selection__choice__remove {
+            color: white;
+            margin-right: 5px;
+        }
+</style> 

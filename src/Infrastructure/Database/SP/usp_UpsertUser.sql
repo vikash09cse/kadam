@@ -48,10 +48,10 @@ BEGIN
         SET 
             Email = @Email,
             UserName = @UserName,
-            PasswordHash = @PasswordHash,
-            PasswordSalt = @PasswordSalt,
             FirstName = @FirstName,
             LastName = @LastName,
+			--PasswordHash=@PasswordHash,
+			--PasswordSalt=@PasswordSalt,
             Phone = @Phone,
             AlternatePhone = @AlternatePhone,
             Gender = @Gender,

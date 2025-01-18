@@ -5,7 +5,9 @@
 }
 @Html.AntiForgeryToken()
 
-<div class="page-content" ng-app="peopleApp" ng-controller="peopleController">
+
+
+<div class="page-content" ng-app="peopleApp" ng-controller="peopleController as vm">
     <div class="container-fluid">
 
         <!-- start page title -->
@@ -14,7 +16,7 @@
                 <div class="page-title-box d-sm-flex align-items-center justify-content-between">
                     <h4 class="mb-sm-0">Peoples </h4>
                     <div class="text-end">
-                        <button type="button" class="btn btn-primary" ng-click="openAddPeopleModal()">
+                        <button type="button" class="btn btn-primary" ng-click="vm.openAddPeopleModal()">
                             Add People
                         </button>
                     </div>
@@ -70,76 +72,134 @@
                     <h5 class="modal-title" id="myModalLabel">Add New People</h5>
                     <button type="button" id="ButtonAddProjectClose" class="btn-close" data-bs-dismiss="modal" aria-label="Close"> </button>
                 </div>
-                <form ng-submit="submitForm()">
+                <form name="vm.peopleForm" ng-submit="vm.submitForm(vm.peopleForm)" novalidate>
                     <div class="modal-body py-2">
                         <div class="row">
-                            <div class="col-md-6">
-                                <div class="form-group">
-                                    <label for="firstName">First Name<span class="text-danger">*</span></label>
-                                    <input type="text" class="form-control" id="firstName" ng-model="userInfo.firstName" required>
+                            <div class="form-group mb-3 col-md-6">
+                                <label for="firstName">First Name<span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="firstName" name="firstName"
+                                       ng-model="vm.userInfo.firstName"
+                                       ng-pattern="/^[a-zA-Z\s]*$/"
+                                       maxlength="50"
+                                       required>
+                                <div class="error-messages">
+                                    <small class="text-danger" ng-if="vm.isSubmit && vm.peopleForm.firstName.$error.required">Required.</small>
+                                    <small class="text-danger" ng-if="vm.peopleForm.firstName.$error.pattern">Only alphabets and spaces are allowed.</small>
+                                    <small class="text-danger" ng-if="vm.peopleForm.firstName.$error.maxlength">Maximum 50 characters allowed.</small>
                                 </div>
                             </div>
-                            <div class="col-md-6">
-                                <div class="form-group">
-                                    <label for="lastName">Last Name<span class="text-danger">*</span></label>
-                                    <input type="text" class="form-control" id="lastName" ng-model="userInfo.lastName" required>
+
+                            <div class="form-group mb-3 col-md-6">
+                                <label for="lastName">Last Name<span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="lastName" name="lastName"
+                                       ng-model="vm.userInfo.lastName"
+                                       ng-pattern="/^[a-zA-Z\s]*$/"
+                                       maxlength="50"
+                                       required>
+                                <div class="error-messages">
+                                    <small class="text-danger" ng-if="vm.isSubmit && vm.peopleForm.lastName.$error.required">Required.</small>
+                                    <small class="text-danger" ng-if="vm.peopleForm.lastName.$error.pattern">Only alphabets and spaces are allowed.</small>
+                                    <small class="text-danger" ng-if="vm.peopleForm.lastName.$error.maxlength">Maximum 50 characters allowed.</small>
                                 </div>
                             </div>
                         </div>
                         <div class="row">
                             <div class="col-md-6">
-                                <div class="form-group">
-                                    <label for="phone">Phone<span class="text-danger">*</span></label>
-                                    <input type="text" class="form-control" id="phone" ng-model="userInfo.phone" required>
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="form-group">
-                                    <label for="alternatePhone">Alternate Phone</label>
-                                    <input type="text" class="form-control" id="alternatePhone" ng-model="userInfo.alternatePhone">
-                                </div>
-                            </div>
-                        </div>
-                        <div class="row">
-                            <div class="col-md-6">
-                                <div class="form-group">
+                                <div class="form-group mb-3">
                                     <label for="email">Email<span class="text-danger">*</span></label>
-                                    <input type="email" class="form-control" id="email" ng-model="userInfo.email" required>
+                                    <input type="email" class="form-control" id="email" name="email"
+                                           ng-model="vm.userInfo.email"
+                                           maxlength="100"
+                                           required>
+                                    <div class="error-messages">
+                                        <small class="text-danger" ng-if="vm.isSubmit && vm.peopleForm.email.$error.required">Required.</small>
+                                        <small class="text-danger" ng-if="vm.peopleForm.email.$error.email">Please enter a valid email address.</small>
+                                        <small class="text-danger" ng-if="vm.peopleForm.email.$error.maxlength">Maximum 100 characters allowed.</small>
+                                    </div>
                                 </div>
                             </div>
                             <div class="col-md-6">
-                                <div class="form-group">
+                                <div class="form-group mb-3">
                                     <label for="userName">Username<span class="text-danger">*</span></label>
-                                    <input type="text" class="form-control" id="userName" ng-model="userInfo.userName" required>
+                                    <input type="text" class="form-control" id="userName" name="userName"
+                                           ng-model="vm.userInfo.userName"
+                                           ng-pattern="/^[a-zA-Z0-9]*$/"
+                                           maxlength="50"
+                                           required>
+                                    <div class="error-messages">
+                                        <small class="text-danger" ng-if="vm.isSubmit && vm.peopleForm.userName.$error.required">Required.</small>
+                                        <small class="text-danger" ng-if="vm.peopleForm.userName.$error.pattern">Only alphabets and numbers are allowed.</small>
+                                        <small class="text-danger" ng-if="vm.peopleForm.userName.$error.maxlength">Maximum 50 characters allowed.</small>
+                                    </div>
                                 </div>
                             </div>
                         </div>
                         <div class="row">
-                            <div class="col-md-4">
-                                <div class="form-group">
-                                    <label for="gender">Gender<span class="text-danger">*</span></label>
-                                    <select class="form-control" id="gender" ng-model="userInfo.gender" required>
-                                        <option value="">Select</option>
-                                        <option ng-repeat="gender in genders" value="{{gender.value}}">{{gender.text}}</option>
-                                    </select>
+                            <!-- Phone -->
+                            <div class="form-group mb-3 col-md-4">
+                                <label for="phone">Phone<span class="text-danger">*</span></label>
+                                <input type="tel" class="form-control" id="phone" name="phone"
+                                       ng-model="vm.userInfo.phone"
+                                       maxlength="15"
+                                       required>
+                                <div class="error-messages">
+                                    <small class="text-danger" ng-if="vm.isSubmit && vm.peopleForm.phone.$error.required">Phone number is required.</small>
+                                    <small class="text-danger" ng-if="vm.peopleForm.phone.$error.maxlength">Maximum 15 characters allowed.</small>
                                 </div>
                             </div>
-                            <div class="col-md-4">
-                                <div class="form-group">
+
+                            <!-- Alternate Phone (Optional) -->
+                            <div class="form-group mb-3 col-md-4">
+                                <label for="alternatePhone">Alternate Phone</label>
+                                <input type="tel" class="form-control" id="alternatePhone" name="alternatePhone"
+                                       ng-model="vm.userInfo.alternatePhone"
+                                       maxlength="15">
+                                <div class="error-messages">
+                                    <small class="text-danger" ng-if="vm.peopleForm.alternatePhone.$error.maxlength">Maximum 15 characters allowed.</small>
+                                </div>
+                            </div>
+
+                            <!-- Gender -->
+                            <div class="form-group mb-3 col-md-4">
+                                <label for="gender">Gender<span class="text-danger">*</span></label>
+                                <select class="form-select" id="gender" name="gender"
+                                        ng-model="vm.userInfo.gender"
+                                        ng-options="gender.value as gender.text for gender in vm.genders"
+                                        required>
+                                    <option value="">Select Gender</option>
+                                </select>
+                                <div class="error-messages">
+                                    <small class="text-danger" ng-if="vm.isSubmit && vm.peopleForm.gender.$error.required">Please select a gender.</small>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group mb-3">
                                     <label for="roleId">Role<span class="text-danger">*</span></label>
-                                    <select class="form-control" id="roleId" ng-model="userInfo.roleId" required>
-                                        <option value="">Select</option>
-                                        <option ng-repeat="role in roles" value="{{role.value}}">{{role.text}}</option>
+                                    <select class="form-select" id="roleId" name="roleId"
+                                            ng-model="vm.userInfo.roleId"
+                                            ng-options="role.value as role.text for role in vm.roles"
+                                            required>
+                                        <option value="">Select Role</option>
                                     </select>
+                                    <div class="error-messages">
+                                        <small class="text-danger" ng-if="vm.isSubmit && vm.peopleForm.roleId.$error.required">Required.</small>
+                                    </div>
                                 </div>
                             </div>
-                            <div class="col-md-4">
-                                <div class="form-group">
+                            <div class="col-md-6">
+                                <div class="form-group mb-3">
                                     <label for="reporteeRoleId">Reportee Role<span class="text-danger">*</span></label>
-                                    <select class="form-control" id="reporteeRoleId" ng-model="userInfo.reporteeRoleId" required>
-                                        <option value="">Select</option>
-                                        <option ng-repeat="role in reportRoles" value="{{role.value}}">{{role.text}}</option>
+                                    <select class="form-select" id="reporteeRoleId" name="reporteeRoleId"
+                                            ng-model="vm.userInfo.reporteeRoleId"
+                                            ng-options="role.value as role.text for role in vm.reportRoles"
+                                            required>
+                                        <option value="">Select Reportee Role</option>
                                     </select>
+                                    <div class="error-messages">
+                                        <small class="text-danger" ng-if="vm.isSubmit && vm.peopleForm.reporteeRoleId.$error.required">Required.</small>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -153,9 +213,35 @@
             </div>
         </div>
     </div>
+    <!-- Add Program Modal -->
+    <div id="assignProgramModal" class="modal fade" tabindex="-1" aria-labelledby="assignProgramModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="assignProgramModalLabel">Assign Program</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Programs</label>
+                        <div ng-repeat="program in vm.programs">
+                            <div class="form-check mb-2">
+                                <input type="checkbox" class="form-check-input" id="{{program.programName}}" ng-model="program.isSelected">
+                                <label class="form-check-label" for="{{program.programName}}">{{program.programName}}</label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-primary" ng-click="vm.submitAssignProgram()">Submit</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    @await Html.PartialAsync("Shared/_AssignInstitutionPartial")
 </div>
 
- @* <button class="btn btn-sm btn-success" title="View Assigned Institution" onclick="viewAssignedInstitution(${row.id})">
+@* <button class="btn btn-sm btn-success" title="View Assigned Institution" onclick="viewAssignedInstitution(${row.id})">
       <i class="mdi mdi-eye"></i>
 </button>
       <button class="btn btn-sm btn-info" title="Email" onclick="emailPerson(${row.id})">
@@ -168,234 +254,28 @@
 <script src="//cdn.jsdelivr.net/npm/toastify-js"></script>
 <script src="~/js/custom-notification.js"></script>
 <script src="/assets/libs/cleave.js/cleave.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 @section Scripts {
+    <!-- Core Angular -->
     <script src="~/js/angular.js"></script>
     <script src="~/js/angular-sanitize.js"></script>
+    
+    <!-- Your app module must be loaded before peopleApp -->
+    <script src="~/js/peoples/app.js"></script>  <!-- This should define your 'app' module -->
+    <script src="~/js/loaderInterceptor.js"></script>
+    
+    <!-- People module and components -->
+    <script src="~/js/peoples/peopleModule.js"></script>
+    <script src="~/js/peoples/peopleService.js"></script>
+    <script src="~/js/peoples/peopleController.js"></script>
 
-    <script type="text/javascript">
-         $(document).ready(function() {
-
-             if (document.querySelector("#phone")) {
-                 var cleaveBlocks = new Cleave('#phone', {
-                     delimiters: [' ', '-'],
-                     blocks: [0, 5, 5]
-                 });
-             }
-
-            if (document.querySelector("#alternatePhone")) {
-                var cleaveBlocks = new Cleave('#alternatePhone', {
-                     delimiters: [' ', '-'],
-                     blocks: [0, 5, 5]
-                 });
-             }
-         });
-
-       
-    </script>
-    <script>
-        var app = angular.module('peopleApp', []);
-        app.controller('peopleController', function ($scope, $http) {
-            var dataTable = $('#peopleTable').DataTable({
-                serverSide: true,
-                processing: true,
-                paging: true,
-                ajax: function (data, callback, settings) {
-                    $http({
-                        method: 'GET',
-                        url: '?handler=UserList',
-                        params: {
-                            draw: data.draw,
-                            start: data.start,
-                            length: data.length,
-                            searchValue: data.search.value
-                        },
-                        headers: {
-                            'RequestVerificationToken': $('input:hidden[name="__RequestVerificationToken"]').val()
-                        }
-                    }).then(function (response) {
-                        callback(response.data);
-                    }, function (error) {
-                        console.error('Error fetching data:', error);
-                    });
-                },
-                columns: [
-                    { data: 'rowNumber' },
-                    { data: 'fullName' },
-                    { data: 'userName' },
-                    { data: 'gender' },
-                    { data: 'phone' },
-                    { data: 'email' },
-                    { data: 'roleId' },
-                    { data: 'reporteeRoleId' },
-                    {
-                        data: null,
-                        orderable: false,
-                        render: function (data, type, row) {
-                            var buttons = `
-                                <div class="btn-group">
-                                    <button class="btn btn-sm btn-warning" title="Edit" onclick="editPerson(${row.id})">
-                                        <i class="mdi mdi-pencil"></i>
-                                    </button>
-                                    <button class="btn btn-sm btn-danger" title="Remove" onclick="removePerson(${row.id})">
-                                        <i class="mdi mdi-close-thick"></i>
-                                    </button>
-                                </div>
-                                
-                                `;
-                            return buttons;
-                        }
-                    }
-                ],
-                lengthMenu: [
-                    [10, 25, 50, 100],
-                    [10, 25, 50, 100]
-                ],
-                language: {
-                    searchPlaceholder: "Search records",
-                    info: "Showing _START_ to _END_ of _TOTAL_ records",
-                    lengthMenu: "Show _MENU_ records",
-                    infoEmpty: "Showing 0 to 0 of 0 records",
-                    emptyTable: "No records found!"
-                },
-                bStateSave: true,
-                fnStateSave: function (oSettings, oData) {
-                    localStorage.setItem('PeopleTable_' + window.location.pathname, JSON.stringify(oData));
-                },
-                fnStateLoad: function (oSettings) {
-                    return JSON.parse(localStorage.getItem('PeopleTable_' + window.location.pathname));
-                }
-            });
-
-            // Global functions for action buttons
-            window.editPerson = function(id) {
-                // Implement edit logic
-            };
-
-            window.viewPerson = function(id) {
-                // Implement view logic
-            };
-
-            window.emailPerson = function(id) {
-                // Implement email logic
-            };
-
-            window.removePerson = function(id) {
-                if (confirm('Are you sure you want to remove this person?')) {
-                    $http.delete('/api/peoples/' + id)
-                        .then(function() {
-                            dataTable.ajax.reload();
-                        })
-                        .catch(function(error) {
-                            console.error('Error removing person:', error);
-                        });
-                }
-            };
-
-            window.assignProgram = function(id) {
-                // Implement assign program logic
-            };
-
-            $scope.userInfo = {
-                firstName: '',
-                lastName: '',
-                email: '',
-                userName: '',
-                phone: '',
-                alternatePhone: '',
-                gender: '',
-                roleId: '',
-                reporteeRoleId: '',
-                userStatus: 1,
-                isDeleted: false
-            };
-
-
-            // In the peopleController, add/update the submitForm function:
-
-                $scope.submitForm = function() {
-                var userData = {
-                    firstName: $scope.userInfo.firstName,
-                    lastName: $scope.userInfo.lastName,
-                    email: $scope.userInfo.email,
-                    userName: $scope.userInfo.userName,
-                    phone: $scope.userInfo.phone,
-                    alternatePhone: $scope.userInfo.alternatePhone,
-                    gender: parseInt($scope.userInfo.gender),
-                    roleId: parseInt($scope.userInfo.roleId),
-                    reporteeRoleId: parseInt($scope.userInfo.reporteeRoleId),
-                    userStatus: 1,
-                    isDeleted: false
-                };
-
-                var url = '?handler=SaveUser';
-
-                $http({
-                    method: 'POST',
-                    url: url,
-                    data: userData, // Send user data in the request body
-                    headers: {
-                        'RequestVerificationToken': $('input:hidden[name="__RequestVerificationToken"]').val()
-                    },
-                    contentType: "application/json; charset=utf-8",
-                }).then(function(response) {
-                    if (response.data.success) {
-                        ShowNotification(response.data.message, 0);
-                        $('#addPeopleModal').modal('hide');
-                        $scope.userInfo = {
-                            firstName: '',
-                            lastName: '',
-                            email: '',
-                            userName: '',
-                            phone: '',
-                            alternatePhone: '',
-                            gender: '',
-                            roleId: '',
-                            reporteeRoleId: '',
-                            userStatus: 1,
-                            isDeleted: false
-                        };
-                        $('#peopleTable').DataTable().ajax.reload();
-                    } else {
-                        ShowNotification(response.data.message, 1);
-                    }
-                }).catch(function(error) {
-                    ShowNotification(error.message, 1);
-                });
-            };
-
-            // Add function to load initial data
-            $scope.loadInitialData = function(id = 0) {
-                $http({
-                    method: 'GET',
-                    url: '?handler=InitialData',
-                    params: { id: id },
-                    headers: {
-                        'RequestVerificationToken': $('input:hidden[name="__RequestVerificationToken"]').val()
-                    }
-                }).then(function(response) {
-                    console.log('Response received:', response.data);
-                    $scope.genders = response.data.genders;
-                    $scope.roles = response.data.roles;
-                    $scope.reportRoles = response.data.reportRoles;
-                    $scope.userInfo = response.data.userInfo;
-                    $('#addPeopleModal').modal('show');
-                }).catch(function(error) {
-                    console.error('Error loading initial data:', error);
-                    // Add user feedback
-                    alert('Failed to load initial data. Please try again.');
-                });
-            };
-
-            // Ensure the modal is properly initialized
-            $scope.openAddPeopleModal = function(id = 0) {
-                console.log('Opening modal for id:', id);
-                $scope.loadInitialData(id);
-            };
-
-            // Initialize the modal
-            $(document).ready(function() {
-                var modal = new bootstrap.Modal(document.getElementById('addPeopleModal'));
-            });
-        });
-    </script>
+    <!-- Other scripts -->
+    <script src="//cdn.jsdelivr.net/npm/toastify-js"></script>
+    <script src="~/js/custom-notification.js"></script>
+    <script src="/assets/libs/cleave.js/cleave.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    
+    <!-- Select2 -->
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 }

@@ -1,0 +1,824 @@
+﻿@page
+@model WebUI.Pages.Admin.InstitutionsModel
+@{
+    ViewData["Title"] = "Institution Management";
+}
+@Html.AntiForgeryToken()
+
+<div class="page-content" ng-app="institutionApp" ng-controller="InstitutionController as vm">
+    <div class="container-fluid">
+
+        <!-- Start Page Title -->
+        <div class="row">
+            <div class="col-12">
+                <div class="page-title-box d-sm-flex align-items-center justify-content-between">
+                    <h4 class="mb-sm-0">Institutions</h4>
+                    <div class="text-end">
+                        <button type="button" class="btn btn-primary" ng-click="vm.openAddInstitutionModal()">
+                            Add Institution
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- End Page Title -->
+
+        <div class="row dashboard-listing">
+            <div class="col">
+                <div class="h-100">
+                    <div class="row mb-3 pb-1">
+                        <div class="col-12">
+                            <div class="table-responsive table-card">
+
+                                <table id="institutionTable" class="table table-nowrap w-100" aria-label="Institutions">
+                                    <thead class="table-primary">
+                                        <tr>
+                                            <th style="width: 5%;">Sr.No.</th>
+                                            <th>Institution Type</th>
+                                            <th>Institution Name</th>
+                                            <th>Institution Code</th>
+                                            <th>Headmaster Name</th>
+                                            <th>Phone</th>
+                                            <th>Financial Year</th>
+                                            <th>Status</th>
+                                            <th style="width: 10%;">Action</th>
+                                        </tr>
+                                    </thead>
+                                </table>
+
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+    <!-- container-fluid -->
+    <!-- Add/Edit Institution Modal -->
+    <div id="addInstitutionModal" class="modal fade" tabindex="-1" aria-labelledby="institutionModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-lg" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="institutionModalLabel">Add/Edit Institution</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <form name="vm.institutionForm" ng-submit="vm.submitInstitutionForm(vm.institutionForm)" novalidate>
+                    <div class="modal-body py-2">
+                        <!-- Combined Row for Division, State, District -->
+                        <div class="row">
+                            <!-- Division Dropdown -->
+                            <div class="form-group mb-3 col-md-4">
+                                <label for="division">Division<span class="text-danger">*</span></label>
+                                <select class="form-select" id="division" name="divisionId"
+                                        ng-model="vm.institutionInfo.divisionId"
+                                        ng-options="division.value as division.text for division in vm.divisions"
+                                        required>
+                                    <option value="">Select Division</option>
+                                </select>
+                                <span class="text-danger" ng-show="vm.isSubmit && vm.institutionForm.divisionId.$error.required">Required.</span>
+                            </div>
+
+                            <!-- State Dropdown -->
+                            <div class="form-group mb-3 col-md-4">
+                                <label for="state">State<span class="text-danger">*</span></label>
+                                <select class="form-select" id="state" name="stateId"
+                                        ng-model="vm.institutionInfo.stateId"
+                                        ng-options="state.value as state.text for state in vm.states"
+                                        ng-change="vm.onStateChange()"
+                                        required>
+                                    <option value="">Select State</option>
+                                </select>
+                                <span class="text-danger" ng-show="vm.isSubmit && vm.institutionForm.stateId.$error.required">Required.</span>
+                            </div>
+
+                            <!-- District Dropdown -->
+                            <div class="form-group mb-3 col-md-4">
+                                <label for="district">District<span class="text-danger">*</span></label>
+                                <select class="form-select" id="district" name="districtId"
+                                        ng-model="vm.institutionInfo.districtId"
+                                        ng-options="district.value as district.text for district in vm.districts"
+                                        ng-change="vm.onDistrictChange()"
+                                        required>
+                                    <option value="">Select District</option>
+                                </select>
+                                <span class="text-danger" ng-show="vm.isSubmit && vm.institutionForm.districtId.$error.required">Required.</span>
+                            </div>
+                        </div>
+
+                        <!-- Combined Row for Block, Village, Institution Type -->
+                        <div class="row">
+                            <!-- Block Dropdown -->
+                            <div class="form-group mb-3 col-md-4">
+                                <label for="block">Block<span class="text-danger">*</span></label>
+                                <select class="form-select" id="block" name="blockId"
+                                        ng-model="vm.institutionInfo.blockId"
+                                        ng-options="block.value as block.text for block in vm.blocks"
+                                        ng-change="vm.onBlockChange()"
+                                        required>
+                                    <option value="">Select Block</option>
+                                </select>
+                                <span class="text-danger" ng-show="vm.isSubmit && vm.institutionForm.blockId.$error.required">Required.</span>
+                            </div>
+
+                            <!-- Village Dropdown -->
+                            <div class="form-group mb-3 col-md-4">
+                                <label for="village">Village<span class="text-danger">*</span></label>
+                                <select class="form-select" id="village" name="villageId"
+                                        ng-model="vm.institutionInfo.villageId"
+                                        ng-options="village.value as village.text for village in vm.villages"
+                                        required>
+                                    <option value="">Select Village</option>
+                                </select>
+                                <span class="text-danger" ng-show="vm.isSubmit && vm.institutionForm.villageId.$error.required">Required.</span>
+                            </div>
+
+                            <!-- Institution Type -->
+                            <div class="form-group mb-3 col-md-4">
+                                <label for="institutionType">Institution Type<span class="text-danger">*</span></label>
+                                <select class="form-select" id="institutionType" name="institutionType"
+                                        ng-model="vm.institutionInfo.institutionType"
+                                        ng-options="type.value as type.text for type in vm.institutionTypes"
+                                        required>
+                                    <option value="">Select Type</option>
+                                </select>
+                                <span class="text-danger" ng-show="vm.isSubmit && vm.institutionForm.institutionType.$error.required">Required.</span>
+                            </div>
+                        </div>
+
+
+                        <!-- Institution Building -->
+                        <div class="row">
+                            <div class="form-group mb-3 col-md-6">
+                                <label for="institutionBuilding">Institution Building<span class="text-danger">*</span></label>
+                                <select class="form-select" id="institutionBuilding" name="institutionBuilding"
+                                        ng-model="vm.institutionInfo.institutionBuilding"
+                                        ng-options="building.value as building.text for building in vm.institutionBuildings"
+                                        required>
+                                    <option value="">Select Building</option>
+                                </select>
+                                <span class="text-danger" ng-show="vm.isSubmit && vm.institutionForm.institutionBuilding.$error.required">Required.</span>
+                            </div>
+
+                            <!-- Continue with Other Form Fields -->
+                            <div class="form-group mb-3 col-md-6">
+                                <label for="institutionName">Institution Name<span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="institutionName" name="institutionName"
+                                       ng-model="vm.institutionInfo.institutionName"
+                                       ng-pattern="/^[a-zA-Z0-9\s]*$/"
+                                       maxlength="100"
+                                       required>
+                                <span class="text-danger" ng-show="vm.isSubmit && vm.institutionForm.institutionName.$error.required">Required.</span>
+                                <span class="text-danger" ng-show="vm.isSubmit && vm.institutionForm.institutionName.$error.pattern">Only alphabets, numbers, and spaces are allowed</span>
+                                <span class="text-danger" ng-show="vm.isSubmit && vm.institutionForm.institutionName.$error.maxlength">Maximum 100 characters allowed</span>
+                            </div>
+                        </div>
+                        <div class="row">
+
+
+                            <!-- Institution Code -->
+                            <div class="form-group mb-3 col-md-6">
+                                <label for="institutionCode">Institution Code<span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="institutionCode" name="institutionCode"
+                                       ng-model="vm.institutionInfo.institutionCode"
+                                       ng-pattern="/^[A-Z0-9\-]*$/"
+                                       maxlength="20"
+                                       required>
+                                <span class="text-danger" ng-show="vm.isSubmit && vm.institutionForm.institutionCode.$error.required">Required.</span>
+                                <span class="text-danger" ng-show="vm.isSubmit && vm.institutionForm.institutionCode.$error.pattern">Only uppercase letters, numbers, and hyphens are allowed</span>
+                                <span class="text-danger" ng-show="vm.isSubmit && vm.institutionForm.institutionCode.$error.maxlength">Maximum 20 characters allowed</span>
+                            </div>
+
+                            <!-- Institution Id -->
+                            <div class="form-group mb-3 col-md-6">
+                                <label for="institutionId">Institution Id<span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="institutionId" name="institutionId"
+                                       ng-model="vm.institutionInfo.institutionId"
+                                       maxlength="20"
+                                       required>
+                                <span class="text-danger" ng-show="vm.isSubmit && vm.institutionForm.institutionId.$error.required">Required.</span>
+                                <span class="text-danger" ng-show="vm.isSubmit && vm.institutionForm.institutionId.$error.maxlength">Maximum 20 characters allowed</span>
+                            </div>
+                        </div>
+                        <!-- Headmaster Name and Phone -->
+                        <div class="row">
+                            <!-- Headmaster Name -->
+                            <div class="form-group mb-3 col-md-6">
+                                <label for="institutionHeadMasterName">
+                                    Head Master / Principal
+                                    <span class="text-danger">*</span>
+                                </label>
+                                <input type="text" class="form-control" id="institutionHeadMasterName" name="institutionHeadMasterName"
+                                       ng-model="vm.institutionInfo.institutionHeadMasterName"
+                                       ng-pattern="/^[a-zA-Z\s]*$/"
+                                       maxlength="50"
+                                       required>
+                                <span class="text-danger" ng-show="vm.isSubmit && vm.institutionForm.institutionHeadMasterName.$error.required">Required.</span>
+                                <span class="text-danger" ng-show="vm.isSubmit && vm.institutionForm.institutionHeadMasterName.$error.pattern">Only alphabets and spaces are allowed</span>
+                                <span class="text-danger" ng-show="vm.isSubmit && vm.institutionForm.institutionHeadMasterName.$error.maxlength">Maximum 50 characters allowed</span>
+                            </div>
+
+                            <!-- Phone -->
+                            <div class="form-group mb-3 col-md-6">
+                                <label for="institutionPhone">Contact<span class="text-danger">*</span></label>
+                                <input type="tel" class="form-control" id="institutionPhone" name="institutionPhone"
+                                       ng-model="vm.institutionInfo.institutionPhone"
+                                       maxlength="15"
+                                       required>
+                                <span class="text-danger" ng-show="vm.isSubmit && vm.institutionForm.institutionPhone.$error.required">Required.</span>
+                            </div>
+                        </div>
+
+                        <!-- Male Teachers and Female Teachers -->
+                        <div class="row">
+                            <div class="form-group mb-3 col-md-6">
+                                <label for="institutionMaleTeacherCount">Male Teachers<span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="institutionMaleTeacherCount" name="institutionMaleTeacherCount" ng-model="vm.institutionInfo.institutionMaleTeacherCount" ng-pattern="/^[0-9]*$/" required>
+                                <span class="text-danger" ng-show="vm.isSubmit && vm.institutionForm.institutionMaleTeacherCount.$error.required">Required.</span>
+                                <span class="text-danger" ng-show="vm.isSubmit && vm.institutionForm.institutionMaleTeacherCount.$error.pattern">Only numbers are allowed</span>
+                            </div>
+
+                            <div class="form-group mb-3 col-md-6">
+                                <label for="institutionFemaleTeacherCount">Female Teachers<span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="institutionFemaleTeacherCount" name="institutionFemaleTeacherCount" ng-model="vm.institutionInfo.institutionFemaleTeacherCount" ng-pattern="/^[0-9]*$/" required>
+                                <span class="text-danger" ng-show="vm.isSubmit && vm.institutionForm.institutionFemaleTeacherCount.$error.required">Required.</span>
+                                <span class="text-danger" ng-show="vm.isSubmit && vm.institutionForm.institutionFemaleTeacherCount.$error.pattern">Only numbers are allowed</span>
+                            </div>
+                        </div>
+                        <!-- Total Teachers & Total Number of Students in Institution -->
+                        <div class="row">
+                            <div class="form-group mb-3 col-md-6">
+                                <label for="institutionTotalTeacherCount">Total Teachers<span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="institutionTotalTeacherCount" name="institutionTotalTeacherCount"
+                                       ng-model="vm.institutionInfo.institutionTotalTeacherCount" ng-pattern="/^[0-9]*$/" readonly required>
+                                <span class="text-danger" ng-show="vm.isSubmit && vm.institutionForm.institutionTotalTeacherCount.$error.required">Required.</span>
+                                <span class="text-danger" ng-show="vm.isSubmit && vm.institutionForm.institutionTotalTeacherCount.$error.pattern">Only numbers are allowed</span>
+                            </div>
+
+                            <div class="form-group mb-3 col-md-6">
+                                <label for="institutionTotalStudentCount">Total Number of Students in Institution<span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="institutionTotalStudentCount" name="institutionTotalStudentCount"
+                                       ng-model="vm.institutionInfo.institutionTotalStudentCount" ng-pattern="/^[0-9]*$/" required>
+                                <span class="text-danger" ng-show="vm.isSubmit && vm.institutionForm.institutionTotalStudentCount.$error.required">Required.</span>
+                                <span class="text-danger" ng-show="vm.isSubmit && vm.institutionForm.institutionTotalStudentCount.$error.pattern">Only numbers are allowed</span>
+                            </div>
+                        </div>
+
+
+                        <!-- Financial Year Start and End -->
+                        <div class="row">
+                            <!-- Financial Year Start -->
+                            <div class="form-group mb-3 col-md-6">
+                                <label for="financialYearStart">Financial Year Start<span class="text-danger">*</span></label>
+                                <input type="date" class="form-control" id="financialYearStart" name="financialYearStart"
+                                       ng-model="vm.institutionInfo.financialYearStart"
+                                       required>
+                                <span class="text-danger" ng-show="vm.isSubmit && vm.institutionForm.financialYearStart.$error.required">Required.</span>
+                            </div>
+
+                            <!-- Financial Year End -->
+                            <div class="form-group mb-3 col-md-6">
+                                <label for="financialYearEnd">Financial Year End<span class="text-danger">*</span></label>
+                                <input type="date" class="form-control" id="financialYearEnd" name="financialYearEnd"
+                                       ng-model="vm.institutionInfo.financialYearEnd"
+                                       required>
+                                <span class="text-danger" ng-show="vm.isSubmit && vm.institutionForm.financialYearEnd.$error.required">Required.</span>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="form-group mb-3 col-md-6">
+                                <label><strong>Grades</strong><span class="text-danger">*</span></label>
+                                <div ng-repeat="grade in vm.grades">
+                                    <input type="checkbox" id="grade{{grade.id}}" ng-model="grade.isSelected">
+                                    <label for="grade{{grade.id}}">{{grade.gradeName}}</label>
+                                </div>
+                            </div>
+
+                            <div class="form-group mb-3 col-md-6">
+                                <label><strong>Sections</strong><span class="text-danger">*</span></label>
+                                <div ng-repeat="grade in vm.grades">
+                                    <div class="d-flex">
+                                        <div ng-repeat="section in grade.sections" class="me-1">
+                                            <div class="form-check form-check-inline">
+                                                <input type="checkbox" ng-disabled="!grade.isSelected" id="section{{section.id}}" ng-model="section.isSelected" class="form-check-input">
+                                                <label for="section{{section.id}}" class="form-check-label" style="padding-left: 0;">{{section.sectionName}}</label>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+                    <div class="modal-footer">
+                        <button class="btn btn-sm btn-primary" type="submit" ng-disabled="vm.isSaving">
+                            <span ng-if="vm.isSaving" class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                            <span ng-if="!vm.isSaving">
+                                <i class="mdi mdi-check"></i>
+                                Save
+                            </span>
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    <!-- Loader Element -->
+    <div id="loader" class="loader" ng-show="vm.isLoading"></div>
+</div>
+
+@section Scripts {
+    <script src="//cdn.jsdelivr.net/npm/toastify-js"></script>
+    <script src="~/js/custom-notification.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    <script src="~/js/angular.js"></script>
+    <script src="~/js/angular-sanitize.js"></script>
+    <script src="~/js/loaderInterceptor.js"></script>
+    <script type="text/javascript">
+        (function() {
+            'use strict';
+
+            // Define the AngularJS module
+            var app = angular.module('institutionApp', ['app']);
+
+            // Configure HTTP Interceptors
+            app.config(['$httpProvider', function($httpProvider) {
+                $httpProvider.interceptors.push('loaderInterceptor');
+            }]);
+
+            // Run block to initialize global variables
+            app.run(['$rootScope', function($rootScope) {
+                $rootScope.isLoading = false; // Initialize isLoading
+            }]);
+
+            // Define the Institution Service
+            app.service('InstitutionService', ['$http', '$q', function($http, $q) {
+                var service = {};
+
+                service.getInitialData = function() {
+                    return $http.get('?handler=InitialData')
+                        .then(response => response.data)
+                        .catch(error => $q.reject(error));
+                };
+
+                service.getDistrictsByState = function(stateId) {
+                    return $http.get('?handler=DistrictListByState&stateId=' + stateId)
+                        .then(response => response.data)
+                        .catch(error => $q.reject(error));
+                };
+
+                service.getBlocksByDistrict = function(districtId) {
+                    return $http.get('?handler=BlockListByDistrict&districtId=' + districtId)
+                        .then(response => response.data)
+                        .catch(error => $q.reject(error));
+                };
+
+                service.getVillagesByBlock = function(blockId) {
+                    return $http.get('?handler=VillagesByBlock&blockId=' + blockId)
+                        .then(response => response.data)
+                        .catch(error => $q.reject(error));
+                };
+
+                service.getInstitutionList = function(params) {
+                    return $http.get('?handler=GetInstitutionList', { params: params })
+                        .then(response => response.data)
+                        .catch(error => $q.reject(error));
+                };
+
+                service.getInstitutionById = function(id) {
+                    return $http.get('?handler=GetInstitutionById&id=' + id)
+                        .then(response => response.data)
+                        .catch(error => $q.reject(error));
+                };
+
+                service.saveInstitution = function(data) {
+                    return $http.post('?handler=SaveInstitution', data, {
+                        headers: { 'RequestVerificationToken': $('input:hidden[name="__RequestVerificationToken"]').val() }
+                    })
+                    .then(response => response.data)
+                    .catch(error => $q.reject(error));
+                };
+
+                service.deleteInstitution = function(id) {
+                    return $http.post('?handler=DeleteInstitution&id=' + id, null, {
+                        headers: { 'RequestVerificationToken': $('input:hidden[name="__RequestVerificationToken"]').val() }
+                    })
+                    .then(response => response.data)
+                    .catch(error => $q.reject(error));
+                };
+
+                return service;
+            }]);
+
+            // Define the Institution Controller
+            app.controller('InstitutionController', ['InstitutionService', '$scope', '$q', '$compile', function(InstitutionService, $scope, $q, $compile) {
+                var vm = this;
+
+                // Initialize variables
+                vm.divisions = [];
+                vm.states = [];
+                vm.institutionBuildings = [];
+                vm.institutionTypes = [];
+                vm.districts = [];
+                vm.blocks = [];
+                vm.villages = [];
+                vm.statuses = [
+                    { value: 'Active', text: 'Active' },
+                    { value: 'Closed', text: 'Closed' },
+                ];
+
+                vm.institutionInfo = {};
+                vm.isSaving = false;
+                vm.isSubmit = false;
+
+                // Initialize DataTable
+                vm.initDataTable = function() {
+                    vm.dataTable = $('#institutionTable').DataTable({
+                        serverSide: true,
+                        processing: true,
+                        paging: true,
+                        ajax: function(data, callback, settings) {
+                            var params = {
+                                draw: data.draw,
+                                start: data.start,
+                                length: data.length,
+                                searchValue: data.search.value
+                            };
+                            InstitutionService.getInstitutionList(params)
+                                .then(function(response) {
+                                    callback(response);
+                                })
+                                .catch(function(error) {
+                                    console.error('Error fetching data:', error);
+                                });
+                        },
+                        columns: [
+                            { data: 'rowNumber' },
+                            { data: 'institutionTypeText' },
+                            { data: 'institutionName' },
+                            { data: 'institutionCode' },
+                            { data: 'institutionHeadMasterName' },
+                            { data: 'institutionPhone' },
+                            {
+                                data: null,
+                                render: function(data, type, row) {
+                                    return row.financialYearStart + " - " + row.financialYearEnd;
+                                }
+                            },
+                            { data: 'currentStatusText' },
+                            {
+                                data: null,
+                                orderable: false,
+                                render: function(data, type, row) {
+                                    return `
+                                        <div class="btn-group">
+                                            <button class="btn btn-sm btn-warning" title="Edit" ng-click="vm.editInstitution(${row.id})">
+                                                <i class="mdi mdi-pencil"></i>
+                                            </button>
+                                            <button class="btn btn-sm btn-danger" title="Remove" ng-click="vm.removeInstitution(${row.id})">
+                                                <i class="mdi mdi-close-thick"></i>
+                                            </button>
+                                        </div>
+                                    `;
+                                }
+                            }
+                        ],
+                        lengthMenu: [ [10, 25, 50, 100], [10, 25, 50, 100] ],
+                        language: {
+                            searchPlaceholder: "Search records",
+                            info: "Showing _START_ to _END_ of _TOTAL_ records",
+                            lengthMenu: "Show _MENU_ records",
+                            infoEmpty: "Showing 0 to 0 of 0 records",
+                            emptyTable: "No records found!"
+                        },
+                        stateSave: true,
+                        stateSaveCallback: function(oSettings, oData) {
+                            localStorage.setItem('InstitutionTable_' + window.location.pathname, JSON.stringify(oData));
+                        },
+                        stateLoadCallback: function(oSettings) {
+                            return JSON.parse(localStorage.getItem('InstitutionTable_' + window.location.pathname));
+                        },
+                        createdRow: function(row, data, dataIndex) {
+                            $compile(angular.element(row).contents())($scope);
+                        }
+                    });
+                };
+
+                // Fetch Initial Data
+                vm.getInitialData = function() {
+                    return InstitutionService.getInitialData()
+                        .then(function(data) {
+                            vm.divisions = data.divisions;
+                            vm.states = data.states;
+                            vm.institutionTypes = data.institutionTypes;
+                            vm.institutionBuildings = data.institutionBuildings;
+                            vm.grades = data.grades;
+                            // vm.statuses = data.statuses;
+                        })
+                        .catch(function(error) {
+                            console.error('Error fetching initial data:', error);
+                        });
+                };
+
+                // Watchers for Dropdown Changes
+                vm.onStateChange = function() {
+                    vm.institutionInfo.districtId = null;
+                    vm.districts = [];
+                    vm.blocks = [];
+                    vm.villages = [];
+                    if (vm.institutionInfo.stateId) {
+                        InstitutionService.getDistrictsByState(vm.institutionInfo.stateId)
+                            .then(function(data) {
+                                vm.districts = data;
+                            })
+                            .catch(function(error) {
+                                console.error('Error fetching districts:', error);
+                            });
+                    }
+                };
+
+                vm.onDistrictChange = function() {
+                    vm.institutionInfo.blockId = null;
+                    vm.blocks = [];
+                    vm.villages = [];
+                    if (vm.institutionInfo.districtId) {
+                        InstitutionService.getBlocksByDistrict(vm.institutionInfo.districtId)
+                            .then(function(data) {
+                                vm.blocks = data;
+                            })
+                            .catch(function(error) {
+                                console.error('Error fetching blocks:', error);
+                            });
+                    }
+                };
+
+                vm.onBlockChange = function() {
+                    vm.institutionInfo.villageId = null;
+                    vm.villages = [];
+                    if (vm.institutionInfo.blockId) {
+                        InstitutionService.getVillagesByBlock(vm.institutionInfo.blockId)
+                            .then(function(data) {
+                                vm.villages = data;
+                            })
+                            .catch(function(error) {
+                                console.error('Error fetching villages:', error);
+                            });
+                    }
+                };
+
+                // Assign Default Institution Info
+                vm.assignInstitutionInfo = function() {
+                    vm.institutionInfo = {
+                        id: 0,
+                        divisionId: null,
+                        stateId: null,
+                        districtId: null,
+                        blockId: null,
+                        villageId: null,
+                        institutionType: null,
+                        institutionBuilding: null,
+                        institutionName: '',
+                        institutionCode: '',
+                        institutionId: '',
+                        institutionHeadMasterName: '',
+                        institutionPhone: '',
+                        institutionEmail: '',
+                        institutionWebsite: '',
+                        institutionLogo: '',
+                        institutionAddress: '',
+                        institutionMaleTeacherCount: null,
+                        institutionFemaleTeacherCount: null,
+                        institutionTotalTeacherCount: null,
+                        institutionTotalStudentCount: null,
+                        financialYearStart: '',
+                        financialYearEnd: '',
+                    };
+                };
+
+                // Watch for changes in Male and Female Teacher Counts
+                $scope.$watchGroup(['vm.institutionInfo.institutionMaleTeacherCount', 'vm.institutionInfo.institutionFemaleTeacherCount'], function(newValues, oldValues) {
+                    var maleCount = parseInt(newValues[0]) || 0;
+                    var femaleCount = parseInt(newValues[1]) || 0;
+                    vm.institutionInfo.institutionTotalTeacherCount = maleCount + femaleCount;
+                });
+
+                // Submit Institution Form
+                vm.submitInstitutionForm = function(form) {
+                    vm.isSubmit = true;
+                    if (form.$invalid) {
+                        var firstError = angular.element("[name='" + form.$name + "']").find('.ng-invalid:visible:first');
+                        if (firstError.length) {
+                            firstError.focus();
+                        }
+                        return;
+                    }
+
+                    // Ensure total teacher count is updated
+                    vm.institutionInfo.institutionTotalTeacherCount = (parseInt(vm.institutionInfo.institutionMaleTeacherCount) || 0) + (parseInt(vm.institutionInfo.institutionFemaleTeacherCount) || 0);
+
+                    // Map grades and sections
+                    vm.institutionInfo.gradeSections = vm.grades
+                        .filter(grade => grade.isSelected)
+                        .map(grade => ({
+                            id: 0,
+                            institutionId: 0,
+                            gradeId: grade.id,
+                            sections: grade.sections
+                                .filter(section => section.isSelected)
+                                .map(section => section.sectionName)
+                                .join(',')
+                        }));
+
+                    // Format dates for backend storage
+                    try {
+                        // Create a copy of the institution info to avoid modifying the form data
+                        const institutionData = { ...vm.institutionInfo };
+                        
+                        // Handle start date
+                        if (institutionData.financialYearStart) {
+                            const startDate = new Date(institutionData.financialYearStart);
+                            if (isNaN(startDate.getTime())) {
+                                throw new Error('Invalid start date');
+                            }
+                            institutionData.financialYearStart = startDate.toISOString().split('T')[0];
+                        }
+
+                        // Handle end date
+                        if (institutionData.financialYearEnd) {
+                            const endDate = new Date(institutionData.financialYearEnd);
+                            if (isNaN(endDate.getTime())) {
+                                throw new Error('Invalid end date');
+                            }
+                            institutionData.financialYearEnd = endDate.toISOString().split('T')[0];
+                        }
+
+                        vm.isSaving = true;
+                        InstitutionService.saveInstitution(institutionData)
+                            .then(function(response) {
+                                vm.isSubmit = false;
+                                vm.isSaving = false;
+                                if (response.success) {
+                                    ShowNotification(response.message, 0);
+                                    $('#addInstitutionModal').modal('hide');
+                                    vm.dataTable.ajax.reload();
+                                } else {
+                                    ShowNotification(response.message, 1);
+                                }
+                            })
+                            .catch(function(error) {
+                                vm.isSaving = false;
+                                vm.isSubmit = false;
+                                ShowNotification(error.message || 'An error occurred while saving', 1);
+                            });
+                    } catch (error) {
+                        vm.isSaving = false;
+                        vm.isSubmit = false;
+                        ShowNotification('Invalid date format. Please check the dates and try again.', 1);
+                    }
+                };
+
+                // Open Add Institution Modal
+                vm.openAddInstitutionModal = function() {
+                    vm.getInitialData()
+                        .then(function() {
+                            vm.assignInstitutionInfo();
+                            vm.districts = [];
+                            vm.blocks = [];
+                            vm.villages = [];
+                            
+                            // Initialize modal with options
+                            var modal = new bootstrap.Modal(document.getElementById('addInstitutionModal'), {
+                                backdrop: 'static',
+                                keyboard: false
+                            });
+                            
+                            // Show the modal
+                            modal.show();
+                        });
+                };
+
+                // Edit Institution
+                vm.editInstitution = function(id) {
+                    InstitutionService.getInstitutionById(id)
+                        .then(function(response) {
+                            if (response.success !== false) {
+                                return vm.getInitialData()
+                                    .then(function() {
+                                        // Reset existing selections
+                                        vm.grades.forEach(grade => {
+                                            grade.isSelected = false;
+                                            grade.sections.forEach(section => {
+                                                section.isSelected = false;
+                                            });
+                                        });
+
+                                        // Set grade and section selections from response
+                                        if (response.gradeSections && response.gradeSections.length > 0) {
+                                            response.gradeSections.forEach(gradeSection => {
+                                                const grade = vm.grades.find(g => g.id === gradeSection.gradeId);
+                                                if (grade) {
+                                                    grade.isSelected = true;
+                                                    
+                                                    // Split sections string and mark selected sections
+                                                    const selectedSections = gradeSection.sections.split(',');
+                                                    grade.sections.forEach(section => {
+                                                        section.isSelected = selectedSections.includes(section.sectionName);
+                                                    });
+                                                }
+                                            });
+                                        }
+
+                                        vm.institutionInfo = {
+                                            id: response.id,
+                                            divisionId: response.divisionId,
+                                            stateId: response.stateId,
+                                            institutionType: response.institutionType,
+                                            institutionBuilding: response.institutionBuilding,
+                                            institutionName: response.institutionName,
+                                            institutionCode: response.institutionCode,
+                                            institutionId: response.institutionId,
+                                            institutionHeadMasterName: response.institutionHeadMasterName,
+                                            institutionPhone: response.institutionPhone,
+                                            institutionEmail: response.institutionEmail,
+                                            institutionWebsite: response.institutionWebsite,
+                                            institutionLogo: response.institutionLogo,
+                                            institutionAddress: response.institutionAddress,
+                                            institutionMaleTeacherCount: response.institutionMaleTeacherCount,
+                                            institutionFemaleTeacherCount: response.institutionFemaleTeacherCount,
+                                            institutionTotalTeacherCount: response.institutionTotalTeacherCount,
+                                            institutionTotalStudentCount: response.institutionTotalStudentCount,
+                                            financialYearStart: new Date(response.financialYearStart),
+                                            financialYearEnd: new Date(response.financialYearEnd),
+                                        };
+
+                                        // Chain the dropdown population
+                                        return InstitutionService.getDistrictsByState(response.stateId);
+                                    })
+                                    .then(function(districts) {
+                                        vm.districts = districts;
+                                        vm.institutionInfo.districtId = response.districtId;
+                                        return InstitutionService.getBlocksByDistrict(response.districtId);
+                                    })
+                                    .then(function(blocks) {
+                                        vm.blocks = blocks;
+                                        vm.institutionInfo.blockId = response.blockId;
+                                        return InstitutionService.getVillagesByBlock(response.blockId);
+                                    })
+                                    .then(function(villages) {
+                                        vm.villages = villages;
+                                        vm.institutionInfo.villageId = response.villageId;
+                                        
+                                        // Show modal after all data is loaded
+                                        $('#addInstitutionModal').modal('show');
+                                    });
+                            } else {
+                                ShowNotification(response.message, 1);
+                            }
+                        })
+                        .catch(function(error) {
+                            ShowNotification(error.message || 'An error occurred while loading institution data', 1);
+                        });
+                };
+
+                // Remove Institution
+                vm.removeInstitution = function(id) {
+                    Swal.fire({
+                        title: 'Are you sure?',
+                        text: "You won't be able to revert this!",
+                        icon: 'warning',
+                        showCancelButton: true,
+                        confirmButtonColor: '#3085d6',
+                        cancelButtonColor: '#d33',
+                        confirmButtonText: 'Yes, delete it!'
+                    }).then((result) => {
+                        if (result.isConfirmed) {
+                            InstitutionService.deleteInstitution(id)
+                                .then(function(response) {
+                                    if (response.success) {
+                                        vm.dataTable.ajax.reload();
+                                        ShowNotification(response.message, 0);
+                                    } else {
+                                        ShowNotification(response.message, 1);
+                                    }
+                                })
+                                .catch(function(error) {
+                                    ShowNotification(error.message, 1);
+                                });
+                        }
+                    });
+                };
+
+                // Initialize Controller
+                vm.init = function() {
+                    vm.assignInstitutionInfo();
+                    vm.initDataTable();
+                };
+
+                vm.init();
+
+            }]);
+
+        })();
+    </script>
+}

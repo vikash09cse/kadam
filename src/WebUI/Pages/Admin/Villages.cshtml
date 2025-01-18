@@ -1,0 +1,348 @@
+﻿@page
+@model WebUI.Pages.Admin.VillagesModel
+@{
+    ViewData["Title"] = "Village Management";
+}
+@Html.AntiForgeryToken()
+
+<div class="page-content" ng-app="villageApp" ng-controller="villageController">
+    <div class="container-fluid">
+
+        <!-- start page title -->
+        <div class="row">
+            <div class="col-12">
+                <div class="page-title-box d-sm-flex align-items-center justify-content-between">
+                    <h4 class="mb-sm-0">Villages</h4>
+                    <div class="text-end">
+                        <button type="button" class="btn btn-primary" ng-click="openAddVillageModal()">
+                            Add Village
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- end page title -->
+
+        <div class="row dashboard-listing">
+            <div class="col">
+                <div class="h-100">
+                    <div class="row mb-3 pb-1">
+                        <div class="col-12">
+                            <div class="table-responsive table-card">
+
+                                <table id="villageTable" class="table table-nowrap w-100" aria-label="Villages">
+                                    <thead class="table-primary">
+                                        <tr>
+                                            <th style="width: 8%;">Sr.No.</th>
+                                            <th>Village Name</th>
+                                            <th>Block Name</th>
+                                            <th>District Name</th>
+                                            <th>State Name</th>
+                                            <th style="width: 8%;">Action</th>
+                                        </tr>
+                                    </thead>
+                                </table>
+
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+    <!-- container-fluid -->
+
+    <!-- Add Village Modal -->
+    <div id="addVillageModal" class="modal fade" tabindex="-1" aria-labelledby="villageModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="villageModalLabel">Add/Edit Village</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <form name="villageForm" ng-submit="submitVillageForm()" novalidate>
+                    <div class="modal-body py-2">
+                        <div class="form-group mb-3">
+                            <label for="stateName">State Name<span class="text-danger">*</span></label>
+                            <select class="form-select" id="stateName" name="stateId"
+                                    ng-model="villageInfo.stateId" 
+                                    ng-options="state.value as state.text for state in states" 
+                                    required>
+                                <option value="">Select State</option>
+                            </select>
+                            <span class="text-danger" ng-show="IsSubmit && villageForm.stateId.$error.required">Required.</span>
+                        </div>
+                        <div class="form-group mb-3">
+                            <label for="districtName">District Name<span class="text-danger">*</span></label>
+                            <select class="form-select" id="districtName" name="districtId"
+                                    ng-model="villageInfo.districtId" 
+                                    ng-options="district.value as district.text for district in districts" 
+                                    required>
+                                <option value="">Select District</option>
+                            </select>
+                            <span class="text-danger" ng-show="IsSubmit && villageForm.districtId.$error.required">Required.</span>
+                        </div>
+                        <div class="form-group mb-3">
+                            <label for="blockName">Block Name<span class="text-danger">*</span></label>
+                            <select class="form-select" id="blockName" name="blockId"
+                                    ng-model="villageInfo.blockId" 
+                                    ng-options="block.value as block.text for block in blocks" 
+                                    required>
+                                <option value="">Select Block</option>
+                            </select>
+                            <span class="text-danger" ng-show="IsSubmit && villageForm.blockId.$error.required">Required.</span>
+                        </div>
+                        <div class="form-group mb-3">
+                            <label for="villageName">Village Name<span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="villageName" name="villageName"
+                                   ng-model="villageInfo.villageName" 
+                                   ng-pattern="/^[a-zA-Z0-9\s]*$/"
+                                   maxlength="50"
+                                   required>
+                            <span class="text-danger" ng-show="IsSubmit && villageForm.villageName.$error.required">Required.</span>
+                            <span class="text-danger" ng-show="IsSubmit && villageForm.villageName.$error.pattern">Only alphabets, numbers, and spaces are allowed</span>
+                            <span class="text-danger" ng-show="IsSubmit && villageForm.villageName.$error.maxlength">Maximum 50 characters allowed</span>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button class="btn btn-sm btn-primary" type="submit" ng-disabled="isSaving">
+                            <span ng-if="isSaving" class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                            <span ng-if="!isSaving">
+                                <i class="mdi mdi-check"></i>
+                                Save
+                            </span>
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    <!-- Loader Element -->
+    <div id="loader" class="loader" ng-show="isLoading"></div>
+</div>
+<script src="//cdn.jsdelivr.net/npm/toastify-js"></script>
+<script src="~/js/custom-notification.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+@section Scripts {
+    <script src="~/js/angular.js"></script>
+    <script src="~/js/angular-sanitize.js"></script>
+    <script src="~/js/loaderInterceptor.js"></script>
+    <script type="text/javascript">
+        var app = angular.module('villageApp', ['app']);
+
+        app.config(['$httpProvider', function($httpProvider) {
+            $httpProvider.interceptors.push('loaderInterceptor');
+        }]);
+
+        app.run(['$rootScope', function($rootScope) {
+            $rootScope.isLoading = false; // Initialize isLoading
+        }]);
+
+        app.controller('villageController', function ($scope, $http) {
+            $scope.states = []; // Initialize states array
+            $scope.districts = []; // Initialize districts array
+            $scope.blocks = []; // Initialize blocks array
+
+            // Fetch states for dropdown
+            $http.get('?handler=StateList').then(function(response) {
+                $scope.states = response.data;
+            });
+
+            // Fetch districts for dropdown
+            $scope.$watch('villageInfo.stateId', function(newVal) {
+                if (newVal) {
+                    $http.get('?handler=DistrictListByState&stateId=' + newVal).then(function(response) {
+                        $scope.districts = response.data;
+                    });
+                }
+            });
+
+            // Fetch blocks for dropdown
+            $scope.$watch('villageInfo.districtId', function(newVal) {
+                if (newVal) {
+                    $http.get('?handler=BlockListByDistrict&districtId=' + newVal).then(function(response) {
+                        $scope.blocks = response.data;
+                    });
+                }
+            });
+
+            var dataTable = $('#villageTable').DataTable({
+                serverSide: true,
+                processing: true,
+                paging: true,
+                ajax: function (data, callback, settings) {
+                    $http({
+                        method: 'GET',
+                        url: '?handler=VillageList',
+                        params: {
+                            draw: data.draw,
+                            start: data.start,
+                            length: data.length,
+                            searchValue: data.search.value
+                        },
+                        headers: {
+                            'RequestVerificationToken': $('input:hidden[name="__RequestVerificationToken"]').val()
+                        }
+                    }).then(function (response) {
+                        callback(response.data);
+                    }, function (error) {
+                        console.error('Error fetching data:', error);
+                    });
+                },
+                columns: [
+                    { data: 'rowNumber' },
+                    { data: 'villageName' },
+                    { data: 'blockName' },
+                    { data: 'districtName' },
+                    { data: 'stateName' },
+                    {
+                        data: null,
+                        orderable: false,
+                        render: function (data, type, row) {
+                            var buttons = `
+                                <div class="btn-group">
+                                    <button class="btn btn-sm btn-warning" title="Edit" onclick="editVillage(${row.id})">
+                                        <i class="mdi mdi-pencil"></i>
+                                    </button>
+                                    <button class="btn btn-sm btn-danger" title="Remove" onclick="removeVillage(${row.id})">
+                                        <i class="mdi mdi-close-thick"></i>
+                                    </button>
+                                </div>
+                            `;
+                            return buttons;
+                        }
+                    }
+                ],
+                lengthMenu: [
+                    [10, 25, 50, 100],
+                    [10, 25, 50, 100]
+                ],
+                language: {
+                    searchPlaceholder: "Search records",
+                    info: "Showing _START_ to _END_ of _TOTAL_ records",
+                    lengthMenu: "Show _MENU_ records",
+                    infoEmpty: "Showing 0 to 0 of 0 records",
+                    emptyTable: "No records found!"
+                },
+                bStateSave: true,
+                fnStateSave: function (oSettings, oData) {
+                    localStorage.setItem('VillageTable_' + window.location.pathname, JSON.stringify(oData));
+                },
+                fnStateLoad: function (oSettings) {
+                    return JSON.parse(localStorage.getItem('VillageTable_' + window.location.pathname));
+                }
+            });
+
+            // Global functions for action buttons
+            window.editVillage = function(id) {
+                 $http({
+                    method: 'GET',
+                    url: '?handler=VillageDetail&id=' + id,
+                    headers: {
+                        'RequestVerificationToken': $('input:hidden[name="__RequestVerificationToken"]').val()
+                    }
+                }).then(function(response) {
+                    $scope.villageInfo = response.data;
+                    $('#addVillageModal').modal('show');
+                }).catch(function(error) {
+                    ShowNotification(error.message, 1);
+                });
+            };
+
+            window.removeVillage = function(id) {
+                Swal.fire({
+                    title: 'Are you sure?',
+                    text: "You won't be able to revert this!",
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#3085d6',
+                    cancelButtonColor: '#d33',
+                    confirmButtonText: 'Yes, delete it!'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        $http({
+                            method: 'POST',
+                            url: '?handler=DeleteVillage&id=' + id,
+                            headers: {
+                                'RequestVerificationToken': $('input:hidden[name="__RequestVerificationToken"]').val()
+                            }
+                        }).then(function(response) {
+                            if(response.data.success){
+                                dataTable.ajax.reload();
+                                ShowNotification(response.data.message, 0);
+                            }else{
+                                ShowNotification(response.data.message, 1);
+                            }
+                        }).catch(function(error) {
+                            ShowNotification(error.message, 1);
+                        });
+                    }
+                });
+            };
+
+            $scope.villageInfo = {
+                id: 0,
+                villageName: '',
+                blockId: null,
+                districtId: null,
+                stateId: null
+            };
+
+            $scope.isSaving = false; // Initialize isSaving
+
+            $scope.submitVillageForm = function() {
+                $scope.IsSubmit = true; // Set form submitted state to true
+                if(!$scope.villageForm.$valid){
+                    angular.element("[name='" + $scope.villageForm.$name + "']").find('.ng-invalid:visible:first').focus();
+                    return;
+                }
+                $scope.isSaving = true; // Set loading state to true
+                var villageData = {
+                    id: $scope.villageInfo.id,
+                    villageName: $scope.villageInfo.villageName,
+                    blockId: $scope.villageInfo.blockId,
+                    districtId: $scope.villageInfo.districtId,
+                    stateId: $scope.villageInfo.stateId
+                };
+
+                $http({
+                    method: 'POST',
+                    url: '?handler=SaveVillage',
+                    data: villageData,
+                    headers: {
+                        'RequestVerificationToken': $('input:hidden[name="__RequestVerificationToken"]').val()
+                    },
+                    contentType: "application/json; charset=utf-8",
+                }).then(function(response) {
+                    $scope.IsSubmit = true; // Set form submitted state to true
+                    $scope.isSaving = false; // Reset loading state
+                    if (response.data.success) {
+                        ShowNotification(response.data.message, 0);
+                        $('#addVillageModal').modal('hide');
+                        $scope.villageInfo = {}; // Reset form
+                        $('#villageTable').DataTable().ajax.reload();
+                    } else {
+                        ShowNotification(response.data.message, 1);
+                    }
+                }).catch(function(error) {
+                    $scope.isSaving = false; // Reset loading state
+                    $scope.IsSubmit = false; // Set form submitted state to false
+                    ShowNotification(error.message, 1);
+                });
+            };
+
+            $scope.openAddVillageModal = function() {
+                $scope.villageInfo = {
+                id: 0,
+                    villageName: '',
+                    blockId: null,
+                    districtId: null,
+                    stateId: null
+                };
+                $('#addVillageModal').modal('show');
+            };
+        });
+    </script>
+}

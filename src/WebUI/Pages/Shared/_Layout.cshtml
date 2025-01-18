@@ -1,7 +1,7 @@
 ﻿<!DOCTYPE html>
 <html lang="en" data-layout="vertical" data-sidebar="light" data-sidebar-size="lg">
 <head>
-    <title>KADAM Portal - Dashboard</title>
+    <title>KADAM Portal - @ViewData["Title"]</title>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <!-- App favicon -->
@@ -16,6 +16,8 @@
     <link href="~/assets/css/app.min.css" rel="stylesheet" type="text/css" />
     <!-- custom Css-->
     <link href="~/assets/css/custom.min.css" rel="stylesheet" type="text/css" />
+    <link href="~/css/site.css" rel="stylesheet" type="text/css" />
+
     <link rel="stylesheet" href="//cdn.datatables.net/1.12.1/css/jquery.dataTables.min.css">
     <link rel="stylesheet" href="//cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css" />
     <script src="https://code.jquery.com/jquery-3.6.0.js"></script>
@@ -67,6 +69,7 @@
                                 </form>
                             </div>
                         </div>
+
 
                         
 
@@ -143,45 +146,88 @@
                                 <i class="ri-dashboard-2-line"></i> <span data-key="t-widgets">Dashboard</span>
                             </a>
                         </li>
-                        @* <li class="nav-item">
-                            <a class="nav-link menu-link" href="#clientmanagement" data-bs-toggle="collapse" role="button" aria-expanded="false" aria-controls="clientmanagement">
-                                <i class="ri-user-settings-line"></i> <span data-key="t-dashboards">Client Management</span>
+                       
+                        
+
+                        <li class="nav-item">
+                            <a class="nav-link menu-link" href="#locationmanagement" data-bs-toggle="collapse" role="button" aria-expanded="false" aria-controls="locationmanagement">
+                                <i class="ri-map-pin-line"></i> <span data-key="t-dashboards">Location Management</span>
                             </a>
-                            <div class="collapse menu-dropdown" id="clientmanagement">
+                            <div class="collapse menu-dropdown" id="locationmanagement">
                                 <ul class="nav nav-sm flex-column">
                                     <li class="nav-item">
-                                        <a id="viewclient-link" href="\Admin\ClientList" class="nav-link" data-key="t-analytics">View Clients</a>
+                                        <a id="states-link" href="/Admin/States" class="nav-link" data-key="t-crm">States</a>
                                     </li>
-                                    
-                                </ul>
-                            </div>
-                        </li> *@
-                        @* <li class="nav-item">
-                            <a class="nav-link menu-link" href="#ordermanagement" data-bs-toggle="collapse" role="button" aria-expanded="false" aria-controls="ordermanagement">
-                                <i class="ri-file-settings-line"></i> <span data-key="t-dashboards">Order Management</span>
-                            </a>
-                            <div class="collapse menu-dropdown" id="ordermanagement">
-                                <ul class="nav nav-sm flex-column">
                                     <li class="nav-item">
-                                        <a id="add-new-order" href="\Admin\OrderMaster" class="nav-link" data-key="t-analytics">Add New Order</a>
+                                        <a id="districts-link" href="/Admin/Districts" class="nav-link" data-key="t-crm">Districts</a>
                                     </li>
-                                    
+                                    <li class="nav-item">
+                                        <a id="blocks-link" href="/Admin/Blocks" class="nav-link" data-key="t-crm">Blocks</a>
+                                    </li>
+                                    <li class="nav-item">
+                                        <a id="blocks-link" href="/Admin/Villages" class="nav-link" data-key="t-crm">Villages</a>
+                                    </li>
                                 </ul>
                             </div>
-                        </li> *@
+                        </li>
+
+
                         <li class="nav-item">
                             <a class="nav-link menu-link" href="#settinglist" data-bs-toggle="collapse" role="button" aria-expanded="false" aria-controls="settinglist">
                                 <i class="ri-settings-3-line"></i> <span data-key="t-dashboards">Settings</span>
                             </a>
                             <div class="collapse menu-dropdown" id="settinglist">
                                 <ul class="nav nav-sm flex-column">
-                                    <li class="nav-item">
-                                        <a id="backoffice-link" href="/Admin/Peoples" class="nav-link" data-key="t-crm">Peoples</a>
-                                    </li>
+                                    
+                                    
                                     <li class="nav-item">
                                         <a id="backoffice-link" href="/Admin/Divisions" class="nav-link" data-key="t-crm">Divisions</a>
                                     </li>
+                                    <li class="nav-item">
+                                        <a id="institutions-link" href="/Admin/Institutions" class="nav-link" data-key="t-crm">Institutions</a>
+                                    </li>
+                                    <li class="nav-item">
+                                        <a id="backoffice-link" href="/Admin/Programs" class="nav-link" data-key="t-crm">Programs</a>
+                                    </li>
+                                    <li class="nav-item">
+                                        <a id="backoffice-link" href="/Admin/MenuPermissions" class="nav-link" data-key="t-crm">Menu Permissions</a>
+                                    </li>
+                                    <li class="nav-item">
+                                        <a id="backoffice-link" href="/Admin/Roles" class="nav-link" data-key="t-crm">Roles</a>
+                                    </li>
                                     
+                                </ul>
+                            </div>
+                        </li>
+
+                        <li class="nav-item">
+                            <a class="nav-link menu-link" href="#userslist" data-bs-toggle="collapse" role="button" aria-expanded="false" aria-controls="userslist">
+                                <i class="ri-user-line"></i> <span data-key="t-dashboards">Users</span>
+                            </a>
+                            <div class="collapse menu-dropdown" id="userslist">
+                                <ul class="nav nav-sm flex-column">
+                                    <li class="nav-item">
+                                        <a id="peoples-link" href="/Admin/Peoples" class="nav-link" data-key="t-crm">Peoples</a>
+                                    </li>
+                                </ul>
+                            </div>
+                        </li>
+
+                        <li class="nav-item">
+                            <a class="nav-link menu-link" href="#kadamlist" data-bs-toggle="collapse" role="button" aria-expanded="false" aria-controls="kadamlist">
+                                <i class="ri-book-line"></i> <span data-key="t-dashboards">Kadam</span>
+                            </a>
+                            <div class="collapse menu-dropdown" id="kadamlist">
+                                <ul class="nav nav-sm flex-column">
+                                    <li class="nav-item">
+                                        <a id="backoffice-link" href="/Admin/Kadam/Subjects" class="nav-link" data-key="t-crm">Subjects</a>
+                                    </li>
+                                    <li class="nav-item">
+                                        <a id="backoffice-link" href="/Admin/Kadam/Steps" class="nav-link" data-key="t-crm">Steps</a>
+                                    </li>
+                                    <li class="nav-item">
+                                        <a id="backoffice-link" href="/Admin/Kadam/Themes" class="nav-link" data-key="t-crm">Themes</a>
+                                    </li>
                                 </ul>
                             </div>
                         </li>

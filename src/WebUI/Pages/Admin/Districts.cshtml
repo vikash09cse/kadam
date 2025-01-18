@@ -1,0 +1,305 @@
+﻿@page
+@model WebUI.Pages.Admin.DistrictsModel
+@{
+    ViewData["Title"] = "District Management";
+}
+@Html.AntiForgeryToken()
+
+<div class="page-content" ng-app="districtApp" ng-controller="districtController">
+    <div class="container-fluid">
+
+        <!-- start page title -->
+        <div class="row">
+            <div class="col-12">
+                <div class="page-title-box d-sm-flex align-items-center justify-content-between">
+                    <h4 class="mb-sm-0">Districts</h4>
+                    <div class="text-end">
+                        <button type="button" class="btn btn-primary" ng-click="openAddDistrictModal()">
+                            Add District
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- end page title -->
+
+        <div class="row dashboard-listing">
+            <div class="col">
+                <div class="h-100">
+                    <div class="row mb-3 pb-1">
+                        <div class="col-12">
+                            <div class="table-responsive table-card">
+
+                                <table id="districtTable" class="table table-nowrap w-100" aria-label="Districts">
+                                    <thead class="table-primary">
+                                        <tr>
+                                            <th style="width: 8%;">Sr.No.</th>
+                                            <th>District Name</th>
+                                            <th>State Name</th>
+                                            <th style="width: 15%;">District Code</th>
+                                            <th style="width: 8%;">Action</th>
+                                        </tr>
+                                    </thead>
+                                </table>
+
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+    <!-- container-fluid -->
+
+    <!-- Add District Modal -->
+    <div id="addDistrictModal" class="modal fade" tabindex="-1" aria-labelledby="districtModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="districtModalLabel">Add/Edit District</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <form method="post" name="districtForm" novalidate>
+                    <div class="modal-body py-2">
+                        <div class="form-group">
+                            <label for="districtName">District Name<span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="districtName" name="districtName" ng-model="districtInfo.districtName" required>
+                            <span class="text-danger" ng-show="IsSubmit && districtForm.districtName.$error.required">Required.</span>
+                        </div>
+                        <div class="form-group">
+                            <label for="stateName">State Name<span class="text-danger">*</span></label>
+                            <select class="form-select" id="stateName" name="stateName" ng-model="districtInfo.stateId" ng-options="state.value as state.text for state in states" required>
+                                <option value="">Select State</option>
+                            </select>
+                            <span class="text-danger" ng-show="IsSubmit && districtForm.stateName.$error.required">Required.</span>
+                        </div>
+                        <div class="form-group">
+                            <label for="districtCode">District Code<span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="districtCode" name="districtCode" ng-model="districtInfo.districtCode" required>
+                            <span class="text-danger" ng-show="IsSubmit && districtForm.districtCode.$error.required">Required.</span>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button class="btn btn-sm btn-primary" type="submit" ng-disabled="isSaving" ng-click="submitDistrictForm()">
+                            <span ng-if="isSaving" class="spinner-border spinner-border-sm" role="status"  aria-hidden="true"></span>
+                            <span ng-if="!isSaving">Save</span>
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    <!-- Loader Element -->
+    <div id="loader" class="loader" ng-show="isLoading"></div>
+</div>
+<script src="//cdn.jsdelivr.net/npm/toastify-js"></script>
+<script src="~/js/custom-notification.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+@section Scripts {
+    <script src="~/js/angular.js"></script>
+    <script src="~/js/angular-sanitize.js"></script>
+    <script src="~/js/loaderInterceptor.js"></script>
+    <script type="text/javascript">
+        var app = angular.module('districtApp', ['app']);
+
+        app.config(['$httpProvider', function($httpProvider) {
+            $httpProvider.interceptors.push('loaderInterceptor');
+        }]);
+
+        app.run(['$rootScope', function($rootScope) {
+            $rootScope.isLoading = false; // Initialize isLoading
+        }]);
+
+        app.controller('districtController', function ($scope, $http) {
+            $scope.states = []; // Initialize states array
+
+            // Fetch states for dropdown
+            $http.get('?handler=StateList').then(function(response) {
+                $scope.states = response.data;
+            });
+
+            var dataTable = $('#districtTable').DataTable({
+                serverSide: true,
+                processing: true,
+                paging: true,
+                ajax: function (data, callback, settings) {
+                    $http({
+                        method: 'GET',
+                        url: '?handler=DistrictList',
+                        params: {
+                            draw: data.draw,
+                            start: data.start,
+                            length: data.length,
+                            searchValue: data.search.value
+                        },
+                        headers: {
+                            'RequestVerificationToken': $('input:hidden[name="__RequestVerificationToken"]').val()
+                        }
+                    }).then(function (response) {
+                        callback(response.data);
+                    }, function (error) {
+                        console.error('Error fetching data:', error);
+                    });
+                },
+                columns: [
+                    { data: 'rowNumber' },
+                    { data: 'districtName' },
+                    { data: 'stateName' },
+                    { data: 'districtCode' },
+                    {
+                        data: null,
+                        orderable: false,
+                        render: function (data, type, row) {
+                            var buttons = `
+                                <div class="btn-group">
+                                    <button class="btn btn-sm btn-warning" title="Edit" onclick="editDistrict(${row.id})">
+                                        <i class="mdi mdi-pencil"></i>
+                                    </button>
+                                    <button class="btn btn-sm btn-danger" title="Remove" onclick="removeDistrict(${row.id})">
+                                        <i class="mdi mdi-trash-can"></i>
+                                    </button>
+                                </div>
+                            `;
+                            return buttons;
+                        }
+                    }
+                ],
+                lengthMenu: [
+                    [10, 25, 50, 100],
+                    [10, 25, 50, 100]
+                ],
+                language: {
+                    searchPlaceholder: "Search records",
+                    info: "Showing _START_ to _END_ of _TOTAL_ records",
+                    lengthMenu: "Show _MENU_ records",
+                    infoEmpty: "Showing 0 to 0 of 0 records",
+                    emptyTable: "No records found!"
+                },
+                bStateSave: true,
+                fnStateSave: function (oSettings, oData) {
+                    localStorage.setItem('DistrictTable_' + window.location.pathname, JSON.stringify(oData));
+                },
+                fnStateLoad: function (oSettings) {
+                    return JSON.parse(localStorage.getItem('DistrictTable_' + window.location.pathname));
+                }
+            });
+
+            // Global functions for action buttons
+            window.editDistrict = function(id) {
+                 $http({
+                    method: 'GET',
+                    url: '?handler=DistrictDetail&id=' + id,
+                    headers: {
+                        'RequestVerificationToken': $('input:hidden[name="__RequestVerificationToken"]').val()
+                    }
+                }).then(function(response) {
+                    $scope.districtInfo = response.data;
+                    $('#addDistrictModal').modal('show');
+                }).catch(function(error) {
+                    ShowNotification(error.message, 1);
+                });
+            };
+
+            window.removeDistrict = function(id) {
+                Swal.fire({
+                    title: 'Are you sure?',
+                    text: "You won't be able to revert this!",
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#3085d6',
+                    cancelButtonColor: '#d33',
+                    confirmButtonText: 'Yes, delete it!'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        $http({
+                            method: 'POST',
+                            url: '?handler=DeleteDistrict&id=' + id,
+                            headers: {
+                                'RequestVerificationToken': $('input:hidden[name="__RequestVerificationToken"]').val()
+                            }
+                        }).then(function(response) {
+                            if(response.data.success){
+                                dataTable.ajax.reload();
+                                ShowNotification(response.data.message, 0);
+                            }else{
+                                ShowNotification(response.data.message, 1);
+                            }
+                        }).catch(function(error) {
+                            ShowNotification(error.message, 1);
+                        });
+                    }
+                });
+            };
+
+            $scope.districtInfo = {
+                id: 0,
+                districtName: '',
+                stateId: null,
+                districtCode: '',
+                districtStatus: 0,
+                closeDate: null,
+            };
+
+            $scope.isSaving = false; // Initialize isSaving
+            $scope.IsSubmit = false;
+
+            $scope.submitDistrictForm = function() {
+                $scope.IsSubmit = true; // Set form submitted state to true
+                
+                if(!$scope.districtForm.$valid){
+                    angular.element("[name='" + $scope.districtForm.$name + "']").find('.ng-invalid:visible:first').focus();
+                    return;
+                }
+
+                $scope.isSaving = true; // Set loading state to true
+                var districtData = {
+                    id: $scope.districtInfo.id,
+                    districtName: $scope.districtInfo.districtName,
+                    stateId: $scope.districtInfo.stateId,
+                    districtCode: $scope.districtInfo.districtCode,
+                    districtStatus: $scope.districtInfo.districtStatus,
+                    closeDate: $scope.districtInfo.closeDate
+                };
+
+                $http({
+                    method: 'POST',
+                    url: '?handler=SaveDistrict',
+                    data: districtData,
+                    headers: {
+                        'RequestVerificationToken': $('input:hidden[name="__RequestVerificationToken"]').val()
+                    },
+                    contentType: "application/json; charset=utf-8",
+                }).then(function(response) {
+                    $scope.isSaving = false; // Reset loading state
+                    $scope.IsSubmit = false;
+                    if (response.data.success) {
+                        ShowNotification(response.data.message, 0);
+                        $('#addDistrictModal').modal('hide');
+                        $scope.districtInfo = {}; // Reset form
+                        $('#districtTable').DataTable().ajax.reload();
+                    } else {
+                        ShowNotification(response.data.message, 1);
+                    }
+                }).catch(function(error) {
+                    $scope.isSaving = false; // Reset loading state
+                    $scope.IsSubmit = false;
+                    ShowNotification(error.message, 1);
+                });
+            };
+
+            $scope.openAddDistrictModal = function() {
+                $scope.districtInfo = {
+                id: 0,
+                districtName: '',
+                    stateId: null,
+                    districtCode: '',
+                    districtStatus: 0,
+                    closeDate: null,
+                };
+                $('#addDistrictModal').modal('show');
+            };
+        });
+    </script>
+}
+

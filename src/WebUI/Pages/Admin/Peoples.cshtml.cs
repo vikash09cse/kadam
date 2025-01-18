@@ -1,7 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Core.Features.Admin;
-using Core.DTOs;
 using static Core.Utilities.Enums;
 using Core.DTOs.Users;
 using Core.Utilities;
@@ -13,11 +12,13 @@ namespace WebUI.Pages.Admin
     {
         private readonly AdminService _adminService;
         private readonly AuthenticationService _authenticationService;
+        private readonly InstitutionService _institutionService;
 
-        public PeoplesModel(AdminService adminService, AuthenticationService authenticationService)
+        public PeoplesModel(AdminService adminService, AuthenticationService authenticationService, InstitutionService institutionService)
         {
             _adminService = adminService;
             _authenticationService = authenticationService;
+            _institutionService = institutionService;
         }
 
         public void OnGet()
@@ -26,21 +27,13 @@ namespace WebUI.Pages.Admin
 
         public async Task<IActionResult> OnGetInitialData(int id)
         {
+            var roles = await _adminService.GetRolesDropDown();
             var response = new UserInitialDataResponse
             {
-                Genders = EnumHelper<Gender>.GetEnumList()
-                    .Select(e => new DropdownDTO { Value = ((int)e.Value).ToString(), Text = e.Description })
-                    .ToList(),
-                Roles = new List<DropdownDTO>
-                {
-                    new () { Value = "1", Text = "Admin" },
-                    new () { Value = "2", Text = "User" }
-                },
-                ReportRoles = new List<DropdownDTO>
-                {
-                    new() { Value = "1", Text = "Admin" },
-                    new () { Value = "2", Text = "User" }
-                },
+                
+                Genders = EnumHelper<Gender>.GetEnumDropdownList(),
+                Roles = roles,
+                ReportRoles = roles,
                 UserInfo = new Core.Entities.Users()
             };
             if (id > 0)
@@ -98,6 +91,55 @@ namespace WebUI.Pages.Admin
                     message = MessageError.ErrorSavingUser(ex.Message)
                 });
             }
+        }
+
+        public async Task<IActionResult> OnGetUserPrograms(int userId)
+        {
+            var result = await _adminService.GetUserPrograms(userId);
+            return new JsonResult(result);
+        }
+        public async Task<IActionResult> OnPostSaveUserPrograms([FromBody] List<UserProgram> userPrograms)
+        {
+            var result = await _adminService.SaveUserPrograms(userPrograms);
+            return new JsonResult(result);
+        }
+        public async Task<IActionResult> OnGetLocationData(int userId)
+        {
+            var response = new
+            {
+                InstitutionTypes = EnumHelper<InstitutionType>.GetEnumDropdownList(),
+                Divisions = await _adminService.GetDivisionsByStatus(Enums.Status.Active),
+                States = await _adminService.GetStatesByStatus(Enums.Status.Active),
+                PeopleInstitution = await _adminService.GetPeopleInstitution(userId)
+            };
+
+            return new JsonResult(response);
+        }
+        public async Task<IActionResult> OnGetDistrictListByState(int stateId)
+        {
+            var districts = await _adminService.GetDistrictsByState(stateId);
+            return new JsonResult(districts);
+        }
+        public async Task<IActionResult> OnGetBlockListByDistrict(int districtId)
+        {
+            var blocks = await _adminService.GetBlocksByDistrict(districtId);
+            return new JsonResult(blocks);
+        }
+
+        public async Task<IActionResult> OnGetVillagesByBlock(int blockId)
+        {
+            var villages = await _adminService.GetVillagesByBlock(blockId);
+            return new JsonResult(villages);
+        }
+        public async Task<IActionResult> OnGetInstitutionsByVillageId(int villageId, int institutionTypeId)
+        {
+            var institutions = await _institutionService.GetInstitutionsByVillageId(villageId, institutionTypeId);
+            return new JsonResult(institutions);
+        }
+        public async Task<IActionResult> OnPostSavePeopleInstitution([FromBody] PeopleInstitution peopleInstitution)
+        {
+            var result = await _adminService.SavePeopleInstitution(peopleInstitution);
+            return new JsonResult(result);
         }
     }
 }
