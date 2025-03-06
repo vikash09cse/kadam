@@ -1,39 +1,56 @@
-﻿using Core.Features.Admin;
+﻿using Core.DTOs;
+using Core.DTOs.App;
+using Core.DTOs.Users;
+using Core.Features.Admin;
 using Microsoft.AspNetCore.Mvc;
+using WebAPI.AuthServices;
 
 namespace WebAPI.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class LoginController : ControllerBase
+    public partial class LoginController(AdminService adminService, AuthenticationService authenticationService) : ControllerBase
     {
-        private readonly AdminService _adminService;
-        public LoginController(AdminService adminService)
+        private readonly AdminService _adminService = adminService;
+        private readonly AuthenticationService _authenticationService = authenticationService;
+
+
+        [HttpGet]
+        public IActionResult Get()
         {
-            _adminService = adminService;
+            return Ok("Login Controller");
         }
 
-        public async Task<IActionResult> Get()
+        [HttpPost]
+        [Route("LoginToken")]
+        public async Task<IActionResult> LoginToken(LoginRequest request)
         {
-            var response = await _adminService.GetProgram(1);
+            var userResponse = await _adminService.ValidateUser(request.Email, request.Password);
+            if (userResponse is null || !userResponse.Success)
+            {
+                return Ok(userResponse);
+            }
+
+            if (userResponse.Result is not UserLoginValidateDTO userLoginInfo)
+            {
+                return Unauthorized();
+            }
+
+            // Create a new anonymous object excluding password fields
+            var userDto = new
+            {
+                userLoginInfo.Id,
+                userLoginInfo.RoleId,
+                userLoginInfo.FirstName,
+                userLoginInfo.LastName,
+                userLoginInfo.Email,
+                userLoginInfo.ReporteeRoleId,
+                userLoginInfo.UserName,
+                Token = _authenticationService.GenerateSecureToken(userLoginInfo)
+            };
+
+            var response = new ServiceResponseDTO(true, AppStatusCodes.Success, userDto, "");
             return Ok(response);
         }
-
-        //[HttpPost]
-        //public IActionResult Login([FromBody] LoginRequest request)
-        //{
-        //    var user = _authenticationService.Authenticate(request.Username, request.Password);
-        //    if (user == null)
-        //    {
-        //        return Unauthorized();
-        //    }
-        //    return Ok(user);
-        //}
-        //[HttpGet]
-        //public IActionResult Logout()
-        //{
-        //    _authenticationService.Logout();
-        //    return Ok();
-        //}
     }
 }

@@ -1,0 +1,50 @@
+﻿using Core.Entities;
+using Core.Features.Admin;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
+
+namespace WebAPI.Controllers
+{
+    [Authorize]
+    [Route("api/[controller]")]
+    [ApiController]
+    public class StudentController(StudentService studentService) : ControllerBase
+    {
+        private readonly StudentService _StudentService = studentService;
+        [HttpPost]
+        public async Task<IActionResult> SaveStudent([FromBody] Student student)
+        {
+            var response = await _StudentService.SaveStudent(student);
+            return StatusCode(response.StatusCode, response);
+        }
+
+        [HttpDelete("{id}/{userId}")]
+        public async Task<IActionResult> DeleteStudent(int id, int userId)
+        {
+            var response = await _StudentService.DeleteStudent(id, userId);
+            return StatusCode(response.StatusCode, response);
+        }
+
+        [HttpGet("{id}")]
+        public async Task<IActionResult> GetStudent(int id)
+        {
+            var student = await _StudentService.GetStudent(id);
+            return Ok(student);
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> GetAllStudents()
+        {
+            var students = await _StudentService.GetAllStudents();
+            return Ok(students);
+        }
+
+        [HttpGet("institutions/{userId}")]
+        public async Task<IActionResult> GetInstitutionsByUserId(int userId)
+        {
+            var institutions = await _StudentService.GetInstitutionsByUserId(userId);
+            return Ok(institutions);
+        }
+    }
+}

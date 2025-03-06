@@ -23,18 +23,25 @@ namespace WebUI
             builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
             .AddCookie(options =>
             {
+                //options.Cookie.Name = "LoginCookies";
+                //options.Cookie.HttpOnly = true;
+                //options.Cookie.SameSite = SameSiteMode.None;
+                ////options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
+                //options.LoginPath = "/Login";
+                //options.LogoutPath = "/Logout";
+                //options.AccessDeniedPath = "/AccessDenied";
+                //options.ExpireTimeSpan = TimeSpan.FromDays(1);
+                //options.SlidingExpiration = true;
+
                 options.Cookie.Name = "LoginCookies";
-                options.Cookie.HttpOnly = false;
-                options.Cookie.SameSite = SameSiteMode.None;
-                options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
+                options.Cookie.HttpOnly = true;
+                //options.Cookie.SecurePolicy = CookieSecurePolicy.Always; // Use Always for HTTPS
                 options.LoginPath = "/Login";
                 options.LogoutPath = "/Logout";
-                options.AccessDeniedPath = "/AccessDenied";
-                options.ExpireTimeSpan = TimeSpan.FromDays(1);
                 options.SlidingExpiration = true;
 
 
-                });
+            });
 
             builder.Services.AddScoped<AuthenticationService>();
             builder.Services.InjectCore();

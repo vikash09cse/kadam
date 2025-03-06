@@ -70,6 +70,7 @@ namespace Infrastructure
         public DbSet<ProjectState> ProjectStates { get; set; }
         public DbSet<UserProgram> UserPrograms { get; set; }
         public DbSet<PeopleInstitution> PeopleInstitutions { get; set; }
+        public DbSet<Student> Students { get; set; }
 
     }
 }

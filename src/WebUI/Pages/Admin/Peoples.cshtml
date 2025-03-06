@@ -255,25 +255,26 @@
 <script src="~/js/custom-notification.js"></script>
 <script src="/assets/libs/cleave.js/cleave.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-@section Scripts {
-    <!-- Core Angular -->
+ <!-- Core Angular -->
     <script src="~/js/angular.js"></script>
     <script src="~/js/angular-sanitize.js"></script>
-    
+
     <!-- Your app module must be loaded before peopleApp -->
-    <script src="~/js/peoples/app.js"></script>  <!-- This should define your 'app' module -->
+    <script src="~/js/peopleApp.js"></script>  <!-- This should define your 'app' module -->
     <script src="~/js/loaderInterceptor.js"></script>
-    
+
     <!-- People module and components -->
-    <script src="~/js/peoples/peopleModule.js"></script>
-    <script src="~/js/peoples/peopleService.js"></script>
-    <script src="~/js/peoples/peopleController.js"></script>
+    <script src="~/js/peopleModule.js"></script>
+    <script src="~/js/peopleService.js"></script>
+    <script src="~/js/peopleController.js"></script>
+@section Scripts {
+   
 
     <!-- Other scripts -->
     <script src="//cdn.jsdelivr.net/npm/toastify-js"></script>
     <script src="~/js/custom-notification.js"></script>
     <script src="/assets/libs/cleave.js/cleave.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    @* <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script> *@
     
     <!-- Select2 -->
     <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
