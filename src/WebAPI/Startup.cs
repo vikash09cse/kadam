@@ -76,17 +76,24 @@ namespace WebAPI
             services.AddEndpointsApiExplorer();
             services.AddSwaggerGen(options =>
             {
-                // Add JWT authentication support
+                options.SwaggerDoc("v1", new OpenApiInfo
+                {
+                    Title = "Kadam API",
+                    Version = "v1"
+                });
+
+                // JWT Bearer Authorization
                 options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
                 {
+                    Name = "Authorization",
+                    Type = SecuritySchemeType.Http, // Changed from ApiKey to Http
                     Scheme = "Bearer",
                     BearerFormat = "JWT",
                     In = ParameterLocation.Header,
-                    Name = "Authorization",
-                    Description = "Bearer Authentication with JWT Token",
-                    Type = SecuritySchemeType.Http
+                    Description = "Please enter token: Bearer <JWT Token>"
                 });
 
+                // Make sure the "Bearer" security requirement is added
                 options.AddSecurityRequirement(new OpenApiSecurityRequirement
                 {
                     {
@@ -94,11 +101,11 @@ namespace WebAPI
                         {
                             Reference = new OpenApiReference
                             {
-                                Id = "Bearer",
-                                Type = ReferenceType.SecurityScheme
+                                Type = ReferenceType.SecurityScheme,
+                                Id = "Bearer"
                             }
                         },
-                        new List<string>()
+                        new string[] { }
                     }
                 });
 

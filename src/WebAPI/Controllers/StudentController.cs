@@ -1,7 +1,7 @@
-﻿using Core.Entities;
+﻿using Azure;
+using Core.Entities;
 using Core.Features.Admin;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
 namespace WebAPI.Controllers
@@ -45,6 +45,20 @@ namespace WebAPI.Controllers
         {
             var institutions = await _StudentService.GetInstitutionsByUserId(userId);
             return Ok(institutions);
+        }
+
+        [HttpGet("GetStudentList/{createdBy}")]
+        public async Task<IActionResult> GetStudentListMobile(int createdBy)
+        {
+            var students = await _StudentService.GetStudentListMobile(createdBy);
+            return Ok(students);
+        }
+
+        [HttpGet("defaultdata/{userId}")]
+        public async Task<IActionResult> GetStudentDefaultData(int userId)
+        {
+            var studentDefaultData = await _StudentService.GetStudentDefaultData(userId);
+            return Ok(studentDefaultData);
         }
     }
 }

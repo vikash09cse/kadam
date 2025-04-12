@@ -13,5 +13,8 @@ public static class DependencyInject
         services.AddScoped<AdminService>();
         services.AddScoped<InstitutionService>();
         services.AddScoped<StudentService>();
+        services.AddScoped<StudentFamilyDetailsService>();
+        services.AddScoped<StudentHealthService>();
+        services.AddScoped<StudentDocumentService>();
     }
 }

@@ -12,5 +12,6 @@ namespace Core.Abstractions
         Task<IEnumerable<Student>> GetAllStudents();
         Task<bool> SaveStudent(Student student);
         Task<IEnumerable<AppInstitutionDTO>> GetInstitutionsByUserId(int userId);
+        Task<IEnumerable<StudentListDTO>> GetStudentListMobile(int createdBy);
     }
 }

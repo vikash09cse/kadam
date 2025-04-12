@@ -80,5 +80,18 @@ namespace Infrastructure
                 return result;
             }
         }
+
+        public async Task<IEnumerable<StudentListDTO>> GetStudentListMobile(int createdBy)
+        {
+            using (var connection = _context.Database.GetDbConnection())
+            {
+                var parameters = new DynamicParameters();
+                parameters.Add("@CreatedBy", createdBy);
+
+                var result = await connection.QueryAsync<StudentListDTO>("usp_StudentList_Mobile", parameters, commandType: CommandType.StoredProcedure);
+                
+                return result;
+            }
+        }
     }
 }

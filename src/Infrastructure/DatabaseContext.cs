@@ -71,6 +71,9 @@ namespace Infrastructure
         public DbSet<UserProgram> UserPrograms { get; set; }
         public DbSet<PeopleInstitution> PeopleInstitutions { get; set; }
         public DbSet<Student> Students { get; set; }
+        public DbSet<StudentFamilyDetail> StudentFamilyDetails { get; set; }
+        public DbSet<StudentHealth> StudentHealths { get; set; }
+        public DbSet<StudentDocument> StudentDocuments { get; set; }
 
     }
 }

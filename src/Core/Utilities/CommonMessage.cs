@@ -14,6 +14,7 @@ public static class MessageSuccess
     public const string NoRecordFound = "No record found.";
     public const string RecordFound = "Record found.";
     public const string Closed = "Record has been closed successfully.";
+    public const string Found = "Record has been found successfully.";
 
 
 }

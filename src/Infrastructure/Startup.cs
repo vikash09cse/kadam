@@ -15,6 +15,9 @@ public static class DependencyInject
         services.AddScoped<IAdminRepository, AdminRepository>();
         services.AddScoped<IInstitutionRepository, InstitutionRepository>();
         services.AddScoped<IStudentRepository, StudentRepository>();
+        services.AddScoped<IStudentFamilyDetailsRepository, StudentFamilyDetailsRepository>();
+        services.AddScoped<IStudentHealthRepository, StudentHealthRepository>();
+        services.AddScoped<IStudentDocumentRepository, StudentDocumentRepository>();
         services.AddScoped<ITechnicianRepository, TechnicianRepository>();
         services.AddScoped<IDbSession, DbSession>();
         services.AddScoped<IUnitOfWork, UnitOfWork>();
