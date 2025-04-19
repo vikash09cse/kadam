@@ -6,5 +6,6 @@ namespace Core.Entities
         public int DocumentTypeId { get; set; }
         public string DocumentNumber { get; set; } = string.Empty;
         public string DocumentPath { get; set; } = string.Empty;
+        public string DocumentFileName { get; set; } = string.Empty;
     }
 } 

@@ -222,7 +222,7 @@ namespace Core.Utilities
             [Description("Speech & Language Disorders")]
             SpeechAndLanguageDisorders = 12
         }
-        public enum DocumentType
+        public enum DocumentTypes
         {
             [Description("Aadhar Card")]
             AadharCard = 1,

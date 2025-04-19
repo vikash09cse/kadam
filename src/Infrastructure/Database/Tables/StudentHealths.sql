@@ -5,6 +5,7 @@ CREATE TABLE StudentHealths (
     PhysicallyChallengedType INT,
     PercentagePhysicallyChallenged DECIMAL(5,2),
     DisabilityCertificatePath VARCHAR(255),
+    DisabilityCertificateFileName VARCHAR(255),
     CurrentStatus INT NOT NULL,
     CreatedBy INT,
     DateCreated DATETIME DEFAULT GETDATE(),

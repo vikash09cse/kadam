@@ -67,5 +67,47 @@ namespace Core.Features.Admin
             ServiceResponseDTO response = new(true, AppStatusCodes.Success, studentDefaultData, MessageSuccess.Found);
             return response;
         }
+
+        public async Task<ServiceResponseDTO> SaveCertificatePath(int studentId, string relativePath)
+        {
+            try
+            {
+                // Get health record and update certificate path
+                var health = await _studentHealthRepository.GetStudentHealthByStudentId(studentId);
+                if (health != null && health.Id > 0)
+                {
+                    // Update the certificate path
+                    health.DisabilityCertificatePath = relativePath;
+                    
+                    // Save the updated record
+                    bool isSaved = await _studentHealthRepository.SaveStudentHealth(health);
+                    return new ServiceResponseDTO(isSaved, 
+                        isSaved ? AppStatusCodes.Success : AppStatusCodes.Unauthorized, 
+                        relativePath, 
+                        isSaved ? MessageSuccess.Saved : MessageError.CodeIssue);
+                }
+                else
+                {
+                    // Create new health record if it doesn't exist
+                    var newHealth = new StudentHealth
+                    {
+                        StudentId = studentId,
+                        DisabilityCertificatePath = relativePath,
+                        PhysicallyChallenged = true,
+                        CurrentStatus = Status.Active
+                    };
+                    
+                    bool isSaved = await _studentHealthRepository.SaveStudentHealth(newHealth);
+                    return new ServiceResponseDTO(isSaved, 
+                        isSaved ? AppStatusCodes.Success : AppStatusCodes.Unauthorized, 
+                        relativePath, 
+                        isSaved ? MessageSuccess.Saved : MessageError.CodeIssue);
+                }
+            }
+            catch (Exception ex)
+            {
+                return new ServiceResponseDTO(false, 400, null, $"Error saving certificate path: {ex.Message}");
+            }
+        }
     }
 } 

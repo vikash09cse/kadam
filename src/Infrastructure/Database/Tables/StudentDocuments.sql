@@ -4,6 +4,7 @@ CREATE TABLE StudentDocuments (
     DocumentTypeId INT NOT NULL,
     DocumentNumber VARCHAR(55),
     DocumentPath VARCHAR(255),
+    DocumentFileName VARCHAR(255),
     CurrentStatus INT NOT NULL,
     CreatedBy INT,
     DateCreated DATETIME DEFAULT GETDATE(),

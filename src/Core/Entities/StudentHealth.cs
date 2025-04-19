@@ -7,5 +7,6 @@ namespace Core.Entities
         public int? PhysicallyChallengedType { get; set; }
         public decimal? PercentagePhysicallyChallenged { get; set; }
         public string DisabilityCertificatePath { get; set; } = string.Empty;
+        public string DisabilityCertificateFileName { get; set; } = string.Empty;
     }
 } 
