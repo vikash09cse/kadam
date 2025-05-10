@@ -6,7 +6,7 @@ BEGIN
         ROW_NUMBER() OVER (ORDER BY sb.SubjectName) AS RowNo,
         sbd.Id,
         sbd.StudentId,
-        sbd.SubjectId,
+        sb.Id As SubjectId,
         sbd.StudentAge,
         sbd.BaselineType,
         sbd.ObtainedMarks,

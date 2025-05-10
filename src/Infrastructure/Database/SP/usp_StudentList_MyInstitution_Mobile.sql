@@ -18,7 +18,8 @@ BEGIN
         s.Age,
         g.GradeName,
         s.CurrentStatus,
-        s.Id
+        s.Id,
+        IsBaselineAdded = CASE WHEN EXISTS (SELECT 1 FROM StudentBaselineDetails sbd WHERE sbd.StudentId = s.Id) THEN 1 ELSE 0 END
     FROM 
         Students s
 	LEFT Join StudentFamilyDetails SF On S.Id=SF.StudentId

@@ -14,5 +14,6 @@ namespace Core.DTOs.App
         public Utilities.Enums.Status CurrentStatus { get; set; }
         public string CurrentStatusText => CurrentStatus.ToString();
         public int Id { get; set; }
+        public int IsBaselineAdded { get; set; }
     }
 } 

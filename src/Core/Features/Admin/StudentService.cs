@@ -65,7 +65,7 @@ namespace Core.Features.Admin
             return response;
         }
 
-        public async Task<ServiceResponseDTO> GetStudentListMyInstitutionMobile(int institutionId, int? gradeId, string section, DateTime? fromDate, DateTime? toDate, int createdBy)
+        public async Task<ServiceResponseDTO> GetStudentListMyInstitutionMobile(int? institutionId, int? gradeId, string section, DateTime? fromDate, DateTime? toDate, int createdBy)
         {
             var studentList = await _studentRepository.GetStudentListMyInstitutionMobile(institutionId, gradeId, section, fromDate, toDate, createdBy);
             ServiceResponseDTO response = new(true, AppStatusCodes.Success, studentList, MessageSuccess.Found);

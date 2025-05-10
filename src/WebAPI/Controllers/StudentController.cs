@@ -53,9 +53,10 @@ namespace WebAPI.Controllers
             return Ok(students);
         }
 
+        //[AllowAnonymous]
         [HttpGet("GetStudentListMyInstitution")]
         public async Task<IActionResult> GetStudentListMyInstitutionMobile(
-            [FromQuery] int institutionId, 
+            [FromQuery] int? institutionId, 
             [FromQuery] int? gradeId = null, 
             [FromQuery] string section = null, 
             [FromQuery] DateTime? fromDate = null, 

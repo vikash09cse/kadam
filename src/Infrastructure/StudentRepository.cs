@@ -94,7 +94,7 @@ namespace Infrastructure
             }
         }
 
-        public async Task<IEnumerable<StudentListInstitutionMobileDTO>> GetStudentListMyInstitutionMobile(int institutionId, int? gradeId, string section, DateTime? fromDate, DateTime? toDate, int createdBy)
+        public async Task<IEnumerable<StudentListInstitutionMobileDTO>> GetStudentListMyInstitutionMobile(int? institutionId, int? gradeId, string section, DateTime? fromDate, DateTime? toDate, int createdBy)
         {
             using (var connection = _context.Database.GetDbConnection())
             {
