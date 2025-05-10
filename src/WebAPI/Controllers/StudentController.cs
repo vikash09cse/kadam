@@ -53,6 +53,19 @@ namespace WebAPI.Controllers
             return Ok(students);
         }
 
+        [HttpGet("GetStudentListMyInstitution")]
+        public async Task<IActionResult> GetStudentListMyInstitutionMobile(
+            [FromQuery] int institutionId, 
+            [FromQuery] int? gradeId = null, 
+            [FromQuery] string section = null, 
+            [FromQuery] DateTime? fromDate = null, 
+            [FromQuery] DateTime? toDate = null, 
+            [FromQuery] int createdBy = 0)
+        {
+            var students = await _StudentService.GetStudentListMyInstitutionMobile(institutionId, gradeId, section, fromDate, toDate, createdBy);
+            return Ok(students);
+        }
+
         [HttpGet("defaultdata/{userId}")]
         public async Task<IActionResult> GetStudentDefaultData(int userId)
         {

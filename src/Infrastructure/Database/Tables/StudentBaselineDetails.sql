@@ -1,0 +1,18 @@
+CREATE TABLE StudentBaselineDetails (
+    Id [int] NOT NULL identity(1,1),
+	[StudentId] [int] NOT NULL,
+	SubjectId	Int Not NUll,
+	StudentAge	Int Null,
+	BaselineType	Varchar(50),
+	ObtainedMarks	Decimal(18,2),
+	PercentageMarks	Decimal(18,2),
+	TotalMarks		Decimal(18,2),
+	[CurrentStatus] [int] NOT NULL,
+	[CreatedBy] [int] NULL,
+	[DateCreated] [datetime] NULL,
+	[ModifyBy] [int] NULL,
+	[ModifyDate] [datetime] NULL,
+	[DeletedBy] [int] NULL,
+	[DeletedDate] [datetime] NULL,
+	[IsDeleted] [bit] NULL,
+);

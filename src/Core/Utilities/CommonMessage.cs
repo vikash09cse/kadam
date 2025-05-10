@@ -53,4 +53,7 @@ public static class MessageError
     public const string InvalidCredential = "The email id or password is incorrect. Please try again.";
     public static string ErrorSavingUser(string errorMessage) => $"Error saving user: {errorMessage}";
     public static string InvalidData => "Invalid data";
+    public static string InvalidStudentId => "Invalid student ID";
+    public static string StudentIdRequired => "Student ID is required";
+    public static string SubjectIdRequired => "Subject ID is required";
 }

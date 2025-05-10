@@ -1,0 +1,51 @@
+
+CREATE PROCEDURE usp_SaveStudentBaseline
+    @StudentId INT,
+    @BaselineDetails NVARCHAR(MAX)
+AS
+BEGIN
+    SET NOCOUNT ON;
+    
+    BEGIN TRY
+        BEGIN TRANSACTION;
+        
+        -- Delete existing baseline details for this student
+        DELETE FROM StudentBaselineDetails 
+        WHERE StudentId = @StudentId;
+        
+        -- Insert new baseline details from JSON
+        INSERT INTO StudentBaselineDetails (
+            StudentId,
+            SubjectId,
+            StudentAge,
+            BaselineType,
+            ObtainedMarks,
+            PercentageMarks,
+            TotalMarks,
+            CurrentStatus,
+            IsDeleted,
+            DateCreated
+        )
+        SELECT
+            @StudentId,
+            JSON_VALUE(b.value, '$.SubjectId'),
+            JSON_VALUE(b.value, '$.StudentAge'),
+            JSON_VALUE(b.value, '$.BaselineType'),
+            JSON_VALUE(b.value, '$.ObtainedMarks'),
+            JSON_VALUE(b.value, '$.PercentageMarks'),
+            JSON_VALUE(b.value, '$.TotalMarks'),
+            1, -- CurrentStatus
+            0, -- IsDeleted
+            GETDATE()
+        FROM OPENJSON(@BaselineDetails) AS b;
+        
+        COMMIT TRANSACTION;
+        SELECT 1 AS Success;
+    END TRY
+    BEGIN CATCH
+        IF @@TRANCOUNT > 0
+            ROLLBACK TRANSACTION;
+            
+        SELECT 0 AS Success, ERROR_MESSAGE() AS ErrorMessage;
+    END CATCH;
+END

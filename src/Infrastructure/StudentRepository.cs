@@ -93,5 +93,26 @@ namespace Infrastructure
                 return result;
             }
         }
+
+        public async Task<IEnumerable<StudentListInstitutionMobileDTO>> GetStudentListMyInstitutionMobile(int institutionId, int? gradeId, string section, DateTime? fromDate, DateTime? toDate, int createdBy)
+        {
+            using (var connection = _context.Database.GetDbConnection())
+            {
+                var parameters = new DynamicParameters();
+                parameters.Add("@InstitutionId", institutionId);
+                parameters.Add("@GradeId", gradeId);
+                parameters.Add("@Section", section);
+                parameters.Add("@FromDate", fromDate);
+                parameters.Add("@ToDate", toDate);
+                parameters.Add("@CreatedBy", createdBy);
+
+                var result = await connection.QueryAsync<StudentListInstitutionMobileDTO>(
+                    "usp_StudentList_MyInstitution_Mobile", 
+                    parameters, 
+                    commandType: CommandType.StoredProcedure);
+                
+                return result;
+            }
+        }
     }
 }
