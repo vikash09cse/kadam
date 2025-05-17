@@ -1,4 +1,5 @@
 ﻿using Core.DTOs;
+using Core.DTOs.App;
 using Core.Entities;
 using Core.Features.Admin;
 using Core.Utilities;
@@ -157,6 +158,13 @@ namespace WebAPI.Controllers
             {
                 return StatusCode(AppStatusCodes.InternalServerError, new { success = false, message = $"Internal server error: {ex.Message}" });
             }
+        }
+
+        [HttpPost("update-student-promotion")]
+        public async Task<IActionResult> UpdateStudentPromotion([FromBody] StudentPromotionUpdateDTO studentPromotionUpdateDTO)
+        {
+            var response = await _StudentService.UpdateStudentPromotion(studentPromotionUpdateDTO);
+            return StatusCode(response.StatusCode, response);
         }
     }
 }

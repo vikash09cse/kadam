@@ -107,5 +107,11 @@ namespace Core.Features.Admin
             var isSaved = await _studentRepository.SaveStudentProfilePicture(id, profilePicturePath);
             return new ServiceResponseDTO(isSaved, isSaved ? AppStatusCodes.Success : AppStatusCodes.Unauthorized, isSaved, isSaved ? MessageSuccess.Saved : MessageError.CodeIssue);
         }
+
+        public async Task<ServiceResponseDTO> UpdateStudentPromotion(StudentPromotionUpdateDTO studentPromotionUpdateDTO)
+        {
+            var isUpdated = await _studentRepository.UpdateStudentPromotion(studentPromotionUpdateDTO);
+            return new ServiceResponseDTO(isUpdated, isUpdated ? AppStatusCodes.Success : AppStatusCodes.Unauthorized, isUpdated, isUpdated ? MessageSuccess.Updated : MessageError.CodeIssue);
+        }
     }
 }

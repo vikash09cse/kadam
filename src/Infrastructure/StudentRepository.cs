@@ -144,5 +144,22 @@ namespace Infrastructure
                 return result > 0;
             }
         }
+
+        public async Task<bool> UpdateStudentPromotion(StudentPromotionUpdateDTO studentPromotionUpdateDTO)
+        {
+            using (var connection = _context.Database.GetDbConnection())
+            {
+                var parameters = new DynamicParameters();
+                parameters.Add("@StudentId", studentPromotionUpdateDTO.StudentId);
+                parameters.Add("@PromotionDate", studentPromotionUpdateDTO.PromotionDate);
+                parameters.Add("@GradeId", studentPromotionUpdateDTO.GradeId);
+                parameters.Add("@Section", studentPromotionUpdateDTO.Section);
+                parameters.Add("@ModifyBy", studentPromotionUpdateDTO.ModifyBy);
+
+                var result = await connection.ExecuteAsync("usp_Student_Promotion_Update", parameters, commandType: CommandType.StoredProcedure);
+
+                return result > 0;
+            }
+        }
     }
 }

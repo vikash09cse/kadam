@@ -8,7 +8,7 @@ Begin
     Select @InstitutionId = InstitutionId From Students Where Id = @StudentId
 
 
-	Select igs.Id, igs.InstitutionId, igs.GradeId, g.GradeName, igs.Sections
+	Select igs.InstitutionId, igs.GradeId As Id, g.GradeName, igs.Sections
 	From InstitutionGradeSections igs
 	Inner Join Grades g on g.Id = igs.GradeId
 	Where igs.InstitutionId = @InstitutionId

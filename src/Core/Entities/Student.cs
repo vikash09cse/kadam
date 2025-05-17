@@ -23,5 +23,6 @@ namespace Core.Entities
         public int ReasonId { get; set; }
         public string? DropoutClass { get; set; }
         public int? DropoutYear { get; set; }
+        public DateTime? PromotionDate { get; set; }
     }
 }
