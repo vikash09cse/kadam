@@ -1,5 +1,3 @@
-using System;
-
 namespace Core.DTOs.App
 {
     public class StudentListInstitutionMobileDTO
@@ -15,5 +13,7 @@ namespace Core.DTOs.App
         public string CurrentStatusText => CurrentStatus.ToString();
         public int Id { get; set; }
         public int IsBaselineAdded { get; set; }
+        public int IsEndBaselineAdded { get; set; }
+
     }
 } 

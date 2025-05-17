@@ -53,12 +53,13 @@ namespace Infrastructure
             return false;
         }
 
-        public async Task<IEnumerable<StudentBaselineDetailWithSubjectDTO>> GetStudentBaselineDetailWithSubjects(int studentId)
+        public async Task<IEnumerable<StudentBaselineDetailWithSubjectDTO>> GetStudentBaselineDetailWithSubjects(int studentId, string baselineType)
         {
             using (var connection = _context.Database.GetDbConnection())
             {
                 var parameters = new DynamicParameters();
                 parameters.Add("@StudentId", studentId);
+                parameters.Add("@BaselineType", baselineType);
 
                 var result = await connection.QueryAsync<StudentBaselineDetailWithSubjectDTO>(
                     "usp_GetStudentBaselineDetailWithSubjects",
@@ -78,6 +79,7 @@ namespace Infrastructure
 
                 var parameters = new DynamicParameters();
                 parameters.Add("@StudentId", studentBaselineDetail.StudentId);
+                parameters.Add("@BaselineType", studentBaselineDetail.BaselineType);
                 parameters.Add("@BaselineDetails", studentBaselineDetails);
 
                 var result = await connection.QueryAsync<int>(

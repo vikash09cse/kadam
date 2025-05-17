@@ -1,4 +1,4 @@
-CREATE PROCEDURE usp_StudentList_Mobile
+CREATE OR ALTER PROCEDURE usp_StudentList_Mobile
     @CreatedBy INT = 0
 AS
 BEGIN
@@ -17,6 +17,6 @@ BEGIN
         (@CreatedBy = 0 OR CreatedBy = @CreatedBy)
         AND IsDeleted = 0
     ORDER BY 
-        FirstName, LastName;
+      EnrollmentDate DESC,  FirstName, LastName;
 END
 GO 

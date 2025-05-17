@@ -37,12 +37,12 @@ namespace Core.Features.Admin
             return new ServiceResponseDTO(true, AppStatusCodes.Success, result, MessageSuccess.Found);
         }
 
-        public async Task<ServiceResponseDTO> GetStudentBaselineDetailWithSubjects(int studentId)
+        public async Task<ServiceResponseDTO> GetStudentBaselineDetailWithSubjects(int studentId, string baselineType)
         {
             if (studentId <= 0)
                 return new ServiceResponseDTO(false, AppStatusCodes.BadRequest, true, MessageError.InvalidStudentId);
 
-            var result = await _repository.GetStudentBaselineDetailWithSubjects(studentId);
+            var result = await _repository.GetStudentBaselineDetailWithSubjects(studentId, baselineType);
             return new ServiceResponseDTO(true, AppStatusCodes.Success, result, MessageSuccess.Found);
         }
 

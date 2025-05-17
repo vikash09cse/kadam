@@ -18,6 +18,7 @@ namespace Core.Entities
         public string StudentRegistratioNumber { get; set; } = string.Empty;
         public int ChildStatudBeforeKadamSTC { get; set; }
         public int HowLongPlaningToStayThisArea { get; set; }
+        public string? ProfilePicturePath { get; set; }
         public int Class { get; set; }
         public int ReasonId { get; set; }
         public string? DropoutClass { get; set; }

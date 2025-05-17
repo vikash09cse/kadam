@@ -1,6 +1,7 @@
 
-CREATE PROCEDURE usp_SaveStudentBaseline
+CREATE OR ALTER PROCEDURE usp_SaveStudentBaseline
     @StudentId INT,
+    @BaselineType VARCHAR(50),
     @BaselineDetails NVARCHAR(MAX)
 AS
 BEGIN
@@ -11,7 +12,7 @@ BEGIN
         
         -- Delete existing baseline details for this student
         DELETE FROM StudentBaselineDetails 
-        WHERE StudentId = @StudentId;
+        WHERE StudentId = @StudentId AND BaselineType = @BaselineType;
         
         -- Insert new baseline details from JSON
         INSERT INTO StudentBaselineDetails (
@@ -30,7 +31,7 @@ BEGIN
             @StudentId,
             JSON_VALUE(b.value, '$.SubjectId'),
             JSON_VALUE(b.value, '$.StudentAge'),
-            JSON_VALUE(b.value, '$.BaselineType'),
+            @BaselineType,
             JSON_VALUE(b.value, '$.ObtainedMarks'),
             JSON_VALUE(b.value, '$.PercentageMarks'),
             JSON_VALUE(b.value, '$.TotalMarks'),

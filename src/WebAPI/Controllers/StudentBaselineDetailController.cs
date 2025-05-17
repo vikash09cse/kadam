@@ -12,51 +12,37 @@ namespace WebAPI.Controllers
     {
         private readonly StudentBaselineDetailService _studentBaselineDetailService = studentBaselineDetailService;
 
-        // [HttpGet]
-        // public async Task<IActionResult> GetAll()
-        // {
-        //     var response = await _studentBaselineDetailService.GetAllAsync();
-        //     return StatusCode(response.StatusCode, response);
-        // }
-
-        // [HttpGet("{id}")]
-        // public async Task<IActionResult> GetById(int id)
-        // {
-        //     var response = await _studentBaselineDetailService.GetByIdAsync(id);
-        //     return StatusCode(response.StatusCode, response);
-        // }
-
-        // [HttpGet("student/{studentId}")]
-        // public async Task<IActionResult> GetByStudentId(int studentId)
-        // {
-        //     var response = await _studentBaselineDetailService.GetByStudentIdAsync(studentId);
-        //     return StatusCode(response.StatusCode, response);
-        // }
-
-        // [HttpPost]
-        // public async Task<IActionResult> SaveStudentBaselineDetail([FromBody] StudentBaselineDetail entity)
-        // {
-        //     var response = await _studentBaselineDetailService.SaveStudentBaselineDetail(entity);
-        //     return StatusCode(response.StatusCode, response);
-        // }
-
-        // [HttpDelete("{id}/{deletedBy}")]
-        // public async Task<IActionResult> Delete(int id, int deletedBy)
-        // {
-        //     var response = await _studentBaselineDetailService.DeleteAsync(id, deletedBy);
-        //     return StatusCode(response.StatusCode, response);
-        // }
-
+        
         [HttpGet("student/{studentId}")]
         public async Task<IActionResult> GetStudentBaselineDetailWithSubjects(int studentId)
         {
-            var response = await _studentBaselineDetailService.GetStudentBaselineDetailWithSubjects(studentId);
+            string baselineType = "baselinepreAssessment";
+            var response = await _studentBaselineDetailService.GetStudentBaselineDetailWithSubjects(studentId, baselineType);
             return StatusCode(response.StatusCode, response);
         }
 
         [HttpPost("save-student-baseline")]
         public async Task<IActionResult> SaveStudentBaselineDetail([FromBody] StudentBaselineDetailWithSubjectSaveDTO entity)
         {
+            string baselineType = "baselinepreAssessment";
+            entity.BaselineType = baselineType;
+            var response = await _studentBaselineDetailService.SaveStudentBaselineDetail(entity);
+            return StatusCode(response.StatusCode, response);
+        }
+
+        [HttpGet("studentEndBaseline/{studentId}")]
+        public async Task<IActionResult> GetStudentEndBaselineDetailWithSubjects(int studentId)
+        {
+            string baselineType = "endlinepreAssessment";
+            var response = await _studentBaselineDetailService.GetStudentBaselineDetailWithSubjects(studentId, baselineType);
+            return StatusCode(response.StatusCode, response);
+        }
+
+        [HttpPost("save-student-endBaseline")]
+        public async Task<IActionResult> SaveStudentEndBaselineDetail([FromBody] StudentBaselineDetailWithSubjectSaveDTO entity)
+        {
+            string baselineType = "endlinepreAssessment";
+            entity.BaselineType = baselineType;
             var response = await _studentBaselineDetailService.SaveStudentBaselineDetail(entity);
             return StatusCode(response.StatusCode, response);
         }

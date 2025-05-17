@@ -19,12 +19,23 @@ BEGIN
         g.GradeName,
         s.CurrentStatus,
         s.Id,
-        IsBaselineAdded = CASE WHEN EXISTS (SELECT 1 FROM StudentBaselineDetails sbd WHERE sbd.StudentId = s.Id) THEN 1 ELSE 0 END
+        CASE WHEN preBaseline.StudentId IS NOT NULL THEN 1 ELSE 0 END AS IsBaselineAdded,
+        CASE WHEN postBaseline.StudentId IS NOT NULL THEN 1 ELSE 0 END AS IsEndBaselineAdded
     FROM 
         Students s
-	LEFT Join StudentFamilyDetails SF On S.Id=SF.StudentId
+    LEFT JOIN StudentFamilyDetails SF ON S.Id = SF.StudentId
     LEFT JOIN Grades g ON s.GradeId = g.Id
     LEFT JOIN Institutions i ON s.InstitutionId = i.Id
+    LEFT JOIN (
+        SELECT DISTINCT StudentId 
+        FROM StudentBaselineDetails 
+        WHERE BaselineType = 'baselinepreAssessment'
+    ) preBaseline ON s.Id = preBaseline.StudentId
+    LEFT JOIN (
+        SELECT DISTINCT StudentId 
+        FROM StudentBaselineDetails 
+        WHERE BaselineType = 'endlinepreAssessment'
+    ) postBaseline ON s.Id = postBaseline.StudentId
     WHERE 
         s.IsDeleted = 0
         AND (@InstitutionId IS NULL OR s.InstitutionId = @InstitutionId)

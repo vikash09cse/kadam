@@ -114,5 +114,35 @@ namespace Infrastructure
                 return result;
             }
         }
+
+        public async Task<IEnumerable<AppGradeSectionDTO>> GetInstitutionGradeByStudentId(int studentId)
+        {
+            using (var connection = _context.Database.GetDbConnection())
+            {
+                var parameters = new DynamicParameters();
+                parameters.Add("@StudentId", studentId);
+
+                var result = await connection.QueryAsync<AppGradeSectionDTO>(
+                    "usp_GetInstitutionGradeByStudentId", 
+                    parameters, 
+                    commandType: CommandType.StoredProcedure);
+                
+                return result;
+            }
+        }
+
+        public async Task<bool> SaveStudentProfilePicture(int id, string profilePicturePath)
+        {
+            using (var connection = _context.Database.GetDbConnection())
+            {
+                var parameters = new DynamicParameters();
+                parameters.Add("@Id", id);
+                parameters.Add("@ProfilePicturePath", profilePicturePath);
+
+                var result = await connection.ExecuteAsync("usp_StudentProfilePictureSave", parameters, commandType: CommandType.StoredProcedure);
+
+                return result > 0;
+            }
+        }
     }
 }

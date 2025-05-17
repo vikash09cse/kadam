@@ -19,6 +19,7 @@
 
   <ItemGroup>
     <Folder Include="UploadFiles\Documents\" />
+    <Folder Include="UploadFiles\StudentProfilePicture\" />
   </ItemGroup>
 
 </Project>

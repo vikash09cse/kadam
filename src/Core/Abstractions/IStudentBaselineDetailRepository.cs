@@ -10,7 +10,7 @@ namespace Core.Abstractions
         Task<IEnumerable<StudentBaselineDetail>> GetStudentBaselineDetailsByStudentId(int studentId);
         Task<bool> SaveStudentBaselineDetail(StudentBaselineDetail studentBaselineDetail);
         Task<bool> DeleteStudentBaselineDetail(int id, int deletedBy);
-        Task<IEnumerable<StudentBaselineDetailWithSubjectDTO>> GetStudentBaselineDetailWithSubjects(int studentId);
+        Task<IEnumerable<StudentBaselineDetailWithSubjectDTO>> GetStudentBaselineDetailWithSubjects(int studentId, string baselineType);
         Task<bool> SaveStudentBaselineDetail(StudentBaselineDetailWithSubjectSaveDTO studentBaselineDetail);
     }
 } 

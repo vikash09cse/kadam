@@ -94,5 +94,18 @@ namespace Core.Features.Admin
 
             return response;
         }
+
+        public async Task<ServiceResponseDTO> GetInstitutionGradeByStudentId(int studentId)
+        {
+            var grades = await _studentRepository.GetInstitutionGradeByStudentId(studentId);
+            ServiceResponseDTO response = new(true, AppStatusCodes.Success, grades, MessageSuccess.Found);
+            return response;
+        }
+
+        public async Task<ServiceResponseDTO> SaveStudentProfilePicture(int id, string profilePicturePath)
+        {
+            var isSaved = await _studentRepository.SaveStudentProfilePicture(id, profilePicturePath);
+            return new ServiceResponseDTO(isSaved, isSaved ? AppStatusCodes.Success : AppStatusCodes.Unauthorized, isSaved, isSaved ? MessageSuccess.Saved : MessageError.CodeIssue);
+        }
     }
 }

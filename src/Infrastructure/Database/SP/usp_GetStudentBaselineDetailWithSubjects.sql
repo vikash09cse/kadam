@@ -1,5 +1,6 @@
-CREATE OR ALTER PROCEDURE usp_GetStudentBaselineDetailWithSubjects -- usp_GetStudentBaselineDetailWithSubjects 1
-    @StudentId INT
+CREATE OR ALTER PROCEDURE usp_GetStudentBaselineDetailWithSubjects -- usp_GetStudentBaselineDetailWithSubjects 1, 'baselinepreAssessment'
+    @StudentId INT,
+    @BaselineType VARCHAR(50)
 AS
 BEGIN
     SELECT 
@@ -15,7 +16,7 @@ BEGIN
         sbd.CurrentStatus,
         sb.SubjectName
     FROM  Subjects sb 
-    LEFT JOIN StudentBaselineDetails sbd ON sbd.SubjectId = sb.Id AND sbd.StudentId = @StudentId
-    WHERE  sb.CurrentStatus = 1 AND sb.IsDeleted = 0
+    LEFT JOIN StudentBaselineDetails sbd ON sbd.SubjectId = sb.Id AND sbd.StudentId = @StudentId AND sbd.BaselineType = @BaselineType
+    WHERE  sb.CurrentStatus = 1 AND sb.IsDeleted = 0 
     ORDER BY sb.SubjectName
 END

@@ -56,4 +56,6 @@ public static class MessageError
     public static string InvalidStudentId => "Invalid student ID";
     public static string StudentIdRequired => "Student ID is required";
     public static string SubjectIdRequired => "Subject ID is required";
+
+    public const string FailedToSaveProfilePicture = "Failed to save profile picture";
 }

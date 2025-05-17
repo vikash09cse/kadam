@@ -1,11 +1,13 @@
-﻿using Core.Entities;
+﻿using Core.DTOs;
+using Core.Entities;
 using Core.Features.Admin;
+using Core.Utilities;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace WebAPI.Controllers
 {
-    [Authorize]
+    //[Authorize]
     [Route("api/[controller]")]
     [ApiController]
     public class StudentController(StudentService studentService) : ControllerBase
@@ -72,6 +74,89 @@ namespace WebAPI.Controllers
         {
             var studentDefaultData = await _StudentService.GetStudentDefaultData(userId);
             return Ok(studentDefaultData);
+        }
+
+        [HttpGet("institutiongrade/{studentId}")]
+        public async Task<IActionResult> GetInstitutionGradeByStudentId(int studentId)
+        {
+            var response = await _StudentService.GetInstitutionGradeByStudentId(studentId);
+            return StatusCode(response.StatusCode, response);
+        }
+
+        [HttpPost("upload-profile-picture")]
+        public async Task<IActionResult> UploadCertificate()
+        {
+            try
+            {
+                // Extract studentId from form data
+                if (!Request.Form.TryGetValue("studentId", out var studentIdValues) ||
+                    !int.TryParse(studentIdValues.FirstOrDefault(), out int studentId))
+                {
+                    return BadRequest("Student ID is required.");
+                }
+
+                // Get the file from the form data
+                var file = Request.Form.Files.FirstOrDefault();
+                if (file == null || file.Length == 0)
+                {
+                    return BadRequest("No file uploaded.");
+                }
+
+                // Ensure directory exists
+                string uploadsFolder = Path.Combine("UploadFiles", "StudentProfilePicture");
+                if (!Directory.Exists(uploadsFolder))
+                {
+                    Directory.CreateDirectory(uploadsFolder);
+                }
+
+                // Delete previous certificate files for this student
+                try
+                {
+                    // Find all files that start with the student ID
+                    string searchPattern = $"{studentId}_*";
+                    string[] existingFiles = Directory.GetFiles(uploadsFolder, searchPattern);
+
+                    // Delete each existing file
+                    foreach (string existingFilePath in existingFiles)
+                    {
+                        System.IO.File.Delete(existingFilePath);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    // Log the error but continue with upload
+                    Console.WriteLine($"Error deleting previous certificates: {ex.Message}");
+                }
+
+                // Create unique filename with original extension
+                string fileExtension = Path.GetExtension(file.FileName);
+                string uniqueFileName = $"{studentId}_{Guid.NewGuid()}{fileExtension}";
+                string filePath = Path.Combine(uploadsFolder, uniqueFileName);
+
+                // Save file
+                using (var fileStream = new FileStream(filePath, FileMode.Create))
+                {
+                    await file.CopyToAsync(fileStream);
+                }
+
+                // Get relative path to store in database
+                string relativePath = $"/UploadFiles/StudentProfilePicture/{uniqueFileName}";
+
+                var isSaved = await _StudentService.SaveStudentProfilePicture(studentId, relativePath);
+                if (!isSaved.Success)
+                {
+                    var _response = new ServiceResponseDTO(false, AppStatusCodes.InternalServerError, relativePath, MessageError.FailedToSaveProfilePicture);
+                    return StatusCode(_response.StatusCode, _response);
+                }
+
+                var response = new ServiceResponseDTO(true, AppStatusCodes.Success, relativePath, MessageSuccess.Saved);
+
+                return StatusCode(response.StatusCode, response);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(AppStatusCodes.InternalServerError, new { success = false, message = $"Internal server error: {ex.Message}" });
+            }
         }
     }
 }
