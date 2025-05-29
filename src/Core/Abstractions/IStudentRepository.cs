@@ -17,5 +17,6 @@ namespace Core.Abstractions
         Task<IEnumerable<AppGradeSectionDTO>> GetInstitutionGradeByStudentId(int studentId);
         Task<bool> SaveStudentProfilePicture(int id, string profilePicturePath);
         Task<bool> UpdateStudentPromotion(StudentPromotionUpdateDTO studentPromotionUpdateDTO);
+        Task<bool> GenerateStudentId(int studentId);
     }
 }

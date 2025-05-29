@@ -1,6 +1,7 @@
 
 CREATE OR ALTER PROCEDURE usp_SaveStudentBaseline
     @StudentId INT,
+    @CreatedBy INT,
     @BaselineType VARCHAR(50),
     @BaselineDetails NVARCHAR(MAX)
 AS
@@ -39,6 +40,11 @@ BEGIN
             0, -- IsDeleted
             GETDATE()
         FROM OPENJSON(@BaselineDetails) AS b;
+
+        if @BaselineType = 'baselinepreAssessment'
+        BEGIN
+            EXEC usp_IdentifyStudentGradeEntryAndExitLevel @StudentId, @CreatedBy
+        END
         
         COMMIT TRANSACTION;
         SELECT 1 AS Success;

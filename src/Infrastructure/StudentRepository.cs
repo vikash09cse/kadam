@@ -161,5 +161,21 @@ namespace Infrastructure
                 return result > 0;
             }
         }
+
+        public async Task<bool> GenerateStudentId(int studentId)
+        {
+            using (var connection = _context.Database.GetDbConnection())
+            {
+                var parameters = new DynamicParameters();
+                parameters.Add("@Id", studentId);
+
+                var result = await connection.ExecuteAsync(
+                    "usp_GenerateStudentId", 
+                    parameters, 
+                    commandType: CommandType.StoredProcedure);
+
+                return result > 0;
+            }
+        }
     }
 }

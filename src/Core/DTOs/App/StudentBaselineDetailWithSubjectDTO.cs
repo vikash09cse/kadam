@@ -23,6 +23,7 @@ namespace Core.DTOs.App
         }
 
         public int StudentId { get; set; }
+        public int CreatedBy { get; set; }
         public string BaselineType { get; set; } = string.Empty;
         public List<StudentBaselineDetailWithSubjectDTO> StudentBaselineDetails { get; set; }
     }

@@ -20,6 +20,7 @@ public static class DependencyInject
         services.AddScoped<IStudentDocumentRepository, StudentDocumentRepository>();
         services.AddScoped<ITechnicianRepository, TechnicianRepository>();
         services.AddScoped<IStudentBaselineDetailRepository, StudentBaselineDetailRepository>();
+        services.AddScoped<IStudentProgressRepository, StudentProgressRepository>();
         services.AddScoped<IDbSession, DbSession>();
         services.AddScoped<IUnitOfWork, UnitOfWork>();
         services.AddDbContext<DatabaseContext>();

@@ -18,6 +18,7 @@ namespace Core.Features.Admin
 
         public async Task<ServiceResponseDTO> SaveStudent(Student student)
         {
+            int _Id = student.Id;
             if (await _studentRepository.CheckDuplicateStudentRegistrationNumber(student.StudentRegistratioNumber, student.Id))
             {
                 return new ServiceResponseDTO(false, AppStatusCodes.BadRequest, true, MessageError.DuplicateStudentRegistrationNumber);
@@ -30,6 +31,10 @@ namespace Core.Features.Admin
             }
 
             bool isSaved = await _studentRepository.SaveStudent(student);
+            if (isSaved && _Id == 0 )
+            {
+                await _studentRepository.GenerateStudentId(student.Id);
+            }
             return new ServiceResponseDTO(isSaved, isSaved ? AppStatusCodes.Success : AppStatusCodes.Unauthorized, result: student.Id,  isSaved ? MessageSuccess.Saved : MessageError.CodeIssue);
         }
 

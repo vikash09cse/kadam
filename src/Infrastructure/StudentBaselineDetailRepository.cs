@@ -79,6 +79,7 @@ namespace Infrastructure
 
                 var parameters = new DynamicParameters();
                 parameters.Add("@StudentId", studentBaselineDetail.StudentId);
+                parameters.Add("@CreatedBy", studentBaselineDetail.CreatedBy);
                 parameters.Add("@BaselineType", studentBaselineDetail.BaselineType);
                 parameters.Add("@BaselineDetails", studentBaselineDetails);
 

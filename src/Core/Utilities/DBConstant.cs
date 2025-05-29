@@ -37,6 +37,11 @@ public static class DBConstant
         public const string ModifyDate = "ModifyDate";
         public const string ModifyBy = "ModifyBy";
     }
+    public static class BaselineType
+    {
+        public const string BaselinePreAssessment = "baselinepreAssessment";
+        public const string EndlinePreAssessment = "endlinepreAssessment";
+    }
 }
 
 
