@@ -65,5 +65,11 @@ namespace Core.Features.Admin
                 return new ServiceResponseDTO(false, AppStatusCodes.InternalServerError, null, MessageError.CodeIssue);
             }
         }
+        public async Task<ServiceResponseDTO> GetStudentGradeTestDetailsWithSubjects(int studentId, int gradeLevelId)
+        {
+            var studentProgress = await _studentProgressRepository.GetStudentGradeTestDetailsWithSubjects(studentId, gradeLevelId);
+            ServiceResponseDTO response = new(true, AppStatusCodes.Success, studentProgress, MessageSuccess.Found);
+            return response;
+        }
     }
 }

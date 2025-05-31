@@ -32,5 +32,11 @@ namespace WebAPI.Controllers
             var response = await _studentProgressService.SaveStudentGradeTestDetail(studentGradeTestDetail);
             return StatusCode(response.StatusCode, response);
         }
+        [HttpGet("GetStudentGradeTestDetailsWithSubjects/{studentId}/{gradeLevelId}")]
+        public async Task<IActionResult> GetStudentGradeTestDetailsWithSubjects(int studentId, int gradeLevelId)
+        {
+            var response = await _studentProgressService.GetStudentGradeTestDetailsWithSubjects(studentId, gradeLevelId);
+            return StatusCode(response.StatusCode, response);
+        }
     }
 } 

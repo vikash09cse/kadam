@@ -12,7 +12,6 @@ namespace Infrastructure
     public class StudentProgressRepository(IDbSession db) : IStudentProgressRepository
     {
         private readonly IDbSession _db = db;
-
         public async Task<StudentProgressDTO> GetStudentProgressDetail(int studentId)
         {
 
@@ -106,7 +105,6 @@ namespace Infrastructure
             return studentProgress;
 
         }
-
         public async Task<IEnumerable<StudentBaselineDetailWithSubjectDTO>> GetStudentBaselineDetailWithSubjects(int studentId)
         {
             var parameters = new DynamicParameters();
@@ -138,7 +136,6 @@ namespace Infrastructure
                 return false;
             }
         }
-
         public async Task<bool> SaveStudentGradeTestDetail(StudentGradeTestDetailSaveDTO studentGradeTestDetail)
         {
             try
@@ -163,6 +160,19 @@ namespace Infrastructure
                 Debug.WriteLine($"Error saving student grade test detail: {ex.Message}");
                 return false;
             }
+        }
+        public async Task<IEnumerable<StudentGradeTestDetail>> GetStudentGradeTestDetailsWithSubjects(int studentId, int gradeLevelId)
+        {
+            var parameters = new DynamicParameters();
+            parameters.Add("@StudentId", studentId);
+            parameters.Add("@GradeLevelId", gradeLevelId);
+
+            var result = await _db.Connection.QueryAsync<StudentGradeTestDetail>(
+                "usp_GetStudentGradeTestDetailsWithSubjects",
+                parameters,
+                commandType: CommandType.StoredProcedure);
+
+            return result;
         }
     }
 }
