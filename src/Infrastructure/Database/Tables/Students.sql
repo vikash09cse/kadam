@@ -21,6 +21,7 @@ CREATE TABLE Students (
     DropoutClass Varchar(25) NULL,
     DropoutYear INT,
     CurrentStatus INT NOT NULL,
+    Remarks VARCHAR(255) NULL,
     CreatedBy INT,
     DateCreated DATETIME DEFAULT GETDATE(),
     ModifyBy INT,

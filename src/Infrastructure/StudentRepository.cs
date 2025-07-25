@@ -67,7 +67,7 @@ namespace Infrastructure
                 parameters.Add("@UserId", userId);
 
                 using var multi = await connection.QueryMultipleAsync("usp_GetInstitutionByUserId", parameters, commandType: CommandType.StoredProcedure);
-                
+
                 var institutions = await multi.ReadAsync<AppInstitutionDTO>();
                 var grades = await multi.ReadAsync<AppGradeSectionDTO>();
 
@@ -89,7 +89,7 @@ namespace Infrastructure
                 parameters.Add("@CreatedBy", createdBy);
 
                 var result = await connection.QueryAsync<StudentListDTO>("usp_StudentList_Mobile", parameters, commandType: CommandType.StoredProcedure);
-                
+
                 return result;
             }
         }
@@ -107,10 +107,10 @@ namespace Infrastructure
                 parameters.Add("@CreatedBy", createdBy);
 
                 var result = await connection.QueryAsync<StudentListInstitutionMobileDTO>(
-                    "usp_StudentList_MyInstitution_Mobile", 
-                    parameters, 
+                    "usp_StudentList_MyInstitution_Mobile",
+                    parameters,
                     commandType: CommandType.StoredProcedure);
-                
+
                 return result;
             }
         }
@@ -123,10 +123,10 @@ namespace Infrastructure
                 parameters.Add("@StudentId", studentId);
 
                 var result = await connection.QueryAsync<AppGradeSectionDTO>(
-                    "usp_GetInstitutionGradeByStudentId", 
-                    parameters, 
+                    "usp_GetInstitutionGradeByStudentId",
+                    parameters,
                     commandType: CommandType.StoredProcedure);
-                
+
                 return result;
             }
         }
@@ -170,9 +170,36 @@ namespace Infrastructure
                 parameters.Add("@Id", studentId);
 
                 var result = await connection.ExecuteAsync(
-                    "usp_GenerateStudentId", 
-                    parameters, 
+                    "usp_GenerateStudentId",
+                    parameters,
                     commandType: CommandType.StoredProcedure);
+
+                return result > 0;
+            }
+        }
+        public async Task<DashboardDTO> GetDashboardCount(int createdBy)
+        {
+            using (var connection = _context.Database.GetDbConnection())
+            {
+                var parameters = new DynamicParameters();
+                parameters.Add("@CreatedBy", createdBy);
+                var result = await connection.QuerySingleAsync<DashboardDTO>("usp_DashboardCount", parameters, commandType: CommandType.StoredProcedure);
+
+                return result;
+            }
+        }
+
+        public async Task<bool> UpdateStudentStatus(StudentStatusUpdateDTO model)
+        {
+            using (var connection = _context.Database.GetDbConnection())
+            {
+                var parameters = new DynamicParameters();
+                parameters.Add("@StudentId", model.StudentId);
+                parameters.Add("@Status", model.Status);
+                parameters.Add("@Remarks", model.Remarks);
+                parameters.Add("@UpdatedBy", model.UpdatedBy);
+
+                var result = await connection.ExecuteAsync("usp_Student_Status_Update", parameters, commandType: CommandType.StoredProcedure);
 
                 return result > 0;
             }

@@ -18,5 +18,7 @@ namespace Core.Abstractions
         Task<bool> SaveStudentProfilePicture(int id, string profilePicturePath);
         Task<bool> UpdateStudentPromotion(StudentPromotionUpdateDTO studentPromotionUpdateDTO);
         Task<bool> GenerateStudentId(int studentId);
+        Task<DashboardDTO> GetDashboardCount(int createdBy);
+        Task<bool> UpdateStudentStatus(StudentStatusUpdateDTO model);
     }
 }

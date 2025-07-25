@@ -24,18 +24,18 @@ namespace Core.Features.Admin
                 return new ServiceResponseDTO(false, AppStatusCodes.BadRequest, true, MessageError.DuplicateStudentRegistrationNumber);
             }
 
-            if (!string.IsNullOrEmpty(student.AadhaarCardNumber) && 
+            if (!string.IsNullOrEmpty(student.AadhaarCardNumber) &&
                 await _studentRepository.CheckDuplicateAadhaarNumber(student.AadhaarCardNumber, student.Id))
             {
-                return new ServiceResponseDTO(false, AppStatusCodes.BadRequest, true, MessageError.DuplicateAadhaarNumber); 
+                return new ServiceResponseDTO(false, AppStatusCodes.BadRequest, true, MessageError.DuplicateAadhaarNumber);
             }
 
             bool isSaved = await _studentRepository.SaveStudent(student);
-            if (isSaved && _Id == 0 )
+            if (isSaved && _Id == 0)
             {
                 await _studentRepository.GenerateStudentId(student.Id);
             }
-            return new ServiceResponseDTO(isSaved, isSaved ? AppStatusCodes.Success : AppStatusCodes.Unauthorized, result: student.Id,  isSaved ? MessageSuccess.Saved : MessageError.CodeIssue);
+            return new ServiceResponseDTO(isSaved, isSaved ? AppStatusCodes.Success : AppStatusCodes.Unauthorized, result: student.Id, isSaved ? MessageSuccess.Saved : MessageError.CodeIssue);
         }
 
         public async Task<ServiceResponseDTO> DeleteStudent(int id, int userId)
@@ -116,6 +116,18 @@ namespace Core.Features.Admin
         public async Task<ServiceResponseDTO> UpdateStudentPromotion(StudentPromotionUpdateDTO studentPromotionUpdateDTO)
         {
             var isUpdated = await _studentRepository.UpdateStudentPromotion(studentPromotionUpdateDTO);
+            return new ServiceResponseDTO(isUpdated, isUpdated ? AppStatusCodes.Success : AppStatusCodes.Unauthorized, isUpdated, isUpdated ? MessageSuccess.Updated : MessageError.CodeIssue);
+        }
+        public async Task<ServiceResponseDTO> GetDashboardCount(int createdBy)
+        {
+            var dashboardCount = await _studentRepository.GetDashboardCount(createdBy);
+            ServiceResponseDTO response = new(true, AppStatusCodes.Success, dashboardCount, MessageSuccess.Found);
+            return response;
+        }
+
+        public async Task<ServiceResponseDTO> UpdateStudentStatus(StudentStatusUpdateDTO model)
+        {
+            var isUpdated = await _studentRepository.UpdateStudentStatus(model);
             return new ServiceResponseDTO(isUpdated, isUpdated ? AppStatusCodes.Success : AppStatusCodes.Unauthorized, isUpdated, isUpdated ? MessageSuccess.Updated : MessageError.CodeIssue);
         }
     }

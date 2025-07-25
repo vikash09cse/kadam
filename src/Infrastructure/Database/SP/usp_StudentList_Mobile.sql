@@ -1,4 +1,4 @@
-CREATE OR ALTER PROCEDURE usp_StudentList_Mobile
+CREATE OR ALTER   PROCEDURE [dbo].[usp_StudentList_Mobile]
     @CreatedBy INT = 0
 AS
 BEGIN
@@ -10,13 +10,13 @@ BEGIN
         Age,
         AadhaarCardNumber,
         StudentId,
-        CONVERT(VARCHAR, EnrollmentDate, 103) AS EnrollmentDate
+        CONVERT(VARCHAR, EnrollmentDate, 103) AS EnrollmentDate,
+		CurrentStatus
     FROM 
         Students
     WHERE 
         (@CreatedBy = 0 OR CreatedBy = @CreatedBy)
         AND IsDeleted = 0
     ORDER BY 
-      EnrollmentDate DESC,  FirstName, LastName;
+      DateCreated DESC,  FirstName, LastName;
 END
-GO 

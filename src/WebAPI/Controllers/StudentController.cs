@@ -8,7 +8,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace WebAPI.Controllers
 {
-    //[Authorize]
+    [Authorize]
     [Route("api/[controller]")]
     [ApiController]
     public class StudentController(StudentService studentService) : ControllerBase
@@ -59,11 +59,11 @@ namespace WebAPI.Controllers
         //[AllowAnonymous]
         [HttpGet("GetStudentListMyInstitution")]
         public async Task<IActionResult> GetStudentListMyInstitutionMobile(
-            [FromQuery] int? institutionId, 
-            [FromQuery] int? gradeId = null, 
-            [FromQuery] string section = null, 
-            [FromQuery] DateTime? fromDate = null, 
-            [FromQuery] DateTime? toDate = null, 
+            [FromQuery] int? institutionId,
+            [FromQuery] int? gradeId = null,
+            [FromQuery] string section = null,
+            [FromQuery] DateTime? fromDate = null,
+            [FromQuery] DateTime? toDate = null,
             [FromQuery] int createdBy = 0)
         {
             var students = await _StudentService.GetStudentListMyInstitutionMobile(institutionId, gradeId, section, fromDate, toDate, createdBy);
@@ -164,6 +164,19 @@ namespace WebAPI.Controllers
         public async Task<IActionResult> UpdateStudentPromotion([FromBody] StudentPromotionUpdateDTO studentPromotionUpdateDTO)
         {
             var response = await _StudentService.UpdateStudentPromotion(studentPromotionUpdateDTO);
+            return StatusCode(response.StatusCode, response);
+        }
+        [HttpGet("dashboard-count/{createdBy}")]
+        public async Task<IActionResult> GetDashboardCount(int createdBy)
+        {
+            var response = await _StudentService.GetDashboardCount(createdBy);
+            return StatusCode(response.StatusCode, response);
+        }
+
+        [HttpPost("update-student-status")]
+        public async Task<IActionResult> UpdateStudentStatus([FromBody] StudentStatusUpdateDTO studentStatusUpdateDTO)
+        {
+            var response = await _StudentService.UpdateStudentStatus(studentStatusUpdateDTO);
             return StatusCode(response.StatusCode, response);
         }
     }

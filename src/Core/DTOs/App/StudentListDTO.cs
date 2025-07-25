@@ -14,5 +14,6 @@ namespace Core.DTOs.App
         public string AadhaarCardNumber { get; set; } = string.Empty;
         public string StudentId { get; set; } = string.Empty;
         public string EnrollmentDate { get; set; } = string.Empty;
+        public int CurrentStatus { get; set; }
     }
 }
