@@ -14,6 +14,7 @@ namespace Core.DTOs.App
         public int Id { get; set; }
         public int IsBaselineAdded { get; set; }
         public int IsEndBaselineAdded { get; set; }
+        public bool IsKadamPlusStudent { get; set; }
 
     }
 } 

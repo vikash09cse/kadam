@@ -196,12 +196,30 @@ namespace Infrastructure
                 var parameters = new DynamicParameters();
                 parameters.Add("@StudentId", model.StudentId);
                 parameters.Add("@Status", model.Status);
+                parameters.Add("@InActiveReason", model.InActiveReason);
+                parameters.Add("@InActiveDate", model.InActiveDate);
                 parameters.Add("@Remarks", model.Remarks);
                 parameters.Add("@UpdatedBy", model.UpdatedBy);
 
                 var result = await connection.ExecuteAsync("usp_Student_Status_Update", parameters, commandType: CommandType.StoredProcedure);
 
                 return result > 0;
+            }
+        }
+
+        public async Task<StudentMainstreamDetailDTO> GetStudentDetailForMainstream(int id)
+        {
+            using (var connection = _context.Database.GetDbConnection())
+            {
+                var parameters = new DynamicParameters();
+                parameters.Add("@Id", id);
+
+                var result = await connection.QuerySingleOrDefaultAsync<StudentMainstreamDetailDTO>(
+                    "usp_GetStudentDetailForMainstream",
+                    parameters,
+                    commandType: CommandType.StoredProcedure);
+
+                return result ?? new StudentMainstreamDetailDTO();
             }
         }
     }

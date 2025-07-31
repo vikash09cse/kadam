@@ -20,5 +20,6 @@ namespace Core.Abstractions
         Task<bool> GenerateStudentId(int studentId);
         Task<DashboardDTO> GetDashboardCount(int createdBy);
         Task<bool> UpdateStudentStatus(StudentStatusUpdateDTO model);
+        Task<StudentMainstreamDetailDTO> GetStudentDetailForMainstream(int id);
     }
 }

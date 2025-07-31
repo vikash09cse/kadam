@@ -26,5 +26,7 @@ namespace Core.Entities
         public DateTime? PromotionDate { get; set; }
         public bool IsKadamPlusStudent { get; set; }
         public string? Remarks { get; set; }
+        public string InActiveReason { get; set; } = string.Empty;
+        public DateTime? InActiveDate { get; set; }
     }
 }

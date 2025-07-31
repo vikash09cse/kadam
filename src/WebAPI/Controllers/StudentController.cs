@@ -179,5 +179,12 @@ namespace WebAPI.Controllers
             var response = await _StudentService.UpdateStudentStatus(studentStatusUpdateDTO);
             return StatusCode(response.StatusCode, response);
         }
+        [AllowAnonymous]
+        [HttpGet("mainstream-detail/{id}")]
+        public async Task<IActionResult> GetStudentDetailForMainstream(int id)
+        {
+            var response = await _StudentService.GetStudentDetailForMainstream(id);
+            return StatusCode(response.StatusCode, response);
+        }
     }
 }

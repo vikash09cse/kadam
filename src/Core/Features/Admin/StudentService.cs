@@ -130,5 +130,12 @@ namespace Core.Features.Admin
             var isUpdated = await _studentRepository.UpdateStudentStatus(model);
             return new ServiceResponseDTO(isUpdated, isUpdated ? AppStatusCodes.Success : AppStatusCodes.Unauthorized, isUpdated, isUpdated ? MessageSuccess.Updated : MessageError.CodeIssue);
         }
+
+        public async Task<ServiceResponseDTO> GetStudentDetailForMainstream(int id)
+        {
+            var studentDetail = await _studentRepository.GetStudentDetailForMainstream(id);
+            ServiceResponseDTO response = new(true, AppStatusCodes.Success, studentDetail, MessageSuccess.Found);
+            return response;
+        }
     }
 }
