@@ -75,6 +75,8 @@ namespace Infrastructure
         public DbSet<StudentHealth> StudentHealths { get; set; }
         public DbSet<StudentDocument> StudentDocuments { get; set; }
         public DbSet<StudentBaselineDetail> StudentBaselineDetails { get; set; }
+        public DbSet<StudentMainstream> StudentMainstreams { get; set; }
+        public DbSet<ThemeActivity> ThemeActivities { get; set; }
 
     }
 }

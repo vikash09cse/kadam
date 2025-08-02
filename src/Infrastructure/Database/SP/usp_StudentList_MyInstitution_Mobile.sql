@@ -4,6 +4,7 @@ CREATE OR Alter PROCEDURE usp_StudentList_MyInstitution_Mobile
     @Section Varchar(25) = NULL,
     @FromDate DATE = NULL,
     @ToDate DATE = NULL,
+    @CurrentStatus INT = NULL,
     @CreatedBy INT = 0
 AS
 BEGIN
@@ -43,6 +44,7 @@ BEGIN
         AND (@Section IS NULL OR s.Section = @Section)
         AND (@FromDate IS NULL OR s.EnrollmentDate >= @FromDate)
         AND (@ToDate IS NULL OR s.EnrollmentDate <= @ToDate)
+        AND (@CurrentStatus IS NULL OR s.CurrentStatus = @CurrentStatus)
         AND (@CreatedBy = 0 OR s.CreatedBy = @CreatedBy)
     ORDER BY 
         s.EnrollmentDate DESC, s.FirstName, s.LastName;

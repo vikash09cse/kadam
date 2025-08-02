@@ -70,9 +70,9 @@ namespace Core.Features.Admin
             return response;
         }
 
-        public async Task<ServiceResponseDTO> GetStudentListMyInstitutionMobile(int? institutionId, int? gradeId, string section, DateTime? fromDate, DateTime? toDate, int createdBy)
+        public async Task<ServiceResponseDTO> GetStudentListMyInstitutionMobile(int? institutionId, int? gradeId, string section, DateTime? fromDate, DateTime? toDate, int? currentStatus, int createdBy)
         {
-            var studentList = await _studentRepository.GetStudentListMyInstitutionMobile(institutionId, gradeId, section, fromDate, toDate, createdBy);
+            var studentList = await _studentRepository.GetStudentListMyInstitutionMobile(institutionId, gradeId, section, fromDate, toDate, currentStatus, createdBy);
             ServiceResponseDTO response = new(true, AppStatusCodes.Success, studentList, MessageSuccess.Found);
             return response;
         }
@@ -136,6 +136,12 @@ namespace Core.Features.Admin
             var studentDetail = await _studentRepository.GetStudentDetailForMainstream(id);
             ServiceResponseDTO response = new(true, AppStatusCodes.Success, studentDetail, MessageSuccess.Found);
             return response;
+        }
+
+        public async Task<ServiceResponseDTO> SaveStudentMainstream(StudentMainstream studentMainstream)
+        {
+            bool isSaved = await _studentRepository.SaveStudentMainstream(studentMainstream);
+            return new ServiceResponseDTO(isSaved, isSaved ? AppStatusCodes.Success : AppStatusCodes.Unauthorized, result: studentMainstream.Id, isSaved ? MessageSuccess.Saved : MessageError.CodeIssue);
         }
     }
 }

@@ -64,9 +64,10 @@ namespace WebAPI.Controllers
             [FromQuery] string section = null,
             [FromQuery] DateTime? fromDate = null,
             [FromQuery] DateTime? toDate = null,
+            [FromQuery] int? currentStatus = null,
             [FromQuery] int createdBy = 0)
         {
-            var students = await _StudentService.GetStudentListMyInstitutionMobile(institutionId, gradeId, section, fromDate, toDate, createdBy);
+            var students = await _StudentService.GetStudentListMyInstitutionMobile(institutionId, gradeId, section, fromDate, toDate, currentStatus, createdBy);
             return Ok(students);
         }
 
@@ -184,6 +185,13 @@ namespace WebAPI.Controllers
         public async Task<IActionResult> GetStudentDetailForMainstream(int id)
         {
             var response = await _StudentService.GetStudentDetailForMainstream(id);
+            return StatusCode(response.StatusCode, response);
+        }
+
+        [HttpPost("save-student-mainstream")]
+        public async Task<IActionResult> SaveStudentMainstream([FromBody] StudentMainstream studentMainstream)
+        {
+            var response = await _StudentService.SaveStudentMainstream(studentMainstream);
             return StatusCode(response.StatusCode, response);
         }
     }

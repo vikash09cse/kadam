@@ -53,5 +53,25 @@ namespace WebAPI.Controllers
                 return StatusCode(response.StatusCode, response);
             }
         }
+
+        /// <summary>
+        /// Get all active themes
+        /// </summary>
+        /// <returns>ServiceResponseDTO containing list of active themes</returns>
+        [HttpGet("themes")]
+        public async Task<IActionResult> GetActiveThemes()
+        {
+            try
+            {
+                var themes = await _adminService.GetActiveThemes();
+                var response = new ServiceResponseDTO(true, AppStatusCodes.Success, themes, MessageSuccess.RecordFound);
+                return StatusCode(response.StatusCode, response);
+            }
+            catch (Exception ex)
+            {
+                var response = new ServiceResponseDTO(false, AppStatusCodes.InternalServerError, null, $"Internal server error: {ex.Message}");
+                return StatusCode(response.StatusCode, response);
+            }
+        }
     }
 } 

@@ -122,6 +122,7 @@ namespace Core.Abstractions
         Task<Theme> GetTheme(int id);
         Task<bool> DeleteTheme(int id, int deletedBy);
         Task<bool> CheckDuplicateThemeName(string themeName, int id);
+        Task<IEnumerable<DropdownDTO>> GetActiveThemes();
         #endregion
 
         #region  "Common"

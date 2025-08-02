@@ -16,7 +16,6 @@ BEGIN
         ModifyDate = GETDATE()
     WHERE Id = @StudentId;
 END; 
-
 Alter Table Students
 ADD InActiveReason Varchar(100) NULL,
     InActiveDate DATETIME NULL;

@@ -94,7 +94,7 @@ namespace Infrastructure
             }
         }
 
-        public async Task<IEnumerable<StudentListInstitutionMobileDTO>> GetStudentListMyInstitutionMobile(int? institutionId, int? gradeId, string section, DateTime? fromDate, DateTime? toDate, int createdBy)
+        public async Task<IEnumerable<StudentListInstitutionMobileDTO>> GetStudentListMyInstitutionMobile(int? institutionId, int? gradeId, string section, DateTime? fromDate, DateTime? toDate, int? currentStatus, int createdBy)
         {
             using (var connection = _context.Database.GetDbConnection())
             {
@@ -104,6 +104,7 @@ namespace Infrastructure
                 parameters.Add("@Section", section);
                 parameters.Add("@FromDate", fromDate);
                 parameters.Add("@ToDate", toDate);
+                parameters.Add("@CurrentStatus", currentStatus);
                 parameters.Add("@CreatedBy", createdBy);
 
                 var result = await connection.QueryAsync<StudentListInstitutionMobileDTO>(
@@ -221,6 +222,31 @@ namespace Infrastructure
 
                 return result ?? new StudentMainstreamDetailDTO();
             }
+        }
+
+        public async Task<bool> SaveStudentMainstream(StudentMainstream studentMainstream)
+        {
+            int _Id = studentMainstream.Id;
+            if (studentMainstream.Id > 0)
+            {
+                _context.StudentMainstreams.Update(studentMainstream);
+            }
+            else
+            {
+                _context.StudentMainstreams.Add(studentMainstream);
+                // After Successfully Save Student Mainstream, Update Student Status to 1
+            }
+            bool isSaved = await _context.SaveChangesAsync() > 0;
+            if (isSaved && _Id == 0)
+            {
+                StudentStatusUpdateDTO model = new StudentStatusUpdateDTO();
+                model.StudentId = studentMainstream.StudentId;
+                model.Status = 3;
+                model.Remarks = "Student Mainstream Added";
+                model.UpdatedBy = studentMainstream.CreatedBy ?? 0;
+                await UpdateStudentStatus(model);
+            }
+            return isSaved;
         }
     }
 }

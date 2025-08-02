@@ -795,6 +795,11 @@ namespace Core.Features.Admin
             var theme = await _adminRepository.GetTheme(id);
             return theme;
         }
+
+        public async Task<IEnumerable<DropdownDTO>> GetActiveThemes()
+        {
+            return await _adminRepository.GetActiveThemes();
+        }
         #endregion
         public async Task<IEnumerable<GradeSectionDTO>> GetGradesAndSections()
         {

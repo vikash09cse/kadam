@@ -832,6 +832,12 @@ namespace Infrastructure
             var theme = await _context.Themes.FirstOrDefaultAsync(x => x.ThemeName == themeName && x.Id != id && !x.IsDeleted);
             return theme != null;
         }
+
+        public async Task<IEnumerable<DropdownDTO>> GetActiveThemes()
+        {
+            var storedProcedure = "dbo.usp_GetActiveThemes";
+            return await _db.Connection.QueryAsync<DropdownDTO>(storedProcedure, null, _db.Transaction, commandType: CommandType.StoredProcedure);
+        }
         #endregion
 
         #region "Menu Permission"

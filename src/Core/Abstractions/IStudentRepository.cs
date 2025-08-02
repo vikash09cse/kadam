@@ -13,7 +13,7 @@ namespace Core.Abstractions
         Task<bool> SaveStudent(Student student);
         Task<IEnumerable<AppInstitutionDTO>> GetInstitutionsByUserId(int userId);
         Task<IEnumerable<StudentListDTO>> GetStudentListMobile(int createdBy);
-        Task<IEnumerable<StudentListInstitutionMobileDTO>> GetStudentListMyInstitutionMobile(int? institutionId, int? gradeId, string section, DateTime? fromDate, DateTime? toDate, int createdBy);
+        Task<IEnumerable<StudentListInstitutionMobileDTO>> GetStudentListMyInstitutionMobile(int? institutionId, int? gradeId, string section, DateTime? fromDate, DateTime? toDate, int? currentStatus, int createdBy);
         Task<IEnumerable<AppGradeSectionDTO>> GetInstitutionGradeByStudentId(int studentId);
         Task<bool> SaveStudentProfilePicture(int id, string profilePicturePath);
         Task<bool> UpdateStudentPromotion(StudentPromotionUpdateDTO studentPromotionUpdateDTO);
@@ -21,5 +21,6 @@ namespace Core.Abstractions
         Task<DashboardDTO> GetDashboardCount(int createdBy);
         Task<bool> UpdateStudentStatus(StudentStatusUpdateDTO model);
         Task<StudentMainstreamDetailDTO> GetStudentDetailForMainstream(int id);
+        Task<bool> SaveStudentMainstream(StudentMainstream studentMainstream);
     }
 }
