@@ -9,6 +9,7 @@ Create Table ThemeActivities
     StudentAttended INT NOT NULL,
     DidChildrenDayHappen BIt NOT NULL Default(0),
     TotalParentsAttended INT,
+    CurrentStatus INT NOT NULL,
     CreatedBy INT,
     DateCreated DATETIME DEFAULT GETDATE(),
     ModifyBy INT,
