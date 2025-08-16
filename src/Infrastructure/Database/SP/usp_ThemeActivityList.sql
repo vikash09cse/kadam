@@ -1,9 +1,11 @@
-CREATE PROCEDURE [dbo].[usp_ThemeActivityList]
+CREATE OR ALTER PROCEDURE [dbo].[usp_ThemeActivityList]
 (
     @InstitutionId INT = NULL,
     @ThemeId INT = NULL,
     @GradeId INT = NULL,
     @Section VARCHAR(25) = NULL,
+    @FromDate DATETIME = NULL,
+    @ToDate DATETIME = NULL,
     @CreatedBy INT = 0
 )
 AS
@@ -34,6 +36,8 @@ BEGIN
         AND (@ThemeId IS NULL OR ta.ThemeId = @ThemeId)
         AND (@GradeId IS NULL OR ta.GradeId = @GradeId)
         AND (@Section IS NULL OR ta.Section = @Section)
+        AND (@FromDate IS NULL OR ta.ThemeActivityDate >= @FromDate)
+        AND (@ToDate IS NULL OR ta.ThemeActivityDate <= @ToDate)
         AND (@CreatedBy = 0 OR ta.CreatedBy = @CreatedBy)
     ORDER BY ta.DateCreated DESC;
 END

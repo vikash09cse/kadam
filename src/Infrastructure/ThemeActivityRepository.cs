@@ -29,7 +29,7 @@ namespace Infrastructure
             return await _context.ThemeActivities.FirstOrDefaultAsync(x => x.Id == id && !x.IsDeleted) ?? new ThemeActivity();
         }
 
-        public async Task<IEnumerable<ThemeActivityListDTO>> GetThemeActivityList(int? institutionId, int? themeId, int? gradeId, string section, int createdBy)
+        public async Task<IEnumerable<ThemeActivityListDTO>> GetThemeActivityList(int? institutionId, int? themeId, int? gradeId, string section, DateTime? fromDate, DateTime? toDate, int createdBy)
         {
             using (var connection = _context.Database.GetDbConnection())
             {
@@ -38,6 +38,8 @@ namespace Infrastructure
                 parameters.Add("@ThemeId", themeId);
                 parameters.Add("@GradeId", gradeId);
                 parameters.Add("@Section", section);
+                parameters.Add("@FromDate", fromDate);
+                parameters.Add("@ToDate", toDate);
                 parameters.Add("@CreatedBy", createdBy);
 
                 var result = await connection.QueryAsync<ThemeActivityListDTO>(

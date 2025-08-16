@@ -10,6 +10,7 @@ Create Table ThemeActivities
     DidChildrenDayHappen BIt NOT NULL Default(0),
     TotalParentsAttended INT,
     CurrentStatus INT NOT NULL,
+    ThemeActivityDate DATETIME,
     CreatedBy INT,
     DateCreated DATETIME DEFAULT GETDATE(),
     ModifyBy INT,

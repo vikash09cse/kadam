@@ -32,17 +32,19 @@ namespace WebAPI.Controllers
             [FromQuery] int? themeId = null,
             [FromQuery] int? gradeId = null,
             [FromQuery] string section = null,
+            [FromQuery] DateTime? fromDate = null,
+            [FromQuery] DateTime? toDate = null,
             [FromQuery] int createdBy = 0)
         {
-            var response = await _themeActivityService.GetThemeActivityList(institutionId, themeId, gradeId, section, createdBy);
+            var response = await _themeActivityService.GetThemeActivityList(institutionId, themeId, gradeId, section, fromDate, toDate, createdBy);
             return StatusCode(response.StatusCode, response);
         }
 
-        [HttpDelete("{id}/{userId}")]
+        [HttpPost("delete/{id}/{userId}")]
         public async Task<IActionResult> DeleteThemeActivity(int id, int userId)
         {
-            var response = await _themeActivityService.DeleteThemeActivity(id, userId);
-            return StatusCode(response.StatusCode, response);
-        }
+                var response = await _themeActivityService.DeleteThemeActivity(id, userId);
+                return StatusCode(response.StatusCode, response);
+            }
     }
 }

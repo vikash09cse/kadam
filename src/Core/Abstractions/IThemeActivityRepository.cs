@@ -7,7 +7,7 @@ namespace Core.Abstractions
     {
         Task<bool> SaveThemeActivity(ThemeActivity themeActivity);
         Task<ThemeActivity> GetThemeActivity(int id);
-        Task<IEnumerable<ThemeActivityListDTO>> GetThemeActivityList(int? institutionId, int? themeId, int? gradeId, string section, int createdBy);
+        Task<IEnumerable<ThemeActivityListDTO>> GetThemeActivityList(int? institutionId, int? themeId, int? gradeId, string section, DateTime? fromDate, DateTime? toDate, int createdBy);
         Task<bool> DeleteThemeActivity(int id, int deletedBy);
     }
 }

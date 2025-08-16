@@ -29,9 +29,9 @@ namespace Core.Features.Admin
             return response;
         }
 
-        public async Task<ServiceResponseDTO> GetThemeActivityList(int? institutionId, int? themeId, int? gradeId, string section, int createdBy)
+        public async Task<ServiceResponseDTO> GetThemeActivityList(int? institutionId, int? themeId, int? gradeId, string section, DateTime? fromDate, DateTime? toDate, int createdBy)
         {
-            var themeActivityList = await _themeActivityRepository.GetThemeActivityList(institutionId, themeId, gradeId, section, createdBy);
+            var themeActivityList = await _themeActivityRepository.GetThemeActivityList(institutionId, themeId, gradeId, section, fromDate, toDate, createdBy);
             ServiceResponseDTO response = new(true, AppStatusCodes.Success, themeActivityList, MessageSuccess.Found);
             return response;
         }

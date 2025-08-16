@@ -10,5 +10,6 @@ namespace Core.Entities
         public int StudentAttended { get; set; }
         public bool DidChildrenDayHappen { get; set; } = false;
         public int? TotalParentsAttended { get; set; }
+        public DateTime? ThemeActivityDate { get; set; }
     }
 }
