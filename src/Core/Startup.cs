@@ -20,5 +20,6 @@ public static class DependencyInject
         services.AddScoped<StudentProgressService>();
         services.AddScoped<ThemeActivityService>();
         services.AddScoped<StudentFollowupService>();
+        services.AddScoped<StudentAttendanceService>();
     }
 }

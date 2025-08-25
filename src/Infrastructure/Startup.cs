@@ -23,6 +23,7 @@ public static class DependencyInject
         services.AddScoped<IStudentProgressRepository, StudentProgressRepository>();
         services.AddScoped<IThemeActivityRepository, ThemeActivityRepository>();
         services.AddScoped<IStudentFollowupRepository, StudentFollowupRepository>();
+        services.AddScoped<IStudentAttendanceRepository, StudentAttendanceRepository>();
         services.AddScoped<IDbSession, DbSession>();
         services.AddScoped<IUnitOfWork, UnitOfWork>();
         services.AddDbContext<DatabaseContext>();
