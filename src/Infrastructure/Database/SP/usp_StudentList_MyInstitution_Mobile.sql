@@ -22,6 +22,8 @@ BEGIN
         s.Id,
         CASE WHEN preBaseline.StudentId IS NOT NULL THEN 1 ELSE 0 END AS IsBaselineAdded,
         CASE WHEN postBaseline.StudentId IS NOT NULL THEN 1 ELSE 0 END AS IsEndBaselineAdded
+        ,s.IsKadamPlusStudent
+        
     FROM 
         Students s
     LEFT JOIN StudentFamilyDetails SF ON S.Id = SF.StudentId

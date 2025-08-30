@@ -79,6 +79,7 @@ namespace Infrastructure
         public DbSet<StudentFollowup> StudentFollowups { get; set; }
         public DbSet<ThemeActivity> ThemeActivities { get; set; }
         public DbSet<StudentAttendance> StudentAttendances { get; set; }
+        public DbSet<StudentTrio> StudentTrios { get; set; }
 
     }
 }

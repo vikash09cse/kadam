@@ -5,18 +5,20 @@ BEGIN
     SET NOCOUNT ON;
 
     SELECT 
-        Id,
+        s.Id,
         CONCAT(FirstName, ' ', LastName) AS StudentName,
         Age,
         AadhaarCardNumber,
-        StudentId,
+        s.StudentId,
         CONVERT(VARCHAR, EnrollmentDate, 103) AS EnrollmentDate,
-		CurrentStatus
+		CurrentStatus,
+		st.TrioId
     FROM 
-        Students
+        Students s
+    LEFT JOIN StudentTrios st ON s.Id = st.StudentId
     WHERE 
-        (@CreatedBy = 0 OR CreatedBy = @CreatedBy)
-        AND IsDeleted = 0
+        (@CreatedBy = 0 OR s.CreatedBy = @CreatedBy)
+        AND s.IsDeleted = 0
     ORDER BY 
-      DateCreated DESC,  FirstName, LastName;
+      s.DateCreated DESC,  FirstName, LastName;
 END
