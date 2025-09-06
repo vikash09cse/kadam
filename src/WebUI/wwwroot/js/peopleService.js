@@ -37,8 +37,14 @@
                 .catch(error => $q.reject(error));
         }
 
-        function saveUser(data) {
-            return $http.post('?handler=SaveUser', data, {
+        function saveUser(userInfo) {
+            // Create the request object with user and password
+            var requestData = {
+                user: userInfo,
+                password: userInfo.password
+            };
+            
+            return $http.post('?handler=SaveUser', requestData, {
                 headers: { 'RequestVerificationToken': $('input:hidden[name="__RequestVerificationToken"]').val() }
             })
             .then(response => response.data)

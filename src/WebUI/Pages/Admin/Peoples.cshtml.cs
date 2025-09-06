@@ -60,14 +60,17 @@ namespace WebUI.Pages.Admin
 
             return new JsonResult(result);
         }
-        public async Task<IActionResult> OnPostSaveUser([FromBody] Users user)
+        public async Task<IActionResult> OnPostSaveUser([FromBody] UserSaveRequest userRequest)
         {
             try
             {
-                if (user == null)
+                if (userRequest?.User == null)
                 {
                     return new JsonResult(new { success = false, message = MessageError.InvalidData });
                 }
+
+                var user = userRequest.User;
+                
                 // Set creation/modification date
                 if (user.Id == 0)
                 {
@@ -80,7 +83,7 @@ namespace WebUI.Pages.Admin
                     user.ModifyBy = _authenticationService.GetCurrentUserId();
                 }
 
-                var result = await _adminService.SaveUser(user);
+                var result = await _adminService.SaveUser(user, userRequest.Password);
                 return new JsonResult(result);
             }
             catch (Exception ex)

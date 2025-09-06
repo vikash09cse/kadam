@@ -54,5 +54,57 @@ namespace Core.Utilities
             return new string(Enumerable.Repeat(chars, length)
                 .Select(s => s[random.Next(s.Length)]).ToArray());
         }
+
+        public static (bool IsValid, string ErrorMessage) ValidatePasswordStrength(string password)
+        {
+            if (string.IsNullOrWhiteSpace(password))
+            {
+                return (false, "Password cannot be empty.");
+            }
+
+            if (password.Length < 6)
+            {
+                return (false, "Password must be at least 6 characters long.");
+            }
+
+            if (password.Length > 20)
+            {
+                return (false, "Password cannot exceed 20 characters.");
+            }
+
+            // Check for at least one uppercase letter
+            if (!password.Any(char.IsUpper))
+            {
+                return (false, "Password must contain at least one uppercase letter.");
+            }
+
+            // Check for at least one lowercase letter
+            if (!password.Any(char.IsLower))
+            {
+                return (false, "Password must contain at least one lowercase letter.");
+            }
+
+            // Check for at least one digit
+            if (!password.Any(char.IsDigit))
+            {
+                return (false, "Password must contain at least one number.");
+            }
+
+            // Check for at least one special character
+            var specialChars = "@$!%*?&";
+            if (!password.Any(c => specialChars.Contains(c)))
+            {
+                return (false, "Password must contain at least one special character (@$!%*?&).");
+            }
+
+            // Check for common weak passwords
+            var commonPasswords = new[] { "password", "123456", "qwerty", "abc123", "password123", "admin", "letmein" };
+            if (commonPasswords.Any(weak => password.ToLower().Contains(weak.ToLower())))
+            {
+                return (false, "Password contains common weak patterns. Please choose a stronger password.");
+            }
+
+            return (true, string.Empty);
+        }
     }
 }

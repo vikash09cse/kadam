@@ -108,6 +108,9 @@
                     vm.roles = response.roles;
                     vm.reportRoles = response.reportRoles;
                     vm.userInfo = response.userInfo;
+                    // Clear password fields for editing (user can leave blank to keep current password)
+                    vm.userInfo.password = '';
+                    vm.userInfo.confirmPassword = '';
                     $('#addPeopleModal').modal('show');
                 })
                 .catch(function(error) {
@@ -154,8 +157,15 @@
                 return;
             }
 
+            // For existing users, only send password if it's not empty
+            var userData = angular.copy(vm.userInfo);
+            if (userData.id > 0 && (!userData.password || userData.password.trim() === '')) {
+                delete userData.password;
+                delete userData.confirmPassword;
+            }
+
             vm.isSaving = true;
-            PeopleService.saveUser(vm.userInfo)
+            PeopleService.saveUser(userData)
                 .then(function(response) {
                     vm.isSubmit = false;
                     vm.isSaving = false;
@@ -163,6 +173,9 @@
                         ShowNotification(response.message, 0);
                         $('#addPeopleModal').modal('hide');
                         vm.dataTable.ajax.reload();
+                        // Clear password fields after successful save
+                        vm.userInfo.password = '';
+                        vm.userInfo.confirmPassword = '';
                     } else {
                         ShowNotification(response.message, 1);
                     }
@@ -202,6 +215,8 @@
                         lastName: '',
                         userName: '',
                         email: '',
+                        password: '',
+                        confirmPassword: '',
                         phone: '',
                         gender: null,
                         roleId: null,

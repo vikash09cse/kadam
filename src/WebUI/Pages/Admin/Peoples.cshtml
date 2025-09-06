@@ -135,6 +135,43 @@
                             </div>
                         </div>
                         <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group mb-3">
+                                    <label for="password">Password<span class="text-danger">*</span></label>
+                                    <input type="password" class="form-control" id="password" name="password"
+                                           ng-model="vm.userInfo.password"
+                                           ng-minlength="6"
+                                           ng-maxlength="15"
+                                           ng-required="vm.userInfo.id == 0"
+                                           placeholder="{{vm.userInfo.id > 0 ? 'Leave blank to keep current password' : 'Enter password'}}">
+                                    <div class="error-messages">
+                                        <small class="text-danger" ng-if="vm.isSubmit && vm.peopleForm.password.$error.required">Password is required for new users.</small>
+                                        <small class="text-danger" ng-if="vm.peopleForm.password.$error.minlength">Password must be at least 6 characters long.</small>
+                                        <small class="text-danger" ng-if="vm.peopleForm.password.$error.maxlength">Password cannot exceed 20 characters.</small>
+                                    </div>
+                                    <small class="text-muted">
+                                        <strong>Password Requirements:</strong><br>
+                                        • At least 6 characters long<br>
+                                        • Maximum 15 characters<br>
+                                    </small>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group mb-3">
+                                    <label for="confirmPassword">Confirm Password<span class="text-danger" ng-if="vm.userInfo.id == 0">*</span></label>
+                                    <input type="password" class="form-control" id="confirmPassword" name="confirmPassword"
+                                           ng-model="vm.userInfo.confirmPassword"
+                                           ng-match="vm.userInfo.password"
+                                           ng-required="vm.userInfo.id == 0"
+                                           placeholder="{{vm.userInfo.id > 0 ? 'Leave blank to keep current password' : 'Confirm password'}}">
+                                    <div class="error-messages">
+                                        <small class="text-danger" ng-if="vm.isSubmit && vm.peopleForm.confirmPassword.$error.required">Please confirm your password for new users.</small>
+                                        <small class="text-danger" ng-if="vm.peopleForm.confirmPassword.$error.match">Passwords do not match.</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
                             <!-- Phone -->
                             <div class="form-group mb-3 col-md-4">
                                 <label for="phone">Phone<span class="text-danger">*</span></label>

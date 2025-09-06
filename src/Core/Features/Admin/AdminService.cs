@@ -23,7 +23,7 @@ namespace Core.Features.Admin
         {
             return await _adminRepository.GetUser(id);
         }
-        public async Task<ServiceResponseDTO> SaveUser(Users user)
+        public async Task<ServiceResponseDTO> SaveUser(Users user, string? password = null)
         {
             if (await _adminRepository.CheckUserExist(user.Email, user.Id))
             {
@@ -35,11 +35,45 @@ namespace Core.Features.Admin
             user.Section = "";
             user.GradeSection = "";
 
-            // Generate random password
-            var randomPassword = PasswordManagement.GenerateRandomPassword(6, 10);
-            var (passwordHash, passwordSalt) = PasswordManagement.HashPassword(randomPassword);
-            user.PasswordHash = passwordHash;
-            user.PasswordSalt = passwordSalt;
+            // Handle password - only set if provided or for new users
+            if (user.Id == 0)
+            {
+                // New user - password is required
+                if (string.IsNullOrWhiteSpace(password))
+                {
+                    return new ServiceResponseDTO(false, AppStatusCodes.BadRequest, true, "Password is required for new users.");
+                }
+                
+                // Validate password strength
+                //var passwordValidation = PasswordManagement.ValidatePasswordStrength(password);
+                //if (!passwordValidation.IsValid)
+                //{
+                //    return new ServiceResponseDTO(false, AppStatusCodes.BadRequest, true, passwordValidation.ErrorMessage);
+                //}
+                
+                var (passwordHash, passwordSalt) = PasswordManagement.HashPassword(password);
+                user.PasswordHash = passwordHash;
+                user.PasswordSalt = passwordSalt;
+            }
+            else
+            {
+                // Existing user - only update password if provided
+                if (!string.IsNullOrWhiteSpace(password))
+                {
+                    // Validate password strength
+                    //var passwordValidation = PasswordManagement.ValidatePasswordStrength(password);
+                    //if (!passwordValidation.IsValid)
+                    //{
+                    //    return new ServiceResponseDTO(false, AppStatusCodes.BadRequest, true, passwordValidation.ErrorMessage);
+                    //}
+                    
+                    var (passwordHash, passwordSalt) = PasswordManagement.HashPassword(password);
+                    user.PasswordHash = passwordHash;
+                    user.PasswordSalt = passwordSalt;
+                }
+                // If password is empty/null, keep existing password (don't update PasswordHash/Salt)
+            }
+            user.UserStatus = 1;
 
             bool isSaved = await _adminRepository.SaveUser(user);
             return new ServiceResponseDTO(isSaved, isSaved ? AppStatusCodes.Success : AppStatusCodes.Unauthorized, isSaved, isSaved ? MessageSuccess.Saved : MessageError.CodeIssue);
@@ -805,5 +839,6 @@ namespace Core.Features.Admin
         {
             return await _adminRepository.GetGradesAndSections();
         }
+
     }
 }
