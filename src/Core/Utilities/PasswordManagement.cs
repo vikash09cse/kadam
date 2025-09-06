@@ -67,9 +67,9 @@ namespace Core.Utilities
                 return (false, "Password must be at least 6 characters long.");
             }
 
-            if (password.Length > 20)
+            if (password.Length > 15)
             {
-                return (false, "Password cannot exceed 20 characters.");
+                return (false, "Password cannot exceed 15 characters.");
             }
 
             // Check for at least one uppercase letter

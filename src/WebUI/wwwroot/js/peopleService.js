@@ -41,7 +41,7 @@
             // Create the request object with user and password
             var requestData = {
                 user: userInfo,
-                password: userInfo.password
+                password: userInfo.password || null
             };
             
             return $http.post('?handler=SaveUser', requestData, {
