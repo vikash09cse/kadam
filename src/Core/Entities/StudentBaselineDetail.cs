@@ -12,5 +12,6 @@ namespace Core.Entities
         public decimal? ObtainedMarks { get; set; }
         public decimal? PercentageMarks { get; set; }
         public decimal? TotalMarks { get; set; }
+        public DateTime? CompletedDate { get; set; }
     }
 } 

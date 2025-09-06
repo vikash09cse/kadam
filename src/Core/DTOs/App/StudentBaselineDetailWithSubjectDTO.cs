@@ -13,6 +13,7 @@ namespace Core.DTOs.App
         public decimal? TotalMarks { get; set; }
         public int CurrentStatus { get; set; }
         public string SubjectName { get; set; } = string.Empty;
+        public DateTime? CompletedDate { get; set; }
     }
 
     public class StudentBaselineDetailWithSubjectSaveDTO

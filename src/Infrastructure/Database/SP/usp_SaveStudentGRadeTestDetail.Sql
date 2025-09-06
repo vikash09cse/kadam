@@ -38,7 +38,7 @@ BEGIN
             JSON_VALUE(t.value, '$.TotalMarks'),
             CASE 
                 WHEN JSON_VALUE(t.value, '$.CompletedDate') IS NOT NULL 
-                THEN TRY_CONVERT(DATETIME, JSON_VALUE(t.value, '$.CompletedDate')) 
+                THEN TRY_CONVERT(DATETIME2, JSON_VALUE(t.value, '$.CompletedDate'))
                 ELSE GETDATE() 
             END,
             @CreatedBy,

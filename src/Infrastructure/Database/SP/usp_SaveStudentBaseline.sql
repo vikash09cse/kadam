@@ -26,7 +26,8 @@ BEGIN
             TotalMarks,
             CurrentStatus,
             IsDeleted,
-            DateCreated
+            DateCreated,
+            CompletedDate
         )
         SELECT
             @StudentId,
@@ -38,7 +39,12 @@ BEGIN
             JSON_VALUE(b.value, '$.TotalMarks'),
             1, -- CurrentStatus
             0, -- IsDeleted
-            GETDATE()
+            GETDATE(),
+            CASE 
+                WHEN JSON_VALUE(b.value, '$.CompletedDate') IS NOT NULL 
+                THEN TRY_CONVERT(DATETIME2, JSON_VALUE(b.value, '$.CompletedDate'))
+                ELSE NULL 
+            END -- CompletedDate
         FROM OPENJSON(@BaselineDetails) AS b;
 
         if @BaselineType = 'baselinepreAssessment'
