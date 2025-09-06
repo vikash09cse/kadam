@@ -138,16 +138,21 @@
                             <div class="col-md-6">
                                 <div class="form-group mb-3">
                                     <label for="password">Password<span class="text-danger">*</span></label>
-                                    <input type="password" class="form-control" id="password" name="password"
-                                           ng-model="vm.userInfo.password"
-                                           ng-minlength="6"
-                                           ng-maxlength="15"
-                                           ng-required="vm.userInfo.id == 0"
-                                           placeholder="{{vm.userInfo.id > 0 ? 'Leave blank to keep current password' : 'Enter password'}}">
+                                    <div class="password-input-container">
+                                        <input type="password" class="form-control password-input" id="password" name="password"
+                                               ng-model="vm.userInfo.password"
+                                               ng-minlength="6"
+                                               ng-maxlength="15"
+                                               ng-required="vm.userInfo.id == 0"
+                                               placeholder="{{vm.userInfo.id > 0 ? 'Leave blank to keep current password' : 'Enter password'}}">
+                                        <button type="button" class="password-toggle-btn" onclick="togglePassword('password', this)">
+                                            <i class="ri-eye-line" id="passwordIcon"></i>
+                                        </button>
+                                    </div>
                                     <div class="error-messages">
                                         <small class="text-danger" ng-if="vm.isSubmit && vm.peopleForm.password.$error.required">Password is required for new users.</small>
                                         <small class="text-danger" ng-if="vm.peopleForm.password.$error.minlength">Password must be at least 6 characters long.</small>
-                                        <small class="text-danger" ng-if="vm.peopleForm.password.$error.maxlength">Password cannot exceed 20 characters.</small>
+                                        <small class="text-danger" ng-if="vm.peopleForm.password.$error.maxlength">Password cannot exceed 15 characters.</small>
                                     </div>
                                     <small class="text-muted">
                                         <strong>Password Requirements:</strong><br>
@@ -159,11 +164,16 @@
                             <div class="col-md-6">
                                 <div class="form-group mb-3">
                                     <label for="confirmPassword">Confirm Password<span class="text-danger" ng-if="vm.userInfo.id == 0">*</span></label>
-                                    <input type="password" class="form-control" id="confirmPassword" name="confirmPassword"
-                                           ng-model="vm.userInfo.confirmPassword"
-                                           ng-match="vm.userInfo.password"
-                                           ng-required="vm.userInfo.id == 0"
-                                           placeholder="{{vm.userInfo.id > 0 ? 'Leave blank to keep current password' : 'Confirm password'}}">
+                                    <div class="password-input-container">
+                                        <input type="password" class="form-control password-input" id="confirmPassword" name="confirmPassword"
+                                               ng-model="vm.userInfo.confirmPassword"
+                                               ng-match="vm.userInfo.password"
+                                               ng-required="vm.userInfo.id == 0"
+                                               placeholder="{{vm.userInfo.id > 0 ? 'Leave blank to keep current password' : 'Confirm password'}}">
+                                        <button type="button" class="password-toggle-btn" onclick="togglePassword('confirmPassword', this)">
+                                            <i class="ri-eye-line" id="confirmPasswordIcon"></i>
+                                        </button>
+                                    </div>
                                     <div class="error-messages">
                                         <small class="text-danger" ng-if="vm.isSubmit && vm.peopleForm.confirmPassword.$error.required">Please confirm your password for new users.</small>
                                         <small class="text-danger" ng-if="vm.peopleForm.confirmPassword.$error.match">Passwords do not match.</small>
@@ -305,7 +315,49 @@
     <script src="~/js/peopleService.js"></script>
     <script src="~/js/peopleController.js"></script>
 @section Scripts {
-   
+    <style>
+        /* Password Toggle Styles */
+        .password-input-container {
+            position: relative;
+        }
+        
+        .password-input {
+            padding-right: 45px;
+        }
+        
+        .password-toggle-btn {
+            position: absolute;
+            right: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            color: #6c757d;
+            cursor: pointer;
+            padding: 0;
+            width: 24px;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: color 0.3s ease;
+            z-index: 10;
+        }
+        
+        .password-toggle-btn:hover {
+            color: #6777EF;
+        }
+        
+        .password-toggle-btn:focus {
+            outline: none;
+            color: #6777EF;
+        }
+        
+        .password-toggle-btn i {
+            font-size: 16px;
+            transition: all 0.3s ease;
+        }
+    </style>
 
     <!-- Other scripts -->
     <script src="//cdn.jsdelivr.net/npm/toastify-js"></script>
@@ -316,4 +368,21 @@
     <!-- Select2 -->
     <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
     <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+    
+    <script>
+        function togglePassword(inputId, button) {
+            const input = document.getElementById(inputId);
+            const icon = button.querySelector('i');
+            
+            if (input.type === 'password') {
+                input.type = 'text';
+                icon.classList.remove('ri-eye-line');
+                icon.classList.add('ri-eye-off-line');
+            } else {
+                input.type = 'password';
+                icon.classList.remove('ri-eye-off-line');
+                icon.classList.add('ri-eye-line');
+            }
+        }
+    </script>
 }

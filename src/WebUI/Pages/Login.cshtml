@@ -11,6 +11,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Login - Help Desk</title>
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link href="~/assets/css/icons.min.css" rel="stylesheet" type="text/css" />
     <style>
         body {
             background-color: #E6E9F9;
@@ -84,6 +85,48 @@
             margin-top: 2rem;
             font-size: 0.9rem;
         }
+        
+        /* Password Toggle Styles */
+        .password-input-container {
+            position: relative;
+        }
+        
+        .password-input {
+            padding-right: 45px;
+        }
+        
+        .password-toggle-btn {
+            position: absolute;
+            right: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            color: #666;
+            cursor: pointer;
+            padding: 0;
+            width: 24px;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: color 0.3s ease;
+            z-index: 10;
+        }
+        
+        .password-toggle-btn:hover {
+            color: #6777EF;
+        }
+        
+        .password-toggle-btn:focus {
+            outline: none;
+            color: #6777EF;
+        }
+        
+        .password-toggle-btn i {
+            font-size: 16px;
+            transition: all 0.3s ease;
+        }
     </style>
 </head>
 <body>
@@ -104,7 +147,12 @@
                     <label asp-for="Password">Password <span class="text-danger">*</span></label>
                     <a href="#" class="forgot-password">Forgot Your Password?</a>
                 </div>
-                <input asp-for="Password" type="password" class="form-control" placeholder="Enter password">
+                <div class="password-input-container">
+                    <input asp-for="Password" type="password" class="form-control password-input" id="loginPassword" placeholder="Enter password">
+                    <button type="button" class="password-toggle-btn" onclick="togglePassword('loginPassword', this)">
+                        <i class="mdi mdi-eye" id="loginPasswordIcon"></i>
+                    </button>
+                </div>
                 <span asp-validation-for="Password" class="text-danger"></span>
             </div>
             
@@ -126,6 +174,23 @@
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/jquery-validation/dist/jquery.validate.min.js"></script>
     <script src="~/lib/jquery-validation-unobtrusive/dist/jquery.validate.unobtrusive.min.js"></script>
+    
+    <script>
+        function togglePassword(inputId, button) {
+            const input = document.getElementById(inputId);
+            const icon = button.querySelector('i');
+            
+            if (input.type === 'password') {
+                input.type = 'text';
+                icon.classList.remove('mdi-eye');
+                icon.classList.add('mdi-eye-off');
+            } else {
+                input.type = 'password';
+                icon.classList.remove('mdi-eye-off');
+                icon.classList.add('mdi-eye');
+            }
+        }
+    </script>
 </body>
 </html>
 
