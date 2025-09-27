@@ -174,5 +174,18 @@ namespace Infrastructure
 
             return result;
         }
+        public async Task<StudentPreviousGradeMarksDTO> CheckStudentPreviousGradeMarks(int studentId, int gradeLevelId)
+        {
+            var parameters = new DynamicParameters();
+            parameters.Add("@StudentId", studentId);
+            parameters.Add("@GradeLevelId", gradeLevelId);
+
+            var result = await _db.Connection.QueryFirstOrDefaultAsync<StudentPreviousGradeMarksDTO>(
+                "usp_CheckStudentPreviousGradeMarks",
+                parameters,
+                commandType: CommandType.StoredProcedure);
+
+            return result ?? new StudentPreviousGradeMarksDTO();
+        }
     }
 }

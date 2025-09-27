@@ -71,5 +71,16 @@ namespace Core.Features.Admin
             ServiceResponseDTO response = new(true, AppStatusCodes.Success, studentProgress, MessageSuccess.Found);
             return response;
         }
+        public async Task<ServiceResponseDTO> CheckStudentPreviousGradeMarks(int studentId, int gradeLevelId)
+        {
+            if (studentId <= 0 || gradeLevelId <= 0)
+            {
+                return new ServiceResponseDTO(false, AppStatusCodes.BadRequest, null, MessageError.InvalidData);
+            }
+
+            var result = await _studentProgressRepository.CheckStudentPreviousGradeMarks(studentId, gradeLevelId);
+            ServiceResponseDTO response = new(true, AppStatusCodes.Success, result, MessageSuccess.Found);
+            return response;
+        }
     }
 }

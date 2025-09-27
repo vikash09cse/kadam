@@ -38,5 +38,11 @@ namespace WebAPI.Controllers
             var response = await _studentProgressService.GetStudentGradeTestDetailsWithSubjects(studentId, gradeLevelId);
             return StatusCode(response.StatusCode, response);
         }
+        [HttpGet("CheckStudentPreviousGradeMarks/{studentId}/{gradeLevelId}")]
+        public async Task<IActionResult> CheckStudentPreviousGradeMarks(int studentId, int gradeLevelId)
+        {
+            var response = await _studentProgressService.CheckStudentPreviousGradeMarks(studentId, gradeLevelId);
+            return StatusCode(response.StatusCode, response);
+        }
     }
 } 
