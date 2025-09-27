@@ -19,6 +19,11 @@ namespace Core.Features.Admin
         public async Task<ServiceResponseDTO> SaveStudent(Student student)
         {
             int _Id = student.Id;
+            if (await _studentRepository.CheckDuplicateStudent(student.FirstName, student.LastName, student.Age, student.InstitutionId, student.Id))
+            {
+                return new ServiceResponseDTO(false, AppStatusCodes.BadRequest, true, MessageError.DuplicateStudent);
+            }
+
             if (await _studentRepository.CheckDuplicateStudentRegistrationNumber(student.StudentRegistratioNumber, student.Id))
             {
                 return new ServiceResponseDTO(false, AppStatusCodes.BadRequest, true, MessageError.DuplicateStudentRegistrationNumber);
@@ -49,7 +54,52 @@ namespace Core.Features.Admin
         public async Task<ServiceResponseDTO> GetStudent(int id)
         {
             var student = await _studentRepository.GetStudent(id);
-            ServiceResponseDTO response = new(true, AppStatusCodes.Success, student, MessageSuccess.Found);
+            bool hasBaselineDetails = false;
+            if (id > 0)
+            {
+                hasBaselineDetails = await _studentRepository.HasBaselineDetails(id);
+            }
+            var studentDTO = new StudentDTO
+            {
+                Id = student.Id,
+                StudentId = student.StudentId,
+                EnrollmentDate = student.EnrollmentDate,
+                ProfilePicture = student.ProfilePicture,
+                FirstName = student.FirstName,
+                LastName = student.LastName,
+                GenderId = student.GenderId,
+                DateOfBirth = student.DateOfBirth,
+                Age = student.Age,
+                DoYouHaveAadhaarCard = student.DoYouHaveAadhaarCard,
+                AadhaarCardNumber = student.AadhaarCardNumber,
+                InstitutionId = student.InstitutionId,
+                Section = student.Section,
+                GradeId = student.GradeId,
+                StudentRegistratioNumber = student.StudentRegistratioNumber,
+                ChildStatudBeforeKadamSTC = student.ChildStatudBeforeKadamSTC,
+                HowLongPlaningToStayThisArea = student.HowLongPlaningToStayThisArea,
+                ProfilePicturePath = student.ProfilePicturePath,
+                Class = student.Class,
+                ReasonId = student.ReasonId,
+                DropoutClass = student.DropoutClass,
+                DropoutYear = student.DropoutYear,
+                PromotionDate = student.PromotionDate,
+                IsKadamPlusStudent = student.IsKadamPlusStudent,
+                Remarks = student.Remarks,
+                InActiveReason = student.InActiveReason,
+                InActiveDate = student.InActiveDate,
+                CurrentStatus = student.CurrentStatus,
+                IsDeleted = student.IsDeleted,
+                CreatedBy = student.CreatedBy,
+                DateCreated = student.DateCreated,
+                ModifyBy = student.ModifyBy,
+                ModifyDate = student.ModifyDate,
+                DeletedBy = student.DeletedBy,
+                DeletedDate = student.DeletedDate,
+                IsBaselineAdded = hasBaselineDetails
+            };
+
+            ServiceResponseDTO response = new(true, AppStatusCodes.Success, studentDTO, MessageSuccess.Found);
             return response;
         }
 

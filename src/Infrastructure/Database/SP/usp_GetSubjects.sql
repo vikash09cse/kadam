@@ -10,13 +10,13 @@ BEGIN
 
     SELECT 
         ROW_NUMBER() OVER(ORDER BY S.Id) AS RowNumber,
-        S.Id, S.SubjectName, S.CurrentStatus,
+        S.Id, S.SubjectName, S.CurrentStatus, S.DisplayOrder, S.GradeTestTotalMarks,
         COUNT(*) OVER() AS TotalCount
     FROM dbo.Subjects S
     WHERE S.IsDeleted = 0
         AND (@SearchTerm IS NULL 
             OR S.SubjectName LIKE '%' + @SearchTerm + '%')
-    ORDER BY Id
+    ORDER BY DisplayOrder
     OFFSET @Offset ROWS
     FETCH NEXT @PageSize ROWS ONLY;
 END

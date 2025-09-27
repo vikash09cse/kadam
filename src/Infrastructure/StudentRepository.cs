@@ -23,6 +23,18 @@ namespace Infrastructure
             return student != null;
         }
 
+        public async Task<bool> CheckDuplicateStudent(string firstName, string lastName, int age, int institutionId, int id)
+        {
+            var student = await _context.Students.FirstOrDefaultAsync(x => 
+                x.FirstName == firstName && 
+                x.LastName == lastName && 
+                x.Age == age && 
+                x.InstitutionId == institutionId && 
+                x.Id != id && 
+                !x.IsDeleted);
+            return student != null;
+        }
+
         public async Task<bool> DeleteStudent(int id, int deletedBy)
         {
             var student = await _context.Students.FirstOrDefaultAsync(x => x.Id == id);
@@ -247,6 +259,12 @@ namespace Infrastructure
                 await UpdateStudentStatus(model);
             }
             return isSaved;
+        }
+
+        public async Task<bool> HasBaselineDetails(int studentId)
+        {
+            return await _context.StudentBaselineDetails
+                .AnyAsync(x => x.StudentId == studentId && !x.IsDeleted);
         }
     }
 }

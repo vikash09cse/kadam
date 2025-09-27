@@ -7,6 +7,7 @@ namespace Core.Abstractions
     {
         Task<bool> CheckDuplicateStudentRegistrationNumber(string registrationNumber, int id);
         Task<bool> CheckDuplicateAadhaarNumber(string aadhaarNumber, int id);
+        Task<bool> CheckDuplicateStudent(string firstName, string lastName, int age, int institutionId, int id);
         Task<bool> DeleteStudent(int id, int deletedBy);
         Task<Student> GetStudent(int id);
         Task<IEnumerable<Student>> GetAllStudents();
@@ -22,5 +23,6 @@ namespace Core.Abstractions
         Task<bool> UpdateStudentStatus(StudentStatusUpdateDTO model);
         Task<StudentMainstreamDetailDTO> GetStudentDetailForMainstream(int id);
         Task<bool> SaveStudentMainstream(StudentMainstream studentMainstream);
+        Task<bool> HasBaselineDetails(int studentId);
     }
 }

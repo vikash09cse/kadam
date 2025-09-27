@@ -38,6 +38,7 @@ public static class MessageError
     public const string DuplicateStepName = "Step name already exists, please try using different name.";
     public const string DuplicateThemeName = "Theme name already exists, please try using different name.";
     public const string DuplicateStudentRegistrationNumber = "Registration number already exists, please try using different number.";
+    public const string DuplicateStudent = "Student registration already exists.";
     public const string DuplicateAadhaarNumber = "Aadhaar number already exists, please try using different number.";
 
     public const string NoDataFound = "Sorry! no data found, please try again.";

@@ -18,7 +18,7 @@ namespace Core.Entities
         public int? PeopleInHouseId { get; set; }
         public int? CasteId { get; set; }
         public int? ReligionId { get; set; }
-        public decimal? ParentMonthlyIncome { get; set; }
-        public decimal? ParentMontlyExpenditure { get; set; }
+        public string? ParentMonthlyIncome { get; set; }
+        public string? ParentMontlyExpenditure { get; set; }
     }
 } 

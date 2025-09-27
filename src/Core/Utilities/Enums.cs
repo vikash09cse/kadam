@@ -98,7 +98,10 @@ namespace Core.Utilities
             [Description("Unemployed")]
             Unemployed = 6,
             [Description("Other")]
-            Other = 7
+            Other = 7,
+            [Description("NA")]
+            NA = 8
+
         }
         public enum EducationType
         {
@@ -117,7 +120,9 @@ namespace Core.Utilities
             [Description("Graduation")]
             Graduation = 7,
             [Description("No Formal Education")]
-            NoFormalEducation = 8
+            NoFormalEducation = 8,
+            [Description("NA")]
+            NA = 9
         }
         public enum PeopleLivingCountType
         {

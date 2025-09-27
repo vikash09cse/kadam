@@ -32,14 +32,43 @@ BEGIN
         AND st.IsDeleted = 0
         AND s.IsDeleted = 0;
         
-        -- Return capacity status
-        IF @CurrentTrioCount >= 3
+        -- Check how many trios of 4 students already exist in this class
+        DECLARE @TriosOfFourCount INT;
+        SELECT @TriosOfFourCount = COUNT(*)
+        FROM (
+            SELECT st.TrioId, COUNT(*) as StudentCount
+            FROM StudentTrios st
+            INNER JOIN Students s ON st.StudentId = s.Id
+            WHERE s.InstitutionId = @InstitutionId
+            AND s.GradeId = @GradeId
+            AND st.IsDeleted = 0
+            AND s.IsDeleted = 0
+            GROUP BY st.TrioId
+            HAVING COUNT(*) = 4
+        ) AS TriosOfFour;
+        
+        -- Return capacity status based on new rules
+        IF @CurrentTrioCount >= 4
         BEGIN
-            SELECT 0 AS HasCapacity, 'Trio is already at maximum capacity (3 students)' AS Message;
+            SELECT 0 AS HasCapacity, 'Trio is already at maximum capacity (4 students)' AS Message;
+        END
+        ELSE IF @CurrentTrioCount = 3 AND @TriosOfFourCount >= 2
+        BEGIN
+            SELECT 0 AS HasCapacity, 'Cannot exceed 4 students as maximum 2 trios of 4 students allowed per class' AS Message;
         END
         ELSE
         BEGIN
-            SELECT 1 AS HasCapacity, 'Trio has capacity for more students' AS Message;
+            DECLARE @CanExpand BIT = 1;
+            DECLARE @CapacityMessage NVARCHAR(255) = 'Trio has capacity for more students';
+            
+            -- If this would be the 3rd trio of 4 students, don't allow it
+            IF @CurrentTrioCount = 3 AND @TriosOfFourCount >= 2
+            BEGIN
+                SET @CanExpand = 0;
+                SET @CapacityMessage = 'Cannot add more students - maximum 2 trios of 4 students allowed per class';
+            END
+            
+            SELECT @CanExpand AS HasCapacity, @CapacityMessage AS Message;
         END
         
     END TRY

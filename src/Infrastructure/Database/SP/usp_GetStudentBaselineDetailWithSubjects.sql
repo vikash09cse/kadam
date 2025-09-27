@@ -69,5 +69,5 @@ BEGIN
     LEFT JOIN StudentBaselineDetails sbd ON sbd.SubjectId = sb.Id AND sbd.StudentId = @StudentId 
     AND sbd.BaselineType = COALESCE(@BaselineType, sbd.BaselineType)
     WHERE  sb.CurrentStatus = 1 AND sb.IsDeleted = 0 
-    ORDER BY sb.SubjectName
+    ORDER BY sb.DisplayOrder
 END

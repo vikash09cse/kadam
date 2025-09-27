@@ -31,6 +31,8 @@
                                     <thead class="table-primary">
                                         <tr>
                                             <th>Subject Name</th>
+                                            <th>Display Order</th>
+                                            <th>Grade Test Total Marks</th>
                                             <th style="width: 8%;">Action</th>
                                         </tr>
                                     </thead>
@@ -54,13 +56,33 @@
                 
                 <form name="subjectForm" ng-submit="vm.submitSubjectForm(subjectForm)" novalidate>
                     <div class="modal-body py-2">
-                        <div class="form-group row">
+                        <div class="form-group row mb-3">
                             <div class="col">
                                 <label for="subjectName">Subject Name<span class="text-danger">*</span></label>
                                 <input type="text" class="form-control" id="subjectName" name="subjectName" 
                                        ng-model="vm.subject.subjectName" required>
                                 <span class="text-danger" ng-show="vm.isSubmit && subjectForm.subjectName.$error.required">
                                     Subject Name is required
+                                </span>
+                            </div>
+                        </div>
+                        <div class="form-group row mb-3">
+                            <div class="col">
+                                <label for="displayOrder">Display Order<span class="text-danger">*</span></label>
+                                <input type="number" class="form-control" id="displayOrder" name="displayOrder" 
+                                       ng-model="vm.subject.displayOrder" min="0" required>
+                                <span class="text-danger" ng-show="vm.isSubmit && subjectForm.displayOrder.$error.required">
+                                    Display Order is required
+                                </span>
+                            </div>
+                        </div>
+                        <div class="form-group row">
+                            <div class="col">
+                                <label for="gradeTestTotalMarks">Grade Test Total Marks<span class="text-danger">*</span></label>
+                                <input type="number" class="form-control" id="gradeTestTotalMarks" name="gradeTestTotalMarks" 
+                                       ng-model="vm.subject.gradeTestTotalMarks" min="1" required>
+                                <span class="text-danger" ng-show="vm.isSubmit && subjectForm.gradeTestTotalMarks.$error.required">
+                                    Grade Test Total Marks is required
                                 </span>
                             </div>
                         </div>
@@ -173,6 +195,8 @@
                             },
                             columns: [
                                 { data: 'subjectName', name: 'SubjectName', autoWidth: true },
+                                { data: 'displayOrder', name: 'DisplayOrder', autoWidth: true },
+                                { data: 'gradeTestTotalMarks', name: 'GradeTestTotalMarks', autoWidth: true },
                                 {
                                     data: null,
                                     orderable: false,
@@ -197,7 +221,7 @@
 
                     // ... continue with other methods, updated to use vm ...
                     vm.openModal = function() {
-                        vm.subject = {};
+                        vm.subject = { displayOrder: 0, gradeTestTotalMarks: 0 };
                         vm.modalTitle = "Add Subject";
                         $('#subjectModal').modal('show');
                     };

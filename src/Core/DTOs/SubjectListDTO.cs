@@ -14,6 +14,8 @@ namespace Core.DTOs
         public string SubjectName { get; set; } = string.Empty;
         public Status CurrentStatus { get; set; } = Status.Active;
         public string CurrentStatusText => CurrentStatus.ToString();
+        public int DisplayOrder { get; set; } = 0;
+        public int GradeTestTotalMarks { get; set; } = 0;
         public int TotalCount { get; set; } = 0;
     }
 }

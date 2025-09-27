@@ -12,7 +12,8 @@ BEGIN
         s.StudentId,
         CONVERT(VARCHAR, EnrollmentDate, 103) AS EnrollmentDate,
 		CurrentStatus,
-		st.TrioId
+		st.TrioId,
+        
     FROM 
         Students s
     LEFT JOIN StudentTrios st ON s.Id = st.StudentId

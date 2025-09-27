@@ -1,111 +1,215 @@
-CREATE OR ALTER PROCEDURE usp_IdentifyStudentGradeEntryAndExitLevel --1,1
+CREATE OR ALTER PROCEDURE usp_IdentifyStudentGradeEntryAndExitLevel
     @StudentId INT,
     @CreatedBy INT
 AS
 BEGIN
-    DECLARE @EntryGradeLevel INT;
-    DECLARE @ExitGradeLevel INT;
+    SET NOCOUNT ON;
+    
+    -- ================================================================
+    -- PROCEDURE: usp_IdentifyStudentGradeEntryAndExitLevel
+    -- PURPOSE: Determines student entry and exit steps based on age and baseline scores
+    -- AUTHOR: System Generated
+    -- DATE: Updated with new criteria logic
+    -- ================================================================
+    
+    -- Variable declarations
+    DECLARE @Age INT,
+            @TotalObtainedMarks INT,
+            @GradeId INT,
+            @GradeName VARCHAR(50),
+            @IsKadam BIT,
+            @EntryStepId INT,
+            @ExitStepId INT,
+            @EntryGradeLevel INT,
+            @ExitGradeLevel INT;
 
-    Declare @Age INT;
-    Declare @TotalObtainedMarks INT;
-    Declare @GradeId INT;
-    Declare @GradeName VARCHAR(50);
-    Declare @IsKadam BIT;
-    Declare @EntryStepId INT;
-    Declare @ExitStepId INT;
-
-    Select @Age = Age, @GradeId = GradeId
+    -- Get student basic information
+    SELECT @Age = Age, @GradeId = GradeId
     FROM Students
     WHERE Id = @StudentId;
 
-    Select @GradeName = GradeName
+    -- Get grade name
+    SELECT @GradeName = GradeName
     FROM Grades
     WHERE Id = @GradeId;
 
-
-    -- If GradeName contains 1st, 2nd, 3rd, 4th, 5th then IsKadam is 1
-    -- If GradeName is Kadam then IsKadam is 0
-    -- If GradeName is Kadam+ then IsKadam is 1
-    Set @IsKadam = CASE
+    -- Determine if student is in Kadam program
+    -- Kadam classification logic for future use
+    SET @IsKadam = CASE
         WHEN @GradeName LIKE '%1st%' OR @GradeName LIKE '%2nd%' OR @GradeName LIKE '%3rd%' OR @GradeName LIKE '%4th%' OR @GradeName LIKE '%5th%' THEN 1
-        WHEN @GradeName LIKE '%Kadam%' THEN 0
+        WHEN @GradeName LIKE '%Kadam%' AND @GradeName NOT LIKE '%Kadam+%' THEN 0
         WHEN @GradeName LIKE '%Kadam+%' THEN 1
-    END
+        ELSE 1
+    END;
 
-    Select @TotalObtainedMarks = SUM(ObtainedMarks)
+    -- Get total baseline assessment marks
+    SELECT @TotalObtainedMarks = ISNULL(SUM(ObtainedMarks), 0)
     FROM StudentBaselineDetails
-    WHERE StudentId = @StudentId And BaselineType = 'baselinepreAssessment'
+    WHERE StudentId = @StudentId 
+      AND BaselineType = 'baselinepreAssessment';
 
-	-- Print 'Age' + CAST(@Age AS VARCHAR)
-    -- Print 'GradeId' + CAST(@GradeId AS VARCHAR)
-    -- Print 'GradeName' + @GradeName
-	-- Print 'TotalObtainedMarks' + CAST(@TotalObtainedMarks AS VARCHAR)
-    -- Print 'IsKadam' + CAST(@IsKadam AS VARCHAR)
+    -- Ensure marks are within valid range (0-200)
+    SET @TotalObtainedMarks = CASE 
+        WHEN @TotalObtainedMarks < 0 THEN 0
+        WHEN @TotalObtainedMarks > 200 THEN 200
+        ELSE @TotalObtainedMarks
+    END;
 
-    Select @EntryGradeLevel = CASE
-        WHEN @TotalObtainedMarks >= 0 AND @TotalObtainedMarks <= 40 THEN 1
-        WHEN @TotalObtainedMarks >= 41 AND @TotalObtainedMarks <= 80 THEN 2
-        WHEN @TotalObtainedMarks >= 81 AND @TotalObtainedMarks <= 120 THEN 3
-        WHEN @TotalObtainedMarks >= 121 AND @TotalObtainedMarks <= 160 THEN 4
-        WHEN @TotalObtainedMarks >= 161 AND @TotalObtainedMarks <= 200 THEN 5
-    END
-
-   if @IsKadam = 1
-   BEGIN
-    Select @ExitGradeLevel = CASE
-        WHEN @GradeName LIKE '%1st%' THEN 1
-        WHEN @GradeName LIKE '%2nd%' THEN 2
-        WHEN @GradeName LIKE '%3rd%' THEN 3
-        WHEN @GradeName LIKE '%4th%' THEN 4
-        WHEN @GradeName LIKE '%5th%' THEN 5
-    END
-	If @EntryGradeLevel > @ExitGradeLevel
-     BEGIN
-        Select @EntryGradeLevel = @ExitGradeLevel
-     END
-   END
-   ELSE
-   BEGIN
-    Select @ExitGradeLevel = CASE
-        WHEN @Age <= 5 THEN 1
-        WHEN @Age = 6 THEN 2
-        WHEN @Age = 7 THEN 3
-        WHEN @Age = 8 THEN 4
-        WHEN @Age = 9 THEN 5
-        WHEN @Age >= 10 THEN 5
-       END
-	End
-    Select @EntryStepId = CASE
-        WHEN @EntryGradeLevel = 1 THEN 1
-        WHEN @EntryGradeLevel = 2 THEN 3
-        WHEN @EntryGradeLevel = 3 THEN 5
-        WHEN @EntryGradeLevel = 4 THEN 7
-        WHEN @EntryGradeLevel = 5 THEN 9
-    END
-
-    Select @ExitStepId = CASE 
-        WHEN @ExitGradeLevel = 1 THEN 2
-        WHEN @ExitGradeLevel = 2 THEN 4
-        WHEN @ExitGradeLevel = 3 THEN 6
-        WHEN @ExitGradeLevel = 4 THEN 8
-        WHEN @ExitGradeLevel = 5 THEN 10
-    END
-
+    -- ================================================================
+    -- STEP DETERMINATION LOGIC
+    -- Based on Age/Grade and Baseline Score criteria table
+    -- ================================================================
     
-    IF NOT EXISTS (SELECT 1 FROM StudentGradeStartAndEndDetails WHERE StudentId = @StudentId)
-    BEGIN
-        Insert into StudentGradeStartAndEndDetails (StudentId, GradeEntryLevelId, GradeExitLevelId, EntryStepId, ExitStepId, CreatedBy)
-        VALUES (@StudentId, @EntryGradeLevel, @ExitGradeLevel, @EntryStepId, @ExitStepId, @CreatedBy)
-    END
-    ELSE
-    BEGIN
-        Update StudentGradeStartAndEndDetails
-        SET GradeEntryLevelId = @EntryGradeLevel,
-            GradeExitLevelId = @ExitGradeLevel,
-            EntryStepId = @EntryStepId,
-            ExitStepId = @ExitStepId,
-            CreatedBy = @CreatedBy
-        WHERE StudentId = @StudentId
-    END
+    -- Create a score range identifier for cleaner logic
+    DECLARE @ScoreRange INT = 
+        CASE 
+            WHEN @TotalObtainedMarks BETWEEN 0 AND 40 THEN 1
+            WHEN @TotalObtainedMarks BETWEEN 41 AND 60 THEN 2
+            WHEN @TotalObtainedMarks BETWEEN 61 AND 80 THEN 3
+            WHEN @TotalObtainedMarks BETWEEN 81 AND 100 THEN 4
+            WHEN @TotalObtainedMarks BETWEEN 101 AND 120 THEN 5
+            WHEN @TotalObtainedMarks BETWEEN 121 AND 140 THEN 6
+            WHEN @TotalObtainedMarks BETWEEN 141 AND 160 THEN 7
+            WHEN @TotalObtainedMarks BETWEEN 161 AND 180 THEN 8
+            WHEN @TotalObtainedMarks BETWEEN 181 AND 200 THEN 9
+            ELSE 1 -- Default to lowest range
+        END;
+
+    -- Determine Entry and Exit Steps using unified logic
+    SELECT 
+        @EntryStepId = EntryStep,
+        @ExitStepId = ExitStep
+    FROM (
+        SELECT 
+            CASE 
+                -- Age 6 (Grade 1)
+                WHEN @Age = 6 AND @ScoreRange = 1 THEN 1  -- 0-40
+                WHEN @Age = 6 AND @ScoreRange = 2 THEN 1  -- 41-60
+                WHEN @Age = 6 AND @ScoreRange = 3 THEN 3  -- 61-80
+                WHEN @Age = 6 AND @ScoreRange = 4 THEN 3  -- 81-100
+                WHEN @Age = 6 AND @ScoreRange = 5 THEN 5  -- 101-120
+                
+                -- Age 7 (Grade 2)
+                WHEN @Age = 7 AND @ScoreRange IN (1,2) THEN 1  -- 0-60
+                WHEN @Age = 7 AND @ScoreRange IN (3,4) THEN 3  -- 61-100
+                WHEN @Age = 7 AND @ScoreRange = 5 THEN 5       -- 101-120
+                
+                -- Age 8 (Grade 3)
+                WHEN @Age = 8 AND @ScoreRange IN (1,2) THEN 1  -- 0-60
+                WHEN @Age = 8 AND @ScoreRange IN (3,4,5) THEN 3 -- 61-120
+                
+                -- Age 9 (Grade 4)
+                WHEN @Age = 9 AND @ScoreRange IN (1,2) THEN 1  -- 0-60
+                WHEN @Age = 9 AND @ScoreRange IN (3,4) THEN 3  -- 61-100
+                WHEN @Age = 9 AND @ScoreRange IN (5,6) THEN 5  -- 101-140
+                WHEN @Age = 9 AND @ScoreRange = 7 THEN 7       -- 141-160
+                
+                -- Age 10+ (Grade 5)
+                WHEN @Age >= 10 AND @ScoreRange IN (1,2) THEN 1  -- 0-60
+                WHEN @Age >= 10 AND @ScoreRange IN (3,4) THEN 3  -- 61-100
+                WHEN @Age >= 10 AND @ScoreRange IN (5,6) THEN 5  -- 101-140
+                WHEN @Age >= 10 AND @ScoreRange IN (7,8) THEN 7  -- 141-180
+                WHEN @Age >= 10 AND @ScoreRange = 9 THEN 9       -- 181-200
+                
+                -- Default case
+                ELSE 1
+            END AS EntryStep,
+            
+            CASE 
+                -- Age 6 (Grade 1)
+                WHEN @Age = 6 AND @ScoreRange = 1 THEN 2  -- 0-40
+                WHEN @Age = 6 AND @ScoreRange = 2 THEN 4  -- 41-60
+                WHEN @Age = 6 AND @ScoreRange = 3 THEN 4  -- 61-80
+                WHEN @Age = 6 AND @ScoreRange = 4 THEN 6  -- 81-100
+                WHEN @Age = 6 AND @ScoreRange = 5 THEN 6  -- 101-120
+                
+                -- Age 7 (Grade 2)
+                WHEN @Age = 7 AND @ScoreRange IN (1,2) THEN 4  -- 0-60
+                WHEN @Age = 7 AND @ScoreRange = 3 THEN 4       -- 61-80
+                WHEN @Age = 7 AND @ScoreRange = 4 THEN 6       -- 81-100
+                WHEN @Age = 7 AND @ScoreRange = 5 THEN 6       -- 101-120
+                
+                -- Age 8 (Grade 3)
+                WHEN @Age = 8 THEN 8  -- All ranges lead to Step 8
+                
+                -- Age 9 (Grade 4)
+                WHEN @Age = 9 THEN 8  -- All ranges lead to Step 8
+                
+                -- Age 10+ (Grade 5)
+                WHEN @Age >= 10 THEN 10  -- All ranges lead to Step 10
+                
+                -- Default case
+                ELSE 2
+            END AS ExitStep
+    ) AS StepCalculation;
+    
+    -- ================================================================
+    -- GRADE LEVEL CALCULATION
+    -- Calculate grade levels based on step ranges (Steps 1-2=Grade1, 3-4=Grade2, etc.)
+    -- ================================================================
+    
+    SELECT 
+        @EntryGradeLevel = (@EntryStepId + 1) / 2,    -- Formula: (Step + 1) / 2
+        @ExitGradeLevel = (@ExitStepId + 1) / 2;      -- More efficient than CASE statements
+
+    -- Ensure grade levels are within valid range (1-5)
+    SET @EntryGradeLevel = CASE 
+        WHEN @EntryGradeLevel < 1 THEN 1 
+        WHEN @EntryGradeLevel > 5 THEN 5 
+        ELSE @EntryGradeLevel 
+    END;
+    
+    SET @ExitGradeLevel = CASE 
+        WHEN @ExitGradeLevel < 1 THEN 1 
+        WHEN @ExitGradeLevel > 5 THEN 5 
+        ELSE @ExitGradeLevel 
+    END;
+
+    -- ================================================================
+    -- DATABASE OPERATION
+    -- Insert or Update student grade start and end details
+    -- ================================================================
+    
+    -- Use MERGE for more efficient INSERT/UPDATE operation
+    MERGE StudentGradeStartAndEndDetails AS target
+    USING (
+        SELECT 
+            @StudentId AS StudentId,
+            @EntryGradeLevel AS GradeEntryLevelId,
+            @ExitGradeLevel AS GradeExitLevelId,
+            @EntryStepId AS EntryStepId,
+            @ExitStepId AS ExitStepId,
+            @CreatedBy AS CreatedBy,
+            GETDATE() AS DateCreated
+    ) AS source ON target.StudentId = source.StudentId
+    
+    WHEN MATCHED THEN
+        UPDATE SET 
+            GradeEntryLevelId = source.GradeEntryLevelId,
+            GradeExitLevelId = source.GradeExitLevelId,
+            EntryStepId = source.EntryStepId,
+            ExitStepId = source.ExitStepId,
+            ModifyBy = source.CreatedBy,
+            ModifyDate = source.DateCreated
+    
+    WHEN NOT MATCHED THEN
+        INSERT (StudentId, GradeEntryLevelId, GradeExitLevelId, EntryStepId, ExitStepId, CreatedBy, DateCreated)
+        VALUES (source.StudentId, source.GradeEntryLevelId, source.GradeExitLevelId, 
+                source.EntryStepId, source.ExitStepId, source.CreatedBy, source.DateCreated);
+
+    -- ================================================================
+    -- RETURN RESULT (Optional: for debugging/verification)
+    -- ================================================================
+    
+    --SELECT 
+    --    @StudentId AS StudentId,
+    --    @Age AS Age,
+    --    @TotalObtainedMarks AS BaselineMarks,
+    --    @ScoreRange AS ScoreRangeId,
+    --    @EntryStepId AS EntryStepId,
+    --    @ExitStepId AS ExitStepId,
+    --    @EntryGradeLevel AS EntryGradeLevel,
+    --    @ExitGradeLevel AS ExitGradeLevel,
+    --    'Success' AS Status;
 
 END
