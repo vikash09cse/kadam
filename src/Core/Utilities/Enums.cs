@@ -97,6 +97,8 @@ namespace Core.Utilities
             Business = 5,
             [Description("Unemployed")]
             Unemployed = 6,
+            [Description("Housewife ")]
+            Housewife = 9,
             [Description("Other")]
             Other = 7,
             [Description("NA")]

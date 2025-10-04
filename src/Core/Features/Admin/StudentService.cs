@@ -24,9 +24,12 @@ namespace Core.Features.Admin
                 return new ServiceResponseDTO(false, AppStatusCodes.BadRequest, true, MessageError.DuplicateStudent);
             }
 
-            if (await _studentRepository.CheckDuplicateStudentRegistrationNumber(student.StudentRegistratioNumber, student.Id))
+            if (!string.IsNullOrEmpty(student.StudentRegistratioNumber))
             {
-                return new ServiceResponseDTO(false, AppStatusCodes.BadRequest, true, MessageError.DuplicateStudentRegistrationNumber);
+                if (await _studentRepository.CheckDuplicateStudentRegistrationNumber(student.StudentRegistratioNumber, student.Id))
+                {
+                    return new ServiceResponseDTO(false, AppStatusCodes.BadRequest, true, MessageError.DuplicateStudentRegistrationNumber);
+                }
             }
 
             if (!string.IsNullOrEmpty(student.AadhaarCardNumber) &&

@@ -1,4 +1,4 @@
-CREATE OR ALTER   PROCEDURE [dbo].[usp_StudentList_Mobile]
+ALTER     PROCEDURE [dbo].[usp_StudentList_Mobile]
     @CreatedBy INT = 0
 AS
 BEGIN
@@ -12,8 +12,9 @@ BEGIN
         s.StudentId,
         CONVERT(VARCHAR, EnrollmentDate, 103) AS EnrollmentDate,
 		CurrentStatus,
-		st.TrioId,
-        
+		st.TrioId
+		,-- Is Baseline Added
+       Case When (SELECT COUNT(1) FROM StudentBaselineDetails WHERE StudentId = s.Id AND BaselineType = 'baselinepreAssessment') > 0 Then 1 Else 0 End AS IsBaselineAdded
     FROM 
         Students s
     LEFT JOIN StudentTrios st ON s.Id = st.StudentId

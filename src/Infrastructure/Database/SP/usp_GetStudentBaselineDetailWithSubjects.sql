@@ -27,7 +27,7 @@ BEGIN
     END
 
     -- Calculate subject total marks based on grade/age
-    IF @IsKadam = 0
+    IF @IsKadam = 1
     BEGIN
         -- Use grade for subject total marks
         SET @SubjectTotalMarks = CASE

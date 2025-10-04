@@ -10,5 +10,6 @@
         public string EnrollmentDate { get; set; } = string.Empty;
         public int CurrentStatus { get; set; }
         public int? TrioId { get; set; }
+        public bool IsBaselineAdded { get; set; }
     }
 }
