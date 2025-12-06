@@ -16,10 +16,11 @@ namespace Core.Features.Admin
             _themeActivityRepository = themeActivityRepository;
         }
 
-        public async Task<ServiceResponseDTO> SaveThemeActivity(ThemeActivity themeActivity)
+        public async Task<ServiceResponseDTO> SaveThemeActivity(ThemeActivitySaveDTO themeActivity)
         {
-            bool isSaved = await _themeActivityRepository.SaveThemeActivity(themeActivity);
-            return new ServiceResponseDTO(isSaved, isSaved ? AppStatusCodes.Success : AppStatusCodes.Unauthorized, result: themeActivity.Id, isSaved ? MessageSuccess.Saved : MessageError.CodeIssue);
+            int savedId = await _themeActivityRepository.SaveThemeActivity(themeActivity);
+            bool isSaved = savedId > 0;
+            return new ServiceResponseDTO(isSaved, isSaved ? AppStatusCodes.Success : AppStatusCodes.Unauthorized, result: savedId, isSaved ? MessageSuccess.Saved : MessageError.CodeIssue);
         }
 
         public async Task<ServiceResponseDTO> GetThemeActivity(int id)
@@ -40,6 +41,13 @@ namespace Core.Features.Admin
         {
             var isDeleted = await _themeActivityRepository.DeleteThemeActivity(id, userId);
             ServiceResponseDTO response = new(isDeleted, isDeleted ? AppStatusCodes.Success : AppStatusCodes.Unauthorized, isDeleted, isDeleted ? MessageSuccess.Deleted : MessageError.CodeIssue);
+            return response;
+        }
+
+        public async Task<ServiceResponseDTO> GetInstitutionsByUserIdForThemeActivity(int userId)
+        {
+            var institutions = await _themeActivityRepository.GetInstitutionsByUserIdForThemeActivity(userId);
+            ServiceResponseDTO response = new(true, AppStatusCodes.Success, institutions, MessageSuccess.Found);
             return response;
         }
     }

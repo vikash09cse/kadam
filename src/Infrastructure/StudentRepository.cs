@@ -11,9 +11,9 @@ namespace Infrastructure
     {
         private readonly DatabaseContext _context = context;
 
-        public async Task<bool> CheckDuplicateStudentRegistrationNumber(string registrationNumber, int id)
+        public async Task<bool> CheckDuplicateStudentRegistrationNumber(string registrationNumber, int institutionId, int id)
         {
-            var student = await _context.Students.FirstOrDefaultAsync(x => x.StudentRegistratioNumber == registrationNumber && x.Id != id && !x.IsDeleted);
+            var student = await _context.Students.FirstOrDefaultAsync(x => x.StudentRegistratioNumber == registrationNumber && x.InstitutionId == institutionId && x.Id != id && !x.IsDeleted);
             return student != null;
         }
 

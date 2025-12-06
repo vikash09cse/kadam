@@ -5,7 +5,7 @@ namespace Core.Abstractions
 {
     public interface IStudentRepository
     {
-        Task<bool> CheckDuplicateStudentRegistrationNumber(string registrationNumber, int id);
+        Task<bool> CheckDuplicateStudentRegistrationNumber(string registrationNumber, int institutionId, int id);
         Task<bool> CheckDuplicateAadhaarNumber(string aadhaarNumber, int id);
         Task<bool> CheckDuplicateStudent(string firstName, string lastName, int age, int institutionId, int id);
         Task<bool> DeleteStudent(int id, int deletedBy);

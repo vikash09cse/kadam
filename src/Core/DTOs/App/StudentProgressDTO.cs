@@ -8,6 +8,8 @@
         public int EntryStepId { get; set; }
         public int ExitStepId { get; set; }
         public int? LastCompletedStepId { get; set; }
+        public DateTime? BaselineCompletedDate { get; set; }
+        public string GradeName { get; set; } = string.Empty;
         public string EntryLevelText { get; set; } = string.Empty;
         public string ExitLevelText { get; set; } = string.Empty;
         public string EntryStepText { get; set; } = string.Empty;

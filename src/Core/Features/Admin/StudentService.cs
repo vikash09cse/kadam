@@ -19,14 +19,14 @@ namespace Core.Features.Admin
         public async Task<ServiceResponseDTO> SaveStudent(Student student)
         {
             int _Id = student.Id;
-            if (await _studentRepository.CheckDuplicateStudent(student.FirstName, student.LastName, student.Age, student.InstitutionId, student.Id))
-            {
-                return new ServiceResponseDTO(false, AppStatusCodes.BadRequest, true, MessageError.DuplicateStudent);
-            }
+            //if (await _studentRepository.CheckDuplicateStudent(student.FirstName, student.LastName, student.Age, student.InstitutionId, student.Id))
+            //{
+            //    return new ServiceResponseDTO(false, AppStatusCodes.BadRequest, true, MessageError.DuplicateStudent);
+            //}
 
             if (!string.IsNullOrEmpty(student.StudentRegistratioNumber))
             {
-                if (await _studentRepository.CheckDuplicateStudentRegistrationNumber(student.StudentRegistratioNumber, student.Id))
+                if (await _studentRepository.CheckDuplicateStudentRegistrationNumber(student.StudentRegistratioNumber, student.InstitutionId, student.Id))
                 {
                     return new ServiceResponseDTO(false, AppStatusCodes.BadRequest, true, MessageError.DuplicateStudentRegistrationNumber);
                 }

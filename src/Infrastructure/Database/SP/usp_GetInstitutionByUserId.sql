@@ -1,4 +1,4 @@
-Create Or Alter Procedure usp_GetInstitutionByUserId --usp_GetInstitutionByUserId 3
+ALTER   Procedure [dbo].[usp_GetInstitutionByUserId] --usp_GetInstitutionByUserId 3
 @UserId Int
 As
 Begin

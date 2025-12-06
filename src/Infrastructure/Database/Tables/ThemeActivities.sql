@@ -3,8 +3,6 @@ Create Table ThemeActivities
     Id INT PRIMARY KEY IDENTITY(1,1),
     ThemeId INT NOT NULL,
     InstitutionId INT NOT NULL,
-    GradeId INT NOT NULL,
-    Section Varchar(25),
     TotalStudents INT NOT NULL,
     StudentAttended INT NOT NULL,
     DidChildrenDayHappen BIt NOT NULL Default(0),

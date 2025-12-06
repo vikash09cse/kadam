@@ -15,6 +15,7 @@ namespace Core.DTOs.App
         public int IsBaselineAdded { get; set; }
         public int IsEndBaselineAdded { get; set; }
         public bool IsKadamPlusStudent { get; set; }
+        public int StudentProgressStepCount { get; set; }
 
     }
 } 

@@ -97,8 +97,12 @@ namespace Core.Utilities
             Business = 5,
             [Description("Unemployed")]
             Unemployed = 6,
-            [Description("Housewife ")]
+            [Description("Housewife")]
             Housewife = 9,
+            [Description("Farmer")]
+            Farmer = 10,
+            [Description("Driver")]
+            Driver = 11,
             [Description("Other")]
             Other = 7,
             [Description("NA")]
@@ -128,8 +132,8 @@ namespace Core.Utilities
         }
         public enum PeopleLivingCountType
         {
-            [Description("1")]
-            One = 1,
+            //[Description("1")]
+            //One = 1,
             [Description("2")]
             Two = 2,
             [Description("3")]

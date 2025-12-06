@@ -18,4 +18,20 @@
         public string GradeName { get; set; } = string.Empty;
         public string Sections { get; set; } = string.Empty;
     }
+
+    public class AppInstitutionThemeActivityDTO
+    {
+        public AppInstitutionThemeActivityDTO()
+        {
+            GradeSections = new List<AppGradeSectionThemeActivityDTO>();
+        }
+        public int Id { get; set; }
+        public string InstitutionName { get; set; } = string.Empty;
+        public IEnumerable<AppGradeSectionThemeActivityDTO> GradeSections { get; set; }
+    }
+
+    public class AppGradeSectionThemeActivityDTO : AppGradeSectionDTO
+    {
+        public string StudentCount { get; set; } = string.Empty;
+    }
 }

@@ -1,4 +1,4 @@
-using Core.Entities;
+using Core.DTOs.App;
 using Core.Features.Admin;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -13,7 +13,7 @@ namespace WebAPI.Controllers
         private readonly ThemeActivityService _themeActivityService = themeActivityService;
 
         [HttpPost]
-        public async Task<IActionResult> SaveThemeActivity([FromBody] ThemeActivity themeActivity)
+        public async Task<IActionResult> SaveThemeActivity([FromBody] ThemeActivitySaveDTO themeActivity)
         {
             var response = await _themeActivityService.SaveThemeActivity(themeActivity);
             return StatusCode(response.StatusCode, response);
@@ -46,5 +46,12 @@ namespace WebAPI.Controllers
                 var response = await _themeActivityService.DeleteThemeActivity(id, userId);
                 return StatusCode(response.StatusCode, response);
             }
+
+        [HttpGet("institutions/{userId}")]
+        public async Task<IActionResult> GetInstitutionsByUserIdForThemeActivity(int userId)
+        {
+            var response = await _themeActivityService.GetInstitutionsByUserIdForThemeActivity(userId);
+            return StatusCode(response.StatusCode, response);
+        }
     }
 }

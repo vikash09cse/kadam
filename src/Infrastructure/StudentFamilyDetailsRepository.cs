@@ -25,12 +25,34 @@ namespace Infrastructure
 
         public async Task<bool> SaveStudentFamilyDetails(StudentFamilyDetail familyDetails)
         {
-            if (familyDetails.Id > 0)
+            var existingDetails = await _context.StudentFamilyDetails
+                .FirstOrDefaultAsync(x => x.StudentId == familyDetails.StudentId && !x.IsDeleted);
+
+            if (existingDetails != null)
             {
-                _context.StudentFamilyDetails.Update(familyDetails);
+                // Update existing record
+                existingDetails.FatherName = familyDetails.FatherName;
+                existingDetails.FatherAge = familyDetails.FatherAge;
+                existingDetails.FatherOccupationId = familyDetails.FatherOccupationId;
+                existingDetails.FatherEducationId = familyDetails.FatherEducationId;
+                existingDetails.MotherName = familyDetails.MotherName;
+                existingDetails.MotherAge = familyDetails.MotherAge;
+                existingDetails.MotherOccupationId = familyDetails.MotherOccupationId;
+                existingDetails.MotherEducationId = familyDetails.MotherEducationId;
+                existingDetails.PrimaryContactNumber = familyDetails.PrimaryContactNumber;
+                existingDetails.AlternateContactNumber = familyDetails.AlternateContactNumber;
+                existingDetails.HouseAddress = familyDetails.HouseAddress;
+                existingDetails.PinCode = familyDetails.PinCode;
+                existingDetails.PeopleInHouseId = familyDetails.PeopleInHouseId;
+                existingDetails.CasteId = familyDetails.CasteId;
+                existingDetails.ReligionId = familyDetails.ReligionId;
+                existingDetails.ParentMonthlyIncome = familyDetails.ParentMonthlyIncome;
+                existingDetails.ParentMontlyExpenditure = familyDetails.ParentMontlyExpenditure;
+                _context.StudentFamilyDetails.Update(existingDetails);
             }
             else
             {
+                // Insert new record
                 _context.StudentFamilyDetails.Add(familyDetails);
             }
             return await _context.SaveChangesAsync() > 0;

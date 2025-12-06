@@ -7,9 +7,12 @@ BEGIN
     
     -- ================================================================
     -- PROCEDURE: usp_IdentifyStudentGradeEntryAndExitLevel
-    -- PURPOSE: Determines student entry and exit steps based on age and baseline scores
+    -- PURPOSE: Determines student entry and exit steps based on Kadam status, grade name, and baseline scores
+    -- LOGIC: 
+    --   - If IsKadam = 1: Uses Grade Name and Score Range for step determination
+    --   - If IsKadam = 0: Uses Age and Score Range for step determination (original logic)
     -- AUTHOR: System Generated
-    -- DATE: Updated with new criteria logic
+    -- DATE: Updated with Kadam-specific logic
     -- ================================================================
     
     -- Variable declarations
@@ -37,7 +40,7 @@ BEGIN
     -- Kadam classification logic for future use
     SET @IsKadam = CASE
         WHEN @GradeName LIKE '%1st%' OR @GradeName LIKE '%2nd%' OR @GradeName LIKE '%3rd%' OR @GradeName LIKE '%4th%' OR @GradeName LIKE '%5th%' THEN 1
-        WHEN @GradeName LIKE '%Kadam%' AND @GradeName NOT LIKE '%Kadam+%' THEN 0
+        WHEN @GradeName LIKE '%Kadam STC%' THEN 0
         WHEN @GradeName LIKE '%Kadam+%' THEN 1
         ELSE 1
     END;
@@ -75,71 +78,223 @@ BEGIN
             ELSE 1 -- Default to lowest range
         END;
 
-    -- Determine Entry and Exit Steps using unified logic
+    -- Determine Entry and Exit Steps using conditional logic based on Kadam status
     SELECT 
         @EntryStepId = EntryStep,
         @ExitStepId = ExitStep
     FROM (
         SELECT 
             CASE 
-                -- Age 6 (Grade 1)
-                WHEN @Age = 6 AND @ScoreRange = 1 THEN 1  -- 0-40
-                WHEN @Age = 6 AND @ScoreRange = 2 THEN 1  -- 41-60
-                WHEN @Age = 6 AND @ScoreRange = 3 THEN 3  -- 61-80
-                WHEN @Age = 6 AND @ScoreRange = 4 THEN 3  -- 81-100
-                WHEN @Age = 6 AND @ScoreRange = 5 THEN 5  -- 101-120
+                -- KADAM STUDENTS LOGIC (IsKadam = 1)
+                WHEN @IsKadam = 1 THEN
+                    CASE 
+                        -- Kadam Grade 1 (1st)
+                        WHEN @GradeName LIKE '%1st%' THEN
+                            CASE 
+                                WHEN @ScoreRange IN (1,2) THEN 1  -- 0-60: Start at Step 1
+                                WHEN @ScoreRange IN (3,4) THEN 3  -- 61-100: Start at Step 3
+                                WHEN @ScoreRange IN (5,6) THEN 5  -- 101-140: Start at Step 5
+                                WHEN @ScoreRange IN (7,8,9) THEN 7 -- 141-200: Start at Step 7
+                                ELSE 1
+                            END
+                        
+                        -- Kadam Grade 2 (2nd)
+                        WHEN @GradeName LIKE '%2nd%' THEN
+                            CASE 
+                                WHEN @ScoreRange IN (1,2) THEN 1  -- 0-60: Start at Step 1
+                                WHEN @ScoreRange IN (3,4) THEN 3  -- 61-100: Start at Step 3
+                                WHEN @ScoreRange IN (5,6) THEN 5  -- 101-140: Start at Step 5
+                                WHEN @ScoreRange IN (7,8) THEN 7  -- 141-180: Start at Step 7
+                                WHEN @ScoreRange = 9 THEN 9       -- 181-200: Start at Step 9
+                                ELSE 1
+                            END
+                        
+                        -- Kadam Grade 3 (3rd)
+                        WHEN @GradeName LIKE '%3rd%' THEN
+                            CASE 
+                                WHEN @ScoreRange IN (1,2) THEN 1  -- 0-60: Start at Step 1
+                                WHEN @ScoreRange IN (3,4) THEN 3  -- 61-100: Start at Step 3
+                                WHEN @ScoreRange IN (5,6) THEN 5  -- 101-140: Start at Step 5
+                                WHEN @ScoreRange IN (7,8) THEN 7  -- 141-180: Start at Step 7
+                                WHEN @ScoreRange = 9 THEN 9       -- 181-200: Start at Step 9
+                                ELSE 1
+                            END
+                        
+                        -- Kadam Grade 4 (4th)
+                        WHEN @GradeName LIKE '%4th%' THEN
+                            CASE 
+                                WHEN @ScoreRange IN (1,2) THEN 1  -- 0-60: Start at Step 1
+                                WHEN @ScoreRange IN (3,4) THEN 3  -- 61-100: Start at Step 3
+                                WHEN @ScoreRange IN (5,6) THEN 5  -- 101-140: Start at Step 5
+                                WHEN @ScoreRange IN (7,8) THEN 7  -- 141-180: Start at Step 7
+                                WHEN @ScoreRange = 9 THEN 9       -- 181-200: Start at Step 9
+                                ELSE 1
+                            END
+                        
+                        -- Kadam Grade 5 (5th)
+                        WHEN @GradeName LIKE '%5th%' THEN
+                            CASE 
+                                WHEN @ScoreRange IN (1,2) THEN 1  -- 0-60: Start at Step 1
+                                WHEN @ScoreRange IN (3,4) THEN 3  -- 61-100: Start at Step 3
+                                WHEN @ScoreRange IN (5,6) THEN 5  -- 101-140: Start at Step 5
+                                WHEN @ScoreRange IN (7,8) THEN 7  -- 141-180: Start at Step 7
+                                WHEN @ScoreRange = 9 THEN 9       -- 181-200: Start at Step 9
+                                ELSE 1
+                            END
+                        
+                        -- Kadam+ (Advanced Kadam)
+                        WHEN @GradeName LIKE '%Kadam+%' THEN
+                            CASE 
+                                WHEN @ScoreRange IN (1,2) THEN 3  -- 0-60: Start at Step 3
+                                WHEN @ScoreRange IN (3,4) THEN 5  -- 61-100: Start at Step 5
+                                WHEN @ScoreRange IN (5,6) THEN 7  -- 101-140: Start at Step 7
+                                WHEN @ScoreRange IN (7,8) THEN 9  -- 141-180: Start at Step 9
+                                WHEN @ScoreRange = 9 THEN 10      -- 181-200: Start at Step 10
+                                ELSE 3
+                            END
+                        
+                        -- Default Kadam case
+                        ELSE 1
+                    END
                 
-                -- Age 7 (Grade 2)
-                WHEN @Age = 7 AND @ScoreRange IN (1,2) THEN 1  -- 0-60
-                WHEN @Age = 7 AND @ScoreRange IN (3,4) THEN 3  -- 61-100
-                WHEN @Age = 7 AND @ScoreRange = 5 THEN 5       -- 101-120
-                
-                -- Age 8 (Grade 3)
-                WHEN @Age = 8 AND @ScoreRange IN (1,2) THEN 1  -- 0-60
-                WHEN @Age = 8 AND @ScoreRange IN (3,4,5) THEN 3 -- 61-120
-                
-                -- Age 9 (Grade 4)
-                WHEN @Age = 9 AND @ScoreRange IN (1,2) THEN 1  -- 0-60
-                WHEN @Age = 9 AND @ScoreRange IN (3,4) THEN 3  -- 61-100
-                WHEN @Age = 9 AND @ScoreRange IN (5,6) THEN 5  -- 101-140
-                WHEN @Age = 9 AND @ScoreRange = 7 THEN 7       -- 141-160
-                
-                -- Age 10+ (Grade 5)
-                WHEN @Age >= 10 AND @ScoreRange IN (1,2) THEN 1  -- 0-60
-                WHEN @Age >= 10 AND @ScoreRange IN (3,4) THEN 3  -- 61-100
-                WHEN @Age >= 10 AND @ScoreRange IN (5,6) THEN 5  -- 101-140
-                WHEN @Age >= 10 AND @ScoreRange IN (7,8) THEN 7  -- 141-180
-                WHEN @Age >= 10 AND @ScoreRange = 9 THEN 9       -- 181-200
-                
-                -- Default case
-                ELSE 1
+                -- NON-KADAM STUDENTS LOGIC (IsKadam = 0) - Original logic
+                ELSE
+                    CASE 
+                        -- Age 6 (Grade 1)
+                        WHEN @Age = 6 AND @ScoreRange = 1 THEN 1  -- 0-40
+                        WHEN @Age = 6 AND @ScoreRange = 2 THEN 1  -- 41-60
+                        WHEN @Age = 6 AND @ScoreRange = 3 THEN 3  -- 61-80
+                        WHEN @Age = 6 AND @ScoreRange = 4 THEN 3  -- 81-100
+                        WHEN @Age = 6 AND @ScoreRange = 5 THEN 5  -- 101-120
+                        
+                        -- Age 7 (Grade 2)
+                        WHEN @Age = 7 AND @ScoreRange IN (1,2) THEN 1  -- 0-60
+                        WHEN @Age = 7 AND @ScoreRange IN (3,4) THEN 3  -- 61-100
+                        WHEN @Age = 7 AND @ScoreRange = 5 THEN 5       -- 101-120
+                        
+                        -- Age 8 (Grade 3)
+                        WHEN @Age = 8 AND @ScoreRange IN (1,2) THEN 1  -- 0-60
+                        WHEN @Age = 8 AND @ScoreRange IN (3,4,5) THEN 3 -- 61-120
+                        
+                        -- Age 9 (Grade 4)
+                        WHEN @Age = 9 AND @ScoreRange IN (1,2) THEN 1  -- 0-60
+                        WHEN @Age = 9 AND @ScoreRange IN (3,4) THEN 3  -- 61-100
+                        WHEN @Age = 9 AND @ScoreRange IN (5,6) THEN 5  -- 101-140
+                        WHEN @Age = 9 AND @ScoreRange = 7 THEN 7       -- 141-160
+                        
+                        -- Age 10+ (Grade 5)
+                        WHEN @Age >= 10 AND @ScoreRange IN (1,2) THEN 1  -- 0-60
+                        WHEN @Age >= 10 AND @ScoreRange IN (3,4) THEN 3  -- 61-100
+                        WHEN @Age >= 10 AND @ScoreRange IN (5,6) THEN 5  -- 101-140
+                        WHEN @Age >= 10 AND @ScoreRange IN (7,8) THEN 7  -- 141-180
+                        WHEN @Age >= 10 AND @ScoreRange = 9 THEN 9       -- 181-200
+                        
+                        -- Default case
+                        ELSE 1
+                    END
             END AS EntryStep,
             
             CASE 
-                -- Age 6 (Grade 1)
-                WHEN @Age = 6 AND @ScoreRange = 1 THEN 2  -- 0-40
-                WHEN @Age = 6 AND @ScoreRange = 2 THEN 4  -- 41-60
-                WHEN @Age = 6 AND @ScoreRange = 3 THEN 4  -- 61-80
-                WHEN @Age = 6 AND @ScoreRange = 4 THEN 6  -- 81-100
-                WHEN @Age = 6 AND @ScoreRange = 5 THEN 6  -- 101-120
+                -- KADAM STUDENTS LOGIC (IsKadam = 1)
+                WHEN @IsKadam = 1 THEN
+                    CASE 
+                        -- Kadam Grade 1 (1st)
+                        WHEN @GradeName LIKE '%1st%' THEN
+                            CASE 
+                                WHEN @ScoreRange IN (1,2) THEN 2  -- 0-60: Exit at Step 2
+                                WHEN @ScoreRange IN (3,4) THEN 4  -- 61-100: Exit at Step 4
+                                WHEN @ScoreRange IN (5,6) THEN 6  -- 101-140: Exit at Step 6
+                                WHEN @ScoreRange IN (7,8,9) THEN 8 -- 141-200: Exit at Step 8
+                                ELSE 2
+                            END
+                        
+                        -- Kadam Grade 2 (2nd)
+                        WHEN @GradeName LIKE '%2nd%' THEN
+                            CASE 
+                                WHEN @ScoreRange IN (1,2) THEN 4  -- 0-60: Exit at Step 4
+                                WHEN @ScoreRange IN (3,4) THEN 6  -- 61-100: Exit at Step 6
+                                WHEN @ScoreRange IN (5,6) THEN 8  -- 101-140: Exit at Step 8
+                                WHEN @ScoreRange IN (7,8) THEN 10 -- 141-180: Exit at Step 10
+                                WHEN @ScoreRange = 9 THEN 10      -- 181-200: Exit at Step 10
+                                ELSE 4
+                            END
+                        
+                        -- Kadam Grade 3 (3rd)
+                        WHEN @GradeName LIKE '%3rd%' THEN
+                            CASE 
+                                WHEN @ScoreRange IN (1,2) THEN 4  -- 0-60: Exit at Step 4
+                                WHEN @ScoreRange IN (3,4) THEN 6  -- 61-100: Exit at Step 6
+                                WHEN @ScoreRange IN (5,6) THEN 8  -- 101-140: Exit at Step 8
+                                WHEN @ScoreRange IN (7,8) THEN 10 -- 141-180: Exit at Step 10
+                                WHEN @ScoreRange = 9 THEN 10      -- 181-200: Exit at Step 10
+                                ELSE 4
+                            END
+                        
+                        -- Kadam Grade 4 (4th)
+                        WHEN @GradeName LIKE '%4th%' THEN
+                            CASE 
+                                WHEN @ScoreRange IN (1,2) THEN 6  -- 0-60: Exit at Step 6
+                                WHEN @ScoreRange IN (3,4) THEN 8  -- 61-100: Exit at Step 8
+                                WHEN @ScoreRange IN (5,6) THEN 10 -- 101-140: Exit at Step 10
+                                WHEN @ScoreRange IN (7,8) THEN 10 -- 141-180: Exit at Step 10
+                                WHEN @ScoreRange = 9 THEN 10      -- 181-200: Exit at Step 10
+                                ELSE 6
+                            END
+                        
+                        -- Kadam Grade 5 (5th)
+                        WHEN @GradeName LIKE '%5th%' THEN
+                            CASE 
+                                WHEN @ScoreRange IN (1,2) THEN 6  -- 0-60: Exit at Step 6
+                                WHEN @ScoreRange IN (3,4) THEN 8  -- 61-100: Exit at Step 8
+                                WHEN @ScoreRange IN (5,6) THEN 10 -- 101-140: Exit at Step 10
+                                WHEN @ScoreRange IN (7,8) THEN 10 -- 141-180: Exit at Step 10
+                                WHEN @ScoreRange = 9 THEN 10      -- 181-200: Exit at Step 10
+                                ELSE 6
+                            END
+                        
+                        -- Kadam+ (Advanced Kadam)
+                        WHEN @GradeName LIKE '%Kadam+%' THEN
+                            CASE 
+                                WHEN @ScoreRange IN (1,2) THEN 4  -- 0-60: Exit at Step 4
+                                WHEN @ScoreRange IN (3,4) THEN 6  -- 61-100: Exit at Step 6
+                                WHEN @ScoreRange IN (5,6) THEN 8  -- 101-140: Exit at Step 8
+                                WHEN @ScoreRange IN (7,8) THEN 10 -- 141-180: Exit at Step 10
+                                WHEN @ScoreRange = 9 THEN 10      -- 181-200: Exit at Step 10
+                                ELSE 4
+                            END
+                        
+                        -- Default Kadam case
+                        ELSE 2
+                    END
                 
-                -- Age 7 (Grade 2)
-                WHEN @Age = 7 AND @ScoreRange IN (1,2) THEN 4  -- 0-60
-                WHEN @Age = 7 AND @ScoreRange = 3 THEN 4       -- 61-80
-                WHEN @Age = 7 AND @ScoreRange = 4 THEN 6       -- 81-100
-                WHEN @Age = 7 AND @ScoreRange = 5 THEN 6       -- 101-120
-                
-                -- Age 8 (Grade 3)
-                WHEN @Age = 8 THEN 8  -- All ranges lead to Step 8
-                
-                -- Age 9 (Grade 4)
-                WHEN @Age = 9 THEN 8  -- All ranges lead to Step 8
-                
-                -- Age 10+ (Grade 5)
-                WHEN @Age >= 10 THEN 10  -- All ranges lead to Step 10
-                
-                -- Default case
-                ELSE 2
+                -- NON-KADAM STUDENTS LOGIC (IsKadam = 0) - Original logic
+                ELSE
+                    CASE 
+                        -- Age 6 (Grade 1)
+                        WHEN @Age = 6 AND @ScoreRange = 1 THEN 2  -- 0-40
+                        WHEN @Age = 6 AND @ScoreRange = 2 THEN 4  -- 41-60
+                        WHEN @Age = 6 AND @ScoreRange = 3 THEN 4  -- 61-80
+                        WHEN @Age = 6 AND @ScoreRange = 4 THEN 6  -- 81-100
+                        WHEN @Age = 6 AND @ScoreRange = 5 THEN 6  -- 101-120
+                        
+                        -- Age 7 (Grade 2)
+                        WHEN @Age = 7 AND @ScoreRange IN (1,2) THEN 4  -- 0-60
+                        WHEN @Age = 7 AND @ScoreRange = 3 THEN 4       -- 61-80
+                        WHEN @Age = 7 AND @ScoreRange = 4 THEN 6       -- 81-100
+                        WHEN @Age = 7 AND @ScoreRange = 5 THEN 6       -- 101-120
+                        
+                        -- Age 8 (Grade 3)
+                        WHEN @Age = 8 THEN 8  -- All ranges lead to Step 8
+                        
+                        -- Age 9 (Grade 4)
+                        WHEN @Age = 9 THEN 8  -- All ranges lead to Step 8
+                        
+                        -- Age 10+ (Grade 5)
+                        WHEN @Age >= 10 THEN 10  -- All ranges lead to Step 10
+                        
+                        -- Default case
+                        ELSE 2
+                    END
             END AS ExitStep
     ) AS StepCalculation;
     
