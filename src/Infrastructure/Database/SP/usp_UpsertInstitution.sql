@@ -1,4 +1,4 @@
-Create Or Alter Procedure usp_UpsertInstitution
+ALTER   Procedure [dbo].[usp_UpsertInstitution]
     @Id INT = NULL,
     @DivisionId INT,
     @StateId INT,
@@ -124,16 +124,28 @@ BEGIN
             
         END
 
-		DELETE FROM dbo.InstitutionGradeSections 
-            WHERE InstitutionId = @Id;
-
-        INSERT INTO dbo.InstitutionGradeSections (InstitutionId, GradeId, Sections)
-        SELECT @Id, GradeId, Sections
-        FROM OPENJSON(@jsonGradeSection) 
-        WITH (
-            GradeId INT, 
-            Sections VARCHAR(55)
-        );
+        -- Merge InstitutionGradeSections to preserve references
+        IF @jsonGradeSection IS NOT NULL
+        BEGIN
+            MERGE dbo.InstitutionGradeSections AS target
+            USING (
+                SELECT @Id AS InstitutionId, GradeId, Sections
+                FROM OPENJSON(@jsonGradeSection) 
+                WITH (
+                    GradeId INT, 
+                    Sections VARCHAR(55)
+                )
+            ) AS source (InstitutionId, GradeId, Sections)
+            ON target.InstitutionId = source.InstitutionId 
+                AND target.GradeId = source.GradeId
+            WHEN MATCHED THEN
+                UPDATE SET Sections = source.Sections
+            WHEN NOT MATCHED BY TARGET THEN
+                INSERT (InstitutionId, GradeId, Sections)
+                VALUES (source.InstitutionId, source.GradeId, source.Sections)
+            WHEN NOT MATCHED BY SOURCE AND target.InstitutionId = @Id THEN
+                DELETE;
+        END;
 
         COMMIT TRANSACTION;
     END TRY

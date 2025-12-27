@@ -1,4 +1,4 @@
-Create Or Alter Procedure usp_GetInstitutionByUserIdForThemeActivity --usp_GetInstitutionByUserId 1
+ALTER   Procedure [dbo].[usp_GetInstitutionByUserIdForThemeActivity] --usp_GetInstitutionByUserIdForThemeActivity 1
 @UserId Int
 As
 Begin
@@ -28,4 +28,5 @@ Begin
 	From InstitutionGradeSections igs
 	Inner Join Grades g on g.Id = igs.GradeId
 	Where igs.InstitutionId In (Select Item From SplitString(@InstitutionIds, ','))
+	Order by g.Id
 End

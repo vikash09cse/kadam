@@ -16,4 +16,5 @@ Begin
 	From InstitutionGradeSections igs
 	Inner Join Grades g on g.Id = igs.GradeId
 	Where igs.InstitutionId In (Select Item From SplitString(@InstitutionIds, ','))
+	Order By G.Id 
 End

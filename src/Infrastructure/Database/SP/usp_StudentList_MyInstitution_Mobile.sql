@@ -1,4 +1,4 @@
-CREATE OR Alter PROCEDURE usp_StudentList_MyInstitution_Mobile
+ALTER   PROCEDURE [dbo].[usp_StudentList_MyInstitution_Mobile]
     @InstitutionId INT = NULL,
     @GradeId INT = NULL,
     @Section Varchar(25) = NULL,
@@ -15,7 +15,7 @@ BEGIN
         s.StudentId,
         CONCAT(s.FirstName, ' ', s.LastName) AS StudentName,
         SF.FatherName,
-        CONVERT(VARCHAR, s.EnrollmentDate, 103) AS EnrollmentDate,
+        s.EnrollmentDate AS EnrollmentDate,
         s.Age,
         g.GradeName,
         s.CurrentStatus,
@@ -23,7 +23,10 @@ BEGIN
         CASE WHEN preBaseline.StudentId IS NOT NULL THEN 1 ELSE 0 END AS IsBaselineAdded,
         CASE WHEN postBaseline.StudentId IS NOT NULL THEN 1 ELSE 0 END AS IsEndBaselineAdded
         ,s.IsKadamPlusStudent
-        
+        ,(Select top 1 StepId From StudentProgressSteps Where StudentId=S.Id order by StepId desc) As StudentProgressStepCount
+		, (Select Top 1 ExitStepId From StudentGradeStartAndEndDetails Where StudentId=S.Id) As ExitStepId
+		, baselineCompletedDate.CompletedDate as BaselineCompletedDate
+		, endlineCompletedDate.CompletedDate as EndlineCompletedDate
     FROM 
         Students s
     LEFT JOIN StudentFamilyDetails SF ON S.Id = SF.StudentId
@@ -39,6 +42,20 @@ BEGIN
         FROM StudentBaselineDetails 
         WHERE BaselineType = 'endlinepreAssessment'
     ) postBaseline ON s.Id = postBaseline.StudentId
+    LEFT JOIN (
+        SELECT StudentId, MAX(CompletedDate) AS CompletedDate
+        FROM StudentBaselineDetails
+        WHERE CompletedDate IS NOT NULL
+            AND BaselineType = 'baselinepreAssessment'
+        GROUP BY StudentId
+    ) baselineCompletedDate ON s.Id = baselineCompletedDate.StudentId
+    LEFT JOIN (
+        SELECT StudentId, MAX(CompletedDate) AS CompletedDate
+        FROM StudentBaselineDetails
+        WHERE CompletedDate IS NOT NULL
+            AND BaselineType = 'endlinepreAssessment'
+        GROUP BY StudentId
+    ) endlineCompletedDate ON s.Id = endlineCompletedDate.StudentId
     WHERE 
         s.IsDeleted = 0
         AND (@InstitutionId IS NULL OR s.InstitutionId = @InstitutionId)
@@ -51,4 +68,3 @@ BEGIN
     ORDER BY 
         s.EnrollmentDate DESC, s.FirstName, s.LastName;
 END
-GO 

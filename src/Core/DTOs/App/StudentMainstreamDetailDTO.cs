@@ -14,5 +14,6 @@ namespace Core.DTOs.App
         public int StateId { get; set; }
         public int DistrictId { get; set; }
         public string InstitutionCode { get; set; } = string.Empty;
+        public DateTime EnrollmentDate { get; set; }
     }
 }
