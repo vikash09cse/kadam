@@ -1,4 +1,4 @@
-﻿using Core.DTOs;
+using Core.DTOs;
 using Core.DTOs.Users;
 using Core.Entities;
 using Core.Utilities;
@@ -41,6 +41,7 @@ namespace Core.Abstractions
         Task<bool> CheckDuplicateStateCode(string stateCode, int id);
         Task<IEnumerable<DropdownDTO>> GetStatesByStatus(Enums.Status currentStatus);
         Task<bool> CloseState(int id, int closedBy);
+        Task<State?> GetStateByName(string stateName);
         #endregion
 
         #region "District"
@@ -51,6 +52,7 @@ namespace Core.Abstractions
         Task<bool> CheckDuplicateDistrictName(string districtName, int id, int stateId);
         Task<bool> CheckDuplicateDistrictCode(string districtCode, int id, int stateId);
         Task<IEnumerable<DropdownDTO>> GetDistrictsByState(int stateId);
+        Task<DistrictImportResultDTO> BulkImportDistricts(IEnumerable<DistrictImportRowDTO> rows, int createdBy);
         #endregion
 
         #region "Blocks"
@@ -60,6 +62,7 @@ namespace Core.Abstractions
         Task<bool> DeleteBlock(int id, int deletedBy);
         Task<bool> CheckDuplicateBlockName(string blockName, int id, int districtId);
         Task<IEnumerable<DropdownDTO>> GetBlocksByDistrict(int districtId);
+        Task<BlockImportResultDTO> BulkImportBlocks(IEnumerable<BlockImportRowDTO> rows, int createdBy);
         #endregion
 
         #region "Villages"
@@ -69,6 +72,7 @@ namespace Core.Abstractions
         Task<bool> DeleteVillage(int id, int deletedBy);
         Task<bool> CheckDuplicateVillageName(string villageName, int id, int blockId);
         Task<IEnumerable<DropdownDTO>> GetVillagesByBlock(int blockId);
+        Task<VillageImportResultDTO> BulkImportVillages(IEnumerable<VillageImportRowDTO> rows, int createdBy);
         #endregion
 
         #region "Programs"

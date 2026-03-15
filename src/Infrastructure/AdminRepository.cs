@@ -1,10 +1,11 @@
-﻿using Core.Abstractions;
+using Core.Abstractions;
 using Core.DTOs;
 using Core.DTOs.Users;
 using Core.Entities;
 using Core.Utilities;
 using Dapper;
 using Kadam.Core.DTOs;
+using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using System.Collections.Generic;
 using System.Data;
@@ -325,6 +326,12 @@ namespace Infrastructure
             return await _db.Connection.QueryAsync<DropdownDTO>(storedProcedure, parameters, _db.Transaction, commandType: CommandType.StoredProcedure);
         }
 
+        public async Task<State?> GetStateByName(string stateName)
+        {
+            return await _context.States.FirstOrDefaultAsync(x =>
+                x.StateName.ToLower() == stateName.ToLower() && !x.IsDeleted);
+        }
+
         public async Task<bool> CloseState(int id, int closedBy)
         {
             var state = await _context.States.FirstOrDefaultAsync(x => x.Id == id);
@@ -403,6 +410,39 @@ namespace Infrastructure
             parameters.Add("@StateId", stateId);
             return await _db.Connection.QueryAsync<DropdownDTO>(storedProcedure, parameters, _db.Transaction, commandType: CommandType.StoredProcedure);
         }
+
+        public async Task<DistrictImportResultDTO> BulkImportDistricts(IEnumerable<DistrictImportRowDTO> rows, int createdBy)
+        {
+            var table = new DataTable();
+            table.Columns.Add("RowNumber",    typeof(int));
+            table.Columns.Add("StateName",    typeof(string));
+            table.Columns.Add("DistrictName", typeof(string));
+            table.Columns.Add("DistrictCode", typeof(string));
+
+            foreach (var row in rows)
+                table.Rows.Add(row.RowNumber, row.StateName, row.DistrictName, row.DistrictCode);
+
+            var parameters = new DynamicParameters();
+            parameters.Add("@Districts", table.AsTableValuedParameter("dbo.DistrictImportType"));
+            parameters.Add("@CreatedBy", createdBy);
+            parameters.Add("@Inserted",  dbType: DbType.Int32, direction: ParameterDirection.Output);
+            parameters.Add("@Updated",   dbType: DbType.Int32, direction: ParameterDirection.Output);
+
+            var errors = await _db.Connection.QueryAsync<DistrictImportErrorDTO>(
+                "dbo.usp_BulkImportDistricts",
+                parameters,
+                _db.Transaction,
+                commandTimeout: 120,
+                commandType: CommandType.StoredProcedure
+            );
+
+            return new DistrictImportResultDTO
+            {
+                Errors    = errors.ToList(),
+                Inserted  = parameters.Get<int>("@Inserted"),
+                Updated   = parameters.Get<int>("@Updated")
+            };
+        }
         #endregion
     
         #region "Blocks"
@@ -467,6 +507,39 @@ namespace Infrastructure
             parameters.Add("@DistrictId", districtId);
             return await _db.Connection.QueryAsync<DropdownDTO>(storedProcedure, parameters, _db.Transaction, commandType: CommandType.StoredProcedure);
         }
+
+        public async Task<BlockImportResultDTO> BulkImportBlocks(IEnumerable<BlockImportRowDTO> rows, int createdBy)
+        {
+            var table = new DataTable();
+            table.Columns.Add("RowNumber",    typeof(int));
+            table.Columns.Add("StateName",    typeof(string));
+            table.Columns.Add("DistrictName", typeof(string));
+            table.Columns.Add("BlockName",    typeof(string));
+
+            foreach (var row in rows)
+                table.Rows.Add(row.RowNumber, row.StateName, row.DistrictName, row.BlockName);
+
+            var parameters = new DynamicParameters();
+            parameters.Add("@Blocks",    table.AsTableValuedParameter("dbo.BlockImportType"));
+            parameters.Add("@CreatedBy", createdBy);
+            parameters.Add("@Inserted",  dbType: DbType.Int32, direction: ParameterDirection.Output);
+            parameters.Add("@Updated",   dbType: DbType.Int32, direction: ParameterDirection.Output);
+
+            var errors = await _db.Connection.QueryAsync<BlockImportErrorDTO>(
+                "dbo.usp_BulkImportBlocks",
+                parameters,
+                _db.Transaction,
+                commandTimeout: 120,
+                commandType: CommandType.StoredProcedure
+            );
+
+            return new BlockImportResultDTO
+            {
+                Errors   = errors.ToList(),
+                Inserted = parameters.Get<int>("@Inserted"),
+                Updated  = parameters.Get<int>("@Updated")
+            };
+        }
         #endregion
 
         #region "Villages"
@@ -529,6 +602,65 @@ namespace Infrastructure
             var parameters = new DynamicParameters();
             parameters.Add("@BlockId", blockId);
             return await _db.Connection.QueryAsync<DropdownDTO>(storedProcedure, parameters, _db.Transaction, commandType: CommandType.StoredProcedure);
+        }
+
+        public async Task<VillageImportResultDTO> BulkImportVillages(IEnumerable<VillageImportRowDTO> rows, int createdBy)
+        {
+            var importId = Guid.NewGuid();
+            var sqlConn  = (SqlConnection)_db.Connection;
+            var sqlTran  = _db.Transaction as SqlTransaction;
+
+            // ── Step 1: Stream rows into staging table via SqlBulkCopy ──
+            // SqlBulkCopy uses TDS bulk-insert protocol — 10-20× faster than TVP
+            // for large datasets and avoids large parameter serialization overhead.
+            var table = new DataTable();
+            table.Columns.Add("ImportId",    typeof(Guid));
+            table.Columns.Add("RowNumber",    typeof(int));
+            table.Columns.Add("StateName",    typeof(string));
+            table.Columns.Add("DistrictName", typeof(string));
+            table.Columns.Add("BlockName",    typeof(string));
+            table.Columns.Add("VillageName",  typeof(string));
+
+            foreach (var row in rows)
+                table.Rows.Add(importId, row.RowNumber, row.StateName, row.DistrictName, row.BlockName, row.VillageName);
+
+            using (var bulkCopy = sqlTran != null
+                ? new SqlBulkCopy(sqlConn, SqlBulkCopyOptions.Default, sqlTran)
+                : new SqlBulkCopy(sqlConn))
+            {
+                bulkCopy.DestinationTableName = "dbo.VillageImportStaging";
+                bulkCopy.BatchSize            = 50000;
+                bulkCopy.BulkCopyTimeout      = 300;
+                bulkCopy.ColumnMappings.Add("ImportId",    "ImportId");
+                bulkCopy.ColumnMappings.Add("RowNumber",   "RowNumber");
+                bulkCopy.ColumnMappings.Add("StateName",   "StateName");
+                bulkCopy.ColumnMappings.Add("DistrictName","DistrictName");
+                bulkCopy.ColumnMappings.Add("BlockName",   "BlockName");
+                bulkCopy.ColumnMappings.Add("VillageName", "VillageName");
+                await bulkCopy.WriteToServerAsync(table);
+            }
+
+            // ── Step 2: SP validates all rows then upserts in 50K batches ──
+            var parameters = new DynamicParameters();
+            parameters.Add("@ImportId",  importId);
+            parameters.Add("@CreatedBy", createdBy);
+            parameters.Add("@Inserted",  dbType: DbType.Int32, direction: ParameterDirection.Output);
+            parameters.Add("@Updated",   dbType: DbType.Int32, direction: ParameterDirection.Output);
+
+            var errors = await sqlConn.QueryAsync<VillageImportErrorDTO>(
+                "dbo.usp_BulkImportVillagesFromStaging",
+                parameters,
+                sqlTran,
+                commandTimeout: 600,
+                commandType: CommandType.StoredProcedure
+            );
+
+            return new VillageImportResultDTO
+            {
+                Errors   = errors.ToList(),
+                Inserted = parameters.Get<int>("@Inserted"),
+                Updated  = parameters.Get<int>("@Updated")
+            };
         }
         public async Task<IEnumerable<GradeSectionDTO>> GetGradesAndSections()
         {

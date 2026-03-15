@@ -1,4 +1,4 @@
-﻿using Core.Abstractions;
+using Core.Abstractions;
 using Core.DTOs;
 using Core.DTOs.Users;
 using Core.Entities;
@@ -282,6 +282,48 @@ namespace Core.Features.Admin
             response = new(isClosed, isClosed ? AppStatusCodes.Success : AppStatusCodes.Unauthorized, isClosed, isClosed ? MessageSuccess.Closed : MessageError.CodeIssue);
             return response;
         }
+        public async Task<ServiceResponseDTO> BulkImportStates(IEnumerable<(string Name, string Code)> stateRows, int currentUserId)
+        {
+            int inserted = 0, updated = 0, skipped = 0;
+
+            foreach (var (rawName, rawCode) in stateRows)
+            {
+                var trimmedName = rawName?.Trim();
+                if (string.IsNullOrWhiteSpace(trimmedName))
+                {
+                    skipped++;
+                    continue;
+                }
+
+                var trimmedCode = rawCode?.Trim() ?? string.Empty;
+
+                var existingState = await _adminRepository.GetStateByName(trimmedName);
+                if (existingState != null)
+                {
+                    existingState.StateCode = trimmedCode;
+                    existingState.ModifyBy = currentUserId;
+                    existingState.ModifyDate = DateTime.UtcNow;
+                    await _adminRepository.SaveState(existingState);
+                    updated++;
+                }
+                else
+                {
+                    var state = new State
+                    {
+                        StateName = trimmedName,
+                        StateCode = trimmedCode,
+                        CurrentStatus = Enums.Status.Active,
+                        DateCreated = DateTime.UtcNow,
+                        CreatedBy = currentUserId
+                    };
+                    await _adminRepository.SaveState(state);
+                    inserted++;
+                }
+            }
+
+            var message = $"{inserted} state(s) inserted, {updated} state(s) updated, {skipped} row(s) skipped.";
+            return new ServiceResponseDTO(true, AppStatusCodes.Success, new { inserted, updated, skipped }, message);
+        }
         #endregion
 
         #region "District"
@@ -346,6 +388,18 @@ namespace Core.Features.Admin
         {
             return await _adminRepository.GetDistrictsByState(stateId);
         }
+        public async Task<ServiceResponseDTO> BulkImportDistricts(IEnumerable<DistrictImportRowDTO> rows, int currentUserId)
+        {
+            var result = await _adminRepository.BulkImportDistricts(rows, currentUserId);
+            if (result.HasErrors)
+            {
+                return new ServiceResponseDTO(false, AppStatusCodes.BadRequest, result.Errors,
+                    $"{result.Errors.Count} validation error(s) found. No records were imported.");
+            }
+            return new ServiceResponseDTO(true, AppStatusCodes.Success,
+                new { result.Inserted, result.Updated },
+                $"{result.Inserted} district(s) inserted, {result.Updated} district(s) updated.");
+        }
         #endregion
     
         #region "Blocks"
@@ -406,6 +460,18 @@ namespace Core.Features.Admin
         {
             return await _adminRepository.GetBlocksByDistrict(districtId);
         }
+        public async Task<ServiceResponseDTO> BulkImportBlocks(IEnumerable<BlockImportRowDTO> rows, int currentUserId)
+        {
+            var result = await _adminRepository.BulkImportBlocks(rows, currentUserId);
+            if (result.HasErrors)
+            {
+                return new ServiceResponseDTO(false, AppStatusCodes.BadRequest, result.Errors,
+                    $"{result.Errors.Count} validation error(s) found. No records were imported.");
+            }
+            return new ServiceResponseDTO(true, AppStatusCodes.Success,
+                new { result.Inserted, result.Updated },
+                $"{result.Inserted} block(s) inserted, {result.Updated} block(s) updated.");
+        }
         #endregion
     
         #region "Villages"
@@ -465,6 +531,18 @@ namespace Core.Features.Admin
         public async Task<IEnumerable<DropdownDTO>> GetVillagesByBlock(int blockId)
         {
             return await _adminRepository.GetVillagesByBlock(blockId);
+        }
+        public async Task<ServiceResponseDTO> BulkImportVillages(IEnumerable<VillageImportRowDTO> rows, int currentUserId)
+        {
+            var result = await _adminRepository.BulkImportVillages(rows, currentUserId);
+            if (result.HasErrors)
+            {
+                return new ServiceResponseDTO(false, AppStatusCodes.BadRequest, result.Errors,
+                    $"{result.Errors.Count} validation error(s) found. No records were imported.");
+            }
+            return new ServiceResponseDTO(true, AppStatusCodes.Success,
+                new { result.Inserted, result.Updated },
+                $"{result.Inserted} village(s) inserted, {result.Updated} village(s) updated.");
         }
         #endregion
 

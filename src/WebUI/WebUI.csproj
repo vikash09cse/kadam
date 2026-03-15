@@ -15,4 +15,8 @@
     <Folder Include="wwwroot\assets\libs\particles.js\demo\" />
   </ItemGroup>
 
+  <ItemGroup>
+    <PackageReference Include="ClosedXML" Version="0.105.0" />
+  </ItemGroup>
+
 </Project>
