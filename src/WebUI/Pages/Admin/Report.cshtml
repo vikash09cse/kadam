@@ -1,0 +1,32 @@
+@page
+@model WebUI.Pages.Admin.ReportModel
+@{
+    ViewData["Title"] = "Kadam Programme Report";
+}
+
+<div class="page-content">
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-12">
+                <div class="page-title-box d-sm-flex align-items-center justify-content-between">
+                    <h4 class="mb-sm-0">Kadam Programme Report</h4>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-body">
+                        <p class="text-muted mb-4">
+                            Download the Kadam Programme report in Excel format. The report includes student details, institution information, family details, baseline and endline assessments, and mainstream data.
+                        </p>
+                        <a href="?handler=DownloadReport" class="btn btn-success">
+                            <i class="mdi mdi-file-excel"></i> Download Excel Report
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

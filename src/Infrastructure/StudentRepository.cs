@@ -1,4 +1,5 @@
-﻿using Core.Abstractions;
+using Core.Abstractions;
+using Core.DTOs;
 using Core.DTOs.App;
 using Core.Entities;
 using Dapper;
@@ -265,6 +266,18 @@ namespace Infrastructure
         {
             return await _context.StudentBaselineDetails
                 .AnyAsync(x => x.StudentId == studentId && !x.IsDeleted);
+        }
+
+        public async Task<IEnumerable<KadamProgrammeReportDTO>> GetKadamProgrammeReport(int? userId)
+        {
+            using var connection = _context.Database.GetDbConnection();
+            var parameters = new DynamicParameters();
+            parameters.Add("@UserId", userId);
+            var result = await connection.QueryAsync<KadamProgrammeReportDTO>(
+                "usp_KadamProgrammeReport",
+                parameters,
+                commandType: CommandType.StoredProcedure);
+            return result;
         }
     }
 }

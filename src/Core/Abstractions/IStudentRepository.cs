@@ -1,4 +1,5 @@
-﻿using Core.DTOs.App;
+using Core.DTOs;
+using Core.DTOs.App;
 using Core.Entities;
 
 namespace Core.Abstractions
@@ -24,5 +25,6 @@ namespace Core.Abstractions
         Task<StudentMainstreamDetailDTO> GetStudentDetailForMainstream(int id);
         Task<bool> SaveStudentMainstream(StudentMainstream studentMainstream);
         Task<bool> HasBaselineDetails(int studentId);
+        Task<IEnumerable<KadamProgrammeReportDTO>> GetKadamProgrammeReport(int? userId);
     }
 }

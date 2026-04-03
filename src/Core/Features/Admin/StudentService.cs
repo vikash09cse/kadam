@@ -1,4 +1,4 @@
-﻿using Core.Abstractions;
+using Core.Abstractions;
 using Core.DTOs;
 using Core.DTOs.App;
 using Core.Entities;
@@ -195,6 +195,11 @@ namespace Core.Features.Admin
         {
             bool isSaved = await _studentRepository.SaveStudentMainstream(studentMainstream);
             return new ServiceResponseDTO(isSaved, isSaved ? AppStatusCodes.Success : AppStatusCodes.Unauthorized, result: studentMainstream.Id, isSaved ? MessageSuccess.Saved : MessageError.CodeIssue);
+        }
+
+        public async Task<IEnumerable<KadamProgrammeReportDTO>> GetKadamProgrammeReport(int? userId)
+        {
+            return await _studentRepository.GetKadamProgrammeReport(userId);
         }
     }
 }
