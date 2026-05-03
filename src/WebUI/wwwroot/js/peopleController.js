@@ -1,6 +1,15 @@
 (function() {
     'use strict';
 
+    function escapeHtml(str) {
+        if (str == null || str === undefined) return '';
+        return String(str)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;');
+    }
+
     angular
         .module('peopleApp')
         .controller('peopleController', PeopleController);
@@ -15,6 +24,8 @@
         vm.roles = [];
         vm.reportRoles = [];
         vm.userInfo = {};
+        vm.autoGeneratePassword = true;
+        vm.passwordPreview = '';
         vm.isSaving = false;
         vm.isSubmit = false;
         vm.programs = {
@@ -53,13 +64,33 @@
                     { data: 'roleName' },
                     { data: 'reporteeRoleName' },
                     {
+                        data: 'lastGeneratedPassword',
+                        orderable: false,
+                        render: function(data, type, row) {
+                            if (!data) {
+                                return '<span class="text-muted">—</span>';
+                            }
+                            return (
+                                '<span class="d-inline-flex align-items-start gap-1 flex-wrap">' +
+                                '<code class="small text-break" style="max-width:220px;">' + escapeHtml(data) + '</code>' +
+                                '<button type="button" class="btn btn-sm btn-light py-0 px-1" title="Copy password" ' +
+                                'onclick="navigator.clipboard.writeText(this.parentElement.querySelector(\'code\').textContent);">' +
+                                '<i class="mdi mdi-content-copy"></i></button></span>'
+                            );
+                        }
+                    },
+                    {
                         data: null,
                         orderable: false,
                         render: function(data, type, row) {
+                            var safeName = String(row.fullName || '').replace(/\\/g, '\\\\').replace(/'/g, "\\'");
                             return `
                                 <div class="btn-group">
                                     <button class="btn btn-sm btn-warning" title="Edit" ng-click="vm.editPerson(${row.id})">
                                         <i class="mdi mdi-pencil"></i>
+                                    </button>
+                                    <button class="btn btn-sm btn-info" title="Reset password" ng-click="vm.confirmResetPassword(${row.id})">
+                                        <i class="mdi mdi-lock-reset"></i>
                                     </button>
                                     <button class="btn btn-sm btn-danger" title="Remove" ng-click="vm.removePerson(${row.id})">
                                         <i class="mdi mdi-close-thick"></i>
@@ -68,7 +99,7 @@
                                         <i class="mdi mdi-plus"></i> Assign Program
                                     </button>
                                     <button class="btn btn-sm btn-success" title="Assign Institution" 
-                                            ng-click="vm.assignInstitution('${row.id}', '${row.fullName}', '${row.roleName}')">
+                                            ng-click="vm.assignInstitution('${row.id}', '${safeName}', '${row.roleName}')">
                                         <i class="mdi mdi-building"></i> Assign Institution
                                     </button>
                                 </div>
@@ -100,6 +131,72 @@
             });
         };
 
+        vm.onAutoGeneratePasswordChange = function() {
+            if (vm.autoGeneratePassword) {
+                vm.userInfo.password = '';
+                vm.userInfo.confirmPassword = '';
+                vm.refreshPasswordPreview();
+            } else {
+                vm.passwordPreview = '';
+            }
+        };
+
+        vm.refreshPasswordPreview = function() {
+            PeopleService.getPasswordPreview()
+                .then(function(d) {
+                    vm.passwordPreview = d.password;
+                })
+                .catch(function(error) {
+                    ShowNotification(error.message || 'Could not generate preview', 1);
+                });
+        };
+
+        vm.fillManualPasswordFromPreview = function() {
+            PeopleService.getPasswordPreview()
+                .then(function(d) {
+                    vm.userInfo.password = d.password;
+                    vm.userInfo.confirmPassword = d.password;
+                })
+                .catch(function(error) {
+                    ShowNotification(error.message || 'Could not generate password', 1);
+                });
+        };
+
+        vm.confirmResetPassword = function(id) {
+            Swal.fire({
+                title: 'Reset password?',
+                text: 'A new secure password will be generated and saved. The previous password will stop working.',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#3085d6',
+                cancelButtonColor: '#d33',
+                confirmButtonText: 'Yes, reset password'
+            }).then(function(result) {
+                if (!result.isConfirmed) return;
+                PeopleService.resetUserPassword(id)
+                    .then(function(response) {
+                        if (response.success) {
+                            vm.dataTable.ajax.reload();
+                            var pwd = response.result && (response.result.generatedPassword || response.result.GeneratedPassword);
+                            if (pwd) {
+                                Swal.fire({
+                                    title: 'New password',
+                                    html: '<p class="mb-2">Copy and share this with the user securely.</p><code style="font-size:1.1rem;">' + escapeHtml(pwd) + '</code>',
+                                    icon: 'success'
+                                });
+                            } else {
+                                ShowNotification(response.message, 0);
+                            }
+                        } else {
+                            ShowNotification(response.message, 1);
+                        }
+                    })
+                    .catch(function(error) {
+                        ShowNotification(error.message || 'Reset failed', 1);
+                    });
+            });
+        };
+
         // Edit Person
         vm.editPerson = function(id) {
             PeopleService.getInitialData(id)
@@ -108,6 +205,8 @@
                     vm.roles = response.roles;
                     vm.reportRoles = response.reportRoles;
                     vm.userInfo = response.userInfo;
+                    vm.autoGeneratePassword = false;
+                    vm.passwordPreview = '';
                     // Clear password fields for editing (user can leave blank to keep current password)
                     vm.userInfo.password = '';
                     vm.userInfo.confirmPassword = '';
@@ -157,23 +256,30 @@
                 return;
             }
 
-            // For existing users, only send password if it's not empty
             var userData = angular.copy(vm.userInfo);
-            if (userData.id > 0 && (!userData.password || userData.password.trim() === '')) {
+            if (userData.id > 0 && (!vm.autoGeneratePassword) && (!userData.password || userData.password.trim() === '')) {
                 delete userData.password;
                 delete userData.confirmPassword;
             }
 
             vm.isSaving = true;
-            PeopleService.saveUser(userData)
+            PeopleService.saveUser(userData, vm.autoGeneratePassword)
                 .then(function(response) {
                     vm.isSubmit = false;
                     vm.isSaving = false;
                     if (response.success) {
-                        ShowNotification(response.message, 0);
+                        var pwd = response.result && (response.result.generatedPassword || response.result.GeneratedPassword);
+                        if (pwd) {
+                            Swal.fire({
+                                title: userData.id > 0 ? 'User updated' : 'User created',
+                                html: '<p class="mb-2">Password (copy and share securely):</p><code style="font-size:1.1rem;">' + escapeHtml(pwd) + '</code>',
+                                icon: 'success'
+                            });
+                        } else {
+                            ShowNotification(response.message, 0);
+                        }
                         $('#addPeopleModal').modal('hide');
                         vm.dataTable.ajax.reload();
-                        // Clear password fields after successful save
                         vm.userInfo.password = '';
                         vm.userInfo.confirmPassword = '';
                     } else {
@@ -223,6 +329,9 @@
                         reporteeRoleId: null,
                         isActive: true
                     };
+                    vm.autoGeneratePassword = true;
+                    vm.passwordPreview = '';
+                    vm.refreshPasswordPreview();
 
                     // Initialize modal with options
                     var modal = new bootstrap.Modal(document.getElementById('addPeopleModal'), {

@@ -19,7 +19,7 @@ AS
 				Id, Email, UserName, PasswordHash, PasswordSalt, FirstName, LastName, 
 				Phone, AlternatePhone, Gender, Grade, Section, GradeSection, DivisionId, 
 				RoleId, ReporteeRoleId, UserStatus, ActivityType, IsDeleted, DateCreated, 
-				CreatedBy, ModifyDate, ModifyBy, DeletedDate, DeletedBy
+				CreatedBy, ModifyDate, ModifyBy, DeletedDate, DeletedBy, LastGeneratedPassword
 			From Users Where Id=@Id
 		End
 	Else If @QueryType=4
@@ -28,6 +28,6 @@ AS
 				Id, Email, UserName, PasswordHash, PasswordSalt, FirstName, LastName, 
 				Phone, AlternatePhone, Gender, Grade, Section, GradeSection, DivisionId, 
 				RoleId, ReporteeRoleId, UserStatus, ActivityType, IsDeleted, DateCreated, 
-				CreatedBy, ModifyDate, ModifyBy, DeletedDate, DeletedBy
+				CreatedBy, ModifyDate, ModifyBy, DeletedDate, DeletedBy, LastGeneratedPassword
 			From Users 
 		End

@@ -1,9 +1,9 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Core.Features.Admin;
+using Core.Utilities;
 using static Core.Utilities.Enums;
 using Core.DTOs.Users;
-using Core.Utilities;
 using Core.Entities;
 
 namespace WebUI.Pages.Admin
@@ -39,6 +39,7 @@ namespace WebUI.Pages.Admin
             if (id > 0)
             {
                 response.UserInfo = await _adminService.GetUser(id);
+                response.UserInfo.LastGeneratedPassword = null;
             }
             return new JsonResult(response);
         }
@@ -83,7 +84,7 @@ namespace WebUI.Pages.Admin
                     user.ModifyBy = _authenticationService.GetCurrentUserId();
                 }
 
-                var result = await _adminService.SaveUser(user, userRequest.Password);
+                var result = await _adminService.SaveUser(user, userRequest.Password, userRequest.AutoGeneratePassword);
                 return new JsonResult(result);
             }
             catch (Exception ex)
@@ -142,6 +143,17 @@ namespace WebUI.Pages.Admin
         public async Task<IActionResult> OnPostSavePeopleInstitution([FromBody] PeopleInstitution peopleInstitution)
         {
             var result = await _adminService.SavePeopleInstitution(peopleInstitution);
+            return new JsonResult(result);
+        }
+
+        public IActionResult OnGetGeneratePasswordPreview()
+        {
+            return new JsonResult(new { password = PasswordManagement.GenerateSecurePassword() });
+        }
+
+        public async Task<IActionResult> OnPostResetUserPassword(int id)
+        {
+            var result = await _adminService.ResetUserPassword(id);
             return new JsonResult(result);
         }
     }

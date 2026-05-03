@@ -86,6 +86,7 @@ namespace Infrastructure
                 P.Add(DBConstant.Param.CreatedBy, user.CreatedBy);
                 P.Add(DBConstant.Param.ModifyDate, user.ModifyDate);
                 P.Add(DBConstant.Param.ModifyBy, user.ModifyBy);
+                P.Add(DBConstant.Param.LastGeneratedPassword, user.LastGeneratedPassword);
                 var rowEffected = await _db.Connection.ExecuteAsync(SP, P, _db.Transaction, null, CommandType.StoredProcedure);
                 return rowEffected > 0;
             }

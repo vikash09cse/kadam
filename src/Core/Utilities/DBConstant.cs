@@ -1,4 +1,4 @@
-﻿namespace Core.Utilities;
+namespace Core.Utilities;
 
 public static class DBConstant
 {
@@ -36,6 +36,7 @@ public static class DBConstant
         public const string CreatedBy = "CreatedBy";
         public const string ModifyDate = "ModifyDate";
         public const string ModifyBy = "ModifyBy";
+        public const string LastGeneratedPassword = "LastGeneratedPassword";
     }
     public static class BaselineType
     {

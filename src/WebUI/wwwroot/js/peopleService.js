@@ -12,6 +12,8 @@
             getInitialData: getInitialData,
             getUserList: getUserList,
             saveUser: saveUser,
+            getPasswordPreview: getPasswordPreview,
+            resetUserPassword: resetUserPassword,
             deleteUser: deleteUser,
             getUserPrograms: getUserPrograms,
             saveUserPrograms: saveUserPrograms,
@@ -37,14 +39,33 @@
                 .catch(error => $q.reject(error));
         }
 
-        function saveUser(userInfo) {
-            // Create the request object with user and password
+        function saveUser(userInfo, autoGeneratePassword) {
+            var payload = angular.copy(userInfo);
+            var pwd = payload.password;
+            delete payload.password;
+            delete payload.confirmPassword;
+
             var requestData = {
-                user: userInfo,
-                password: userInfo.password || null
+                user: payload,
+                password: autoGeneratePassword ? null : (pwd || null),
+                autoGeneratePassword: !!autoGeneratePassword
             };
-            
+
             return $http.post('?handler=SaveUser', requestData, {
+                headers: { 'RequestVerificationToken': $('input:hidden[name="__RequestVerificationToken"]').val() }
+            })
+            .then(response => response.data)
+            .catch(error => $q.reject(error));
+        }
+
+        function getPasswordPreview() {
+            return $http.get('?handler=GeneratePasswordPreview')
+                .then(response => response.data)
+                .catch(error => $q.reject(error));
+        }
+
+        function resetUserPassword(id) {
+            return $http.post('?handler=ResetUserPassword&id=' + id, null, {
                 headers: { 'RequestVerificationToken': $('input:hidden[name="__RequestVerificationToken"]').val() }
             })
             .then(response => response.data)

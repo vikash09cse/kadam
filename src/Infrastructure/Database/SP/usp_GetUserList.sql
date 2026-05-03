@@ -13,6 +13,7 @@ BEGIN
          u.Id, Email, UserName, FirstName, LastName, 
         Phone, Gender, 
         r.RoleName AS RoleName, rr.RoleName AS ReporteeRoleName,
+        u.LastGeneratedPassword,
         COUNT(*) OVER() AS TotalCount
     FROM Users u 
     LEFT JOIN Roles r ON u.RoleId = r.Id

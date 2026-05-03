@@ -1,4 +1,4 @@
-﻿namespace Core.Entities
+namespace Core.Entities
 {
     public class Users
     {
@@ -6,7 +6,9 @@
         public string Email { get; set; } = string.Empty;
         public string UserName { get; set; } = string.Empty;
         public byte[] PasswordHash { get; set; } 
-        public byte[] PasswordSalt { get; set; } 
+        public byte[] PasswordSalt { get; set; }
+        /// <summary>Last password shown to admins (set on create/reset/manual save). Not used for authentication.</summary>
+        public string? LastGeneratedPassword { get; set; }
         public string FirstName { get; set; } = string.Empty;
         public string LastName { get; set; } = string.Empty;
         public string Phone { get; set; } = string.Empty;

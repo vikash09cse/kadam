@@ -23,7 +23,7 @@ namespace Core.Features.Admin
         {
             return await _adminRepository.GetUser(id);
         }
-        public async Task<ServiceResponseDTO> SaveUser(Users user, string? password = null)
+        public async Task<ServiceResponseDTO> SaveUser(Users user, string? password = null, bool autoGeneratePassword = false)
         {
             if (await _adminRepository.CheckUserExist(user.Email, user.Id))
             {
@@ -35,48 +35,102 @@ namespace Core.Features.Admin
             user.Section = "";
             user.GradeSection = "";
 
-            // Handle password - only set if provided or for new users
+            string? plainPasswordForReturn = null;
+            Users? existing = null;
+            if (user.Id > 0)
+            {
+                existing = await _adminRepository.GetUser(user.Id);
+                if (existing == null || existing.Id == 0)
+                {
+                    return new ServiceResponseDTO(false, AppStatusCodes.BadRequest, true, MessageError.InvalidData);
+                }
+            }
+
             if (user.Id == 0)
             {
-                // New user - password is required
-                if (string.IsNullOrWhiteSpace(password))
+                if (autoGeneratePassword)
                 {
-                    return new ServiceResponseDTO(false, AppStatusCodes.BadRequest, true, "Password is required for new users.");
+                    plainPasswordForReturn = PasswordManagement.GenerateSecurePassword();
                 }
-                
-                // Validate password strength
-                //var passwordValidation = PasswordManagement.ValidatePasswordStrength(password);
-                //if (!passwordValidation.IsValid)
-                //{
-                //    return new ServiceResponseDTO(false, AppStatusCodes.BadRequest, true, passwordValidation.ErrorMessage);
-                //}
-                
-                var (passwordHash, passwordSalt) = PasswordManagement.HashPassword(password);
-                user.PasswordHash = passwordHash;
-                user.PasswordSalt = passwordSalt;
+                else if (!string.IsNullOrWhiteSpace(password))
+                {
+                    var manualValidation = PasswordManagement.ValidatePasswordStrength(password);
+                    if (!manualValidation.IsValid)
+                    {
+                        return new ServiceResponseDTO(false, AppStatusCodes.BadRequest, true, manualValidation.ErrorMessage);
+                    }
+                    plainPasswordForReturn = password;
+                }
+                else
+                {
+                    return new ServiceResponseDTO(false, AppStatusCodes.BadRequest, true, "Password is required for new users, or enable automatic password generation.");
+                }
+
+                var (hashNew, saltNew) = PasswordManagement.HashPassword(plainPasswordForReturn);
+                user.PasswordHash = hashNew;
+                user.PasswordSalt = saltNew;
+                user.LastGeneratedPassword = plainPasswordForReturn;
             }
             else
             {
-                // Existing user - only update password if provided
-                if (!string.IsNullOrWhiteSpace(password))
+                if (autoGeneratePassword)
                 {
-                    // Validate password strength
-                    //var passwordValidation = PasswordManagement.ValidatePasswordStrength(password);
-                    //if (!passwordValidation.IsValid)
-                    //{
-                    //    return new ServiceResponseDTO(false, AppStatusCodes.BadRequest, true, passwordValidation.ErrorMessage);
-                    //}
-                    
-                    var (passwordHash, passwordSalt) = PasswordManagement.HashPassword(password);
-                    user.PasswordHash = passwordHash;
-                    user.PasswordSalt = passwordSalt;
+                    plainPasswordForReturn = PasswordManagement.GenerateSecurePassword();
+                    var (hashNew, saltNew) = PasswordManagement.HashPassword(plainPasswordForReturn);
+                    user.PasswordHash = hashNew;
+                    user.PasswordSalt = saltNew;
+                    user.LastGeneratedPassword = plainPasswordForReturn;
                 }
-                // If password is empty/null, keep existing password (don't update PasswordHash/Salt)
+                else if (!string.IsNullOrWhiteSpace(password))
+                {
+                    var manualValidation = PasswordManagement.ValidatePasswordStrength(password);
+                    if (!manualValidation.IsValid)
+                    {
+                        return new ServiceResponseDTO(false, AppStatusCodes.BadRequest, true, manualValidation.ErrorMessage);
+                    }
+                    plainPasswordForReturn = password;
+                    var (hashNew, saltNew) = PasswordManagement.HashPassword(plainPasswordForReturn);
+                    user.PasswordHash = hashNew;
+                    user.PasswordSalt = saltNew;
+                    user.LastGeneratedPassword = plainPasswordForReturn;
+                }
+                else
+                {
+                    user.PasswordHash = existing!.PasswordHash;
+                    user.PasswordSalt = existing.PasswordSalt;
+                    user.LastGeneratedPassword = existing.LastGeneratedPassword;
+                }
             }
+
             user.UserStatus = 1;
 
             bool isSaved = await _adminRepository.SaveUser(user);
-            return new ServiceResponseDTO(isSaved, isSaved ? AppStatusCodes.Success : AppStatusCodes.Unauthorized, isSaved, isSaved ? MessageSuccess.Saved : MessageError.CodeIssue);
+            object resultPayload = isSaved
+                ? new { generatedPassword = plainPasswordForReturn }
+                : false;
+            return new ServiceResponseDTO(isSaved, isSaved ? AppStatusCodes.Success : AppStatusCodes.Unauthorized, resultPayload, isSaved ? MessageSuccess.Saved : MessageError.CodeIssue);
+        }
+
+        public async Task<ServiceResponseDTO> ResetUserPassword(int userId)
+        {
+            var user = await _adminRepository.GetUser(userId);
+            if (user == null || user.Id == 0)
+            {
+                return new ServiceResponseDTO(false, AppStatusCodes.BadRequest, false, MessageError.InvalidData);
+            }
+
+            var plain = PasswordManagement.GenerateSecurePassword();
+            var (hash, salt) = PasswordManagement.HashPassword(plain);
+            user.PasswordHash = hash;
+            user.PasswordSalt = salt;
+            user.LastGeneratedPassword = plain;
+            user.UserStatus = 1;
+
+            bool isSaved = await _adminRepository.SaveUser(user);
+            object resultPayload = isSaved
+                ? new { generatedPassword = plain }
+                : false;
+            return new ServiceResponseDTO(isSaved, isSaved ? AppStatusCodes.Success : AppStatusCodes.Unauthorized, resultPayload, isSaved ? MessageSuccess.Saved : MessageError.CodeIssue);
         }
         public async Task<ServiceResponseDTO> DeleteUser(int id)
         {

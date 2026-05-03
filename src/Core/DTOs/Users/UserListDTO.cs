@@ -1,4 +1,4 @@
-﻿using Core.Utilities;
+using Core.Utilities;
 
 namespace Core.DTOs.Users
 {
@@ -16,6 +16,7 @@ namespace Core.DTOs.Users
         public string GenderName => EnumHelper<Enums.Gender>.GetDescription(Gender);
         public string RoleName { get; set; } = string.Empty;
         public string ReporteeRoleName { get; set; } = string.Empty;
+        public string? LastGeneratedPassword { get; set; }
         public int TotalCount { get; set; }
     }
 }

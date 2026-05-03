@@ -1,4 +1,4 @@
-﻿@page
+@page
 @model WebUI.Pages.Admin.PeoplesModel
 @{
     ViewData["Title"] = "People Management";
@@ -45,6 +45,7 @@
                                             <th>Email</th>
                                             <th>Role</th>
                                             <th>Reportee Role</th>
+                                            <th>Password (last set)</th>
                                             <th>Action</th>
                                         </tr>
                                     </thead>
@@ -69,7 +70,7 @@
         <div class="modal-dialog modal-dialog-centered" role="document">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title" id="myModalLabel">Add New People</h5>
+                    <h5 class="modal-title" id="myModalLabel">{{ vm.userInfo.id > 0 ? 'Edit People' : 'Add New People' }}</h5>
                     <button type="button" id="ButtonAddProjectClose" class="btn-close" data-bs-dismiss="modal" aria-label="Close"> </button>
                 </div>
                 <form name="vm.peopleForm" ng-submit="vm.submitForm(vm.peopleForm)" novalidate>
@@ -135,29 +136,59 @@
                             </div>
                         </div>
                         <div class="row">
+                            <div class="col-12">
+                                <div class="form-check mb-3">
+                                    <input class="form-check-input" type="checkbox" id="autoGeneratePassword" name="autoGeneratePassword"
+                                           ng-model="vm.autoGeneratePassword"
+                                           ng-true-value="true" ng-false-value="false"
+                                           ng-change="vm.onAutoGeneratePasswordChange()">
+                                    <label class="form-check-label" for="autoGeneratePassword">
+                                        Generate password automatically (secure random password)
+                                    </label>
+                                </div>
+                                <div class="alert alert-light border py-2 mb-3" ng-if="vm.autoGeneratePassword">
+                                    <small class="text-muted">A new password will be created when you save. You can preview a sample below; the actual password on save may differ.</small>
+                                    <div class="d-flex flex-wrap align-items-center gap-2 mt-2" ng-if="vm.passwordPreview">
+                                        <code class="small mb-0">{{ vm.passwordPreview }}</code>
+                                        <button type="button" class="btn btn-sm btn-outline-secondary" ng-click="vm.refreshPasswordPreview()">
+                                            <i class="mdi mdi-refresh"></i> New preview
+                                        </button>
+                                    </div>
+                                    <button type="button" class="btn btn-sm btn-outline-primary mt-2" ng-click="vm.refreshPasswordPreview()" ng-if="!vm.passwordPreview">
+                                        <i class="mdi mdi-lock-outline"></i> Load password preview
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row" ng-if="!vm.autoGeneratePassword">
                             <div class="col-md-6">
                                 <div class="form-group mb-3">
-                                    <label for="password">Password<span class="text-danger">*</span></label>
-                                    <div class="password-input-container">
-                                        <input type="password" class="form-control password-input" id="password" name="password"
-                                               ng-model="vm.userInfo.password"
-                                               ng-minlength="6"
-                                               ng-maxlength="15"
-                                               ng-required="vm.userInfo.id == 0"
-                                               placeholder="{{vm.userInfo.id > 0 ? 'Leave blank to keep current password' : 'Enter password'}}">
-                                        <button type="button" class="password-toggle-btn" onclick="togglePassword('password', this)">
-                                            <i class="ri-eye-line" id="passwordIcon"></i>
+                                    <label for="password">Password<span class="text-danger" ng-if="vm.userInfo.id == 0">*</span></label>
+                                    <div class="input-group">
+                                        <div class="password-input-container flex-grow-1">
+                                            <input type="password" class="form-control password-input" id="password" name="password"
+                                                   ng-model="vm.userInfo.password"
+                                                   ng-minlength="6"
+                                                   ng-maxlength="15"
+                                                   ng-required="vm.userInfo.id == 0 && !vm.autoGeneratePassword"
+                                                   placeholder="{{vm.userInfo.id > 0 ? 'Leave blank to keep current password' : 'Enter password'}}">
+                                            <button type="button" class="password-toggle-btn" onclick="togglePassword('password', this)">
+                                                <i class="ri-eye-line" id="passwordIcon"></i>
+                                            </button>
+                                        </div>
+                                        <button type="button" class="btn btn-outline-secondary" ng-click="vm.fillManualPasswordFromPreview()" title="Fill with a generated password">
+                                            <i class="mdi mdi-auto-fix"></i> Generate
                                         </button>
                                     </div>
                                     <div class="error-messages">
-                                        <small class="text-danger" ng-if="vm.isSubmit && vm.peopleForm.password.$error.required">Password is required for new users.</small>
+                                        <small class="text-danger" ng-if="vm.isSubmit && vm.peopleForm.password.$error.required">Password is required for new users (or use automatic generation).</small>
                                         <small class="text-danger" ng-if="vm.peopleForm.password.$error.minlength">Password must be at least 6 characters long.</small>
                                         <small class="text-danger" ng-if="vm.peopleForm.password.$error.maxlength">Password cannot exceed 15 characters.</small>
                                     </div>
                                     <small class="text-muted">
                                         <strong>Password Requirements:</strong><br>
-                                        • At least 6 characters long<br>
-                                        • Maximum 15 characters<br>
+                                        • Uppercase, lowercase, number, special (@@$!%*?&amp;)<br>
+                                        • 6–15 characters<br>
                                     </small>
                                 </div>
                             </div>
@@ -168,7 +199,7 @@
                                         <input type="password" class="form-control password-input" id="confirmPassword" name="confirmPassword"
                                                ng-model="vm.userInfo.confirmPassword"
                                                ng-match="vm.userInfo.password"
-                                               ng-required="vm.userInfo.id == 0"
+                                               ng-required="vm.userInfo.id == 0 && !vm.autoGeneratePassword"
                                                placeholder="{{vm.userInfo.id > 0 ? 'Leave blank to keep current password' : 'Confirm password'}}">
                                         <button type="button" class="password-toggle-btn" onclick="togglePassword('confirmPassword', this)">
                                             <i class="ri-eye-line" id="confirmPasswordIcon"></i>

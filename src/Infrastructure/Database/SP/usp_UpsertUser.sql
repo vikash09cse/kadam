@@ -21,7 +21,8 @@ Create Or Alter Procedure [dbo].[usp_UpsertUser]
     @DateCreated        Datetime = Null,
     @CreatedBy          Int = Null,
     @ModifyDate         Datetime = Null,
-    @ModifyBy           Int = Null
+    @ModifyBy           Int = Null,
+    @LastGeneratedPassword Nvarchar(200) = Null
 )
 AS
 BEGIN
@@ -32,13 +33,13 @@ BEGIN
             Email, UserName, PasswordHash, PasswordSalt, FirstName, LastName, 
             Phone, AlternatePhone, Gender, Grade, Section, GradeSection, 
             DivisionId, RoleId, ReporteeRoleId, UserStatus, ActivityType, 
-            IsDeleted, DateCreated, CreatedBy
+            IsDeleted, DateCreated, CreatedBy, LastGeneratedPassword
         )
         VALUES (
             @Email, @UserName, @PasswordHash, @PasswordSalt, @FirstName, @LastName, 
             @Phone, @AlternatePhone, @Gender, @Grade, @Section, @GradeSection, 
             @DivisionId, @RoleId, @ReporteeRoleId, @UserStatus, @ActivityType, 
-            0, GETDATE(), @CreatedBy
+            0, GETDATE(), @CreatedBy, @LastGeneratedPassword
         )
     END
     ELSE
@@ -63,6 +64,7 @@ BEGIN
             ReporteeRoleId = @ReporteeRoleId,
             UserStatus = @UserStatus,
             ActivityType = @ActivityType,
+            LastGeneratedPassword = @LastGeneratedPassword,
             ModifyDate = GETDATE(),
             ModifyBy = @ModifyBy
         WHERE Id = @Id

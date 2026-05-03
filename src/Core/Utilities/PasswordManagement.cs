@@ -1,6 +1,7 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -46,13 +47,39 @@ namespace Core.Utilities
             }
         }
 
+        /// <summary>
+        /// Generates a cryptographically random password meeting <see cref="ValidatePasswordStrength"/> rules.
+        /// </summary>
+        public static string GenerateSecurePassword(int length = 12)
+        {
+            length = Math.Clamp(length, 8, 15);
+            const string upper = "ABCDEFGHJKLMNPQRSTUVWXYZ";
+            const string lower = "abcdefghjkmnpqrstuvwxyz";
+            const string digits = "23456789";
+            const string special = "@$!%*?&";
+
+            Span<char> pwd = stackalloc char[length];
+            var pool = upper + lower + digits + special;
+            pwd[0] = upper[RandomNumberGenerator.GetInt32(upper.Length)];
+            pwd[1] = lower[RandomNumberGenerator.GetInt32(lower.Length)];
+            pwd[2] = digits[RandomNumberGenerator.GetInt32(digits.Length)];
+            pwd[3] = special[RandomNumberGenerator.GetInt32(special.Length)];
+            for (int i = 4; i < length; i++)
+                pwd[i] = pool[RandomNumberGenerator.GetInt32(pool.Length)];
+
+            // Fisher–Yates shuffle
+            for (int i = length - 1; i > 0; i--)
+            {
+                int j = RandomNumberGenerator.GetInt32(i + 1);
+                (pwd[i], pwd[j]) = (pwd[j], pwd[i]);
+            }
+
+            return new string(pwd);
+        }
+
         public static string GenerateRandomPassword(int minLength, int maxLength)
         {
-            const string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-            var random = new Random();
-            int length = random.Next(minLength, maxLength + 1);
-            return new string(Enumerable.Repeat(chars, length)
-                .Select(s => s[random.Next(s.Length)]).ToArray());
+            return GenerateSecurePassword(Math.Clamp((minLength + maxLength) / 2, minLength, maxLength));
         }
 
         public static (bool IsValid, string ErrorMessage) ValidatePasswordStrength(string password)
