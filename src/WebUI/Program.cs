@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.StaticFiles;
 using WebUI;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -25,6 +26,12 @@ if (!app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+
+// Serve wwwroot (e.g. APK) from disk; ensures downloads work when the file is deployed
+// even if static-asset manifest and disk get out of sync.
+var apkContentTypes = new FileExtensionContentTypeProvider();
+apkContentTypes.Mappings[".apk"] = "application/vnd.android.package-archive";
+app.UseStaticFiles(new StaticFileOptions { ContentTypeProvider = apkContentTypes });
 
 app.UseRouting();
 

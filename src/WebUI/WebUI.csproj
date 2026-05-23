@@ -13,6 +13,7 @@
   <ItemGroup>
     <Folder Include="wwwroot\assets\Files\InboundInventoryImport\" />
     <Folder Include="wwwroot\assets\libs\particles.js\demo\" />
+    <Folder Include="wwwroot\apk\" />
   </ItemGroup>
 
   <ItemGroup>
