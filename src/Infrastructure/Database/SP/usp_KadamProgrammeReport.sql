@@ -1,14 +1,31 @@
 -- Kadam Programme Report - Matches Report Format Excel
 -- Returns student data with institution, location, family, baseline, endline, mainstream details
 CREATE OR ALTER PROCEDURE [dbo].[usp_KadamProgrammeReport]
-    @UserId INT = NULL  -- Filter by user's institutions if provided
+    @UserId INT = NULL  -- Current user; admin role returns all data, others are filtered by assigned institutions
 AS
 BEGIN
     SET NOCOUNT ON;
 
     DECLARE @InstitutionIds VARCHAR(2000) = NULL;
+    DECLARE @FilterByInstitution BIT = 0;
+
     IF @UserId IS NOT NULL AND @UserId > 0
-        SELECT @InstitutionIds = InstitutionIds FROM PeopleInstitutions WHERE UserId = @UserId;
+    BEGIN
+        IF EXISTS (
+            SELECT 1
+            FROM Users u
+            INNER JOIN Roles r ON u.RoleId = r.Id AND r.IsDeleted = 0
+            WHERE u.Id = @UserId
+              AND u.IsDeleted = 0
+              AND LOWER(LTRIM(RTRIM(r.RoleName))) = 'admin'
+        )
+            SET @FilterByInstitution = 0;
+        ELSE
+        BEGIN
+            SET @FilterByInstitution = 1;
+            SELECT @InstitutionIds = InstitutionIds FROM PeopleInstitutions WHERE UserId = @UserId;
+        END
+    END
 
     SELECT
         ROW_NUMBER() OVER (ORDER BY s.DateCreated, s.Id) AS SrNo,
@@ -197,7 +214,14 @@ BEGIN
     LEFT JOIN StudentMainstreams sm ON s.Id = sm.StudentId
     LEFT JOIN Grades gm ON sm.GradeId = gm.Id
     WHERE s.IsDeleted = 0
-    AND (@InstitutionIds IS NULL OR i.Id IN (SELECT Item FROM dbo.SplitString(@InstitutionIds, ',')))
+    AND (
+        @FilterByInstitution = 0
+        OR (
+            @InstitutionIds IS NOT NULL
+            AND LTRIM(RTRIM(@InstitutionIds)) <> ''
+            AND i.Id IN (SELECT Item FROM dbo.SplitString(@InstitutionIds, ','))
+        )
+    )
     ORDER BY s.DateCreated, s.Id;
 END
 GO
