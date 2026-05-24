@@ -61,6 +61,7 @@ namespace Infrastructure
         public DbSet<Role> Roles { get; set; }
         public DbSet<MenuPermission> MenuPermissions { get; set; }
         public DbSet<RolePermission> RolePermissions { get; set; }
+        public DbSet<UserMenuPermission> UserMenuPermissions { get; set; }
         public DbSet<Subject> Subjects { get; set; }
         public DbSet<Theme> Themes { get; set; }
         public DbSet<Step> Steps { get; set; }

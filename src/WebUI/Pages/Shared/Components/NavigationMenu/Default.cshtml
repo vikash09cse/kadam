@@ -1,0 +1,42 @@
+@model List<Core.DTOs.NavigationMenuDTO>
+
+<ul class="navbar-nav" id="navbar-nav">
+    @foreach (var menu in Model)
+    {
+        if (menu.Children.Any())
+        {
+            var collapseId = menu.MenuKey ?? $"menu-{menu.Id}";
+            <li class="nav-item">
+                <a class="nav-link menu-link" href="#@collapseId" data-bs-toggle="collapse" role="button" aria-expanded="false" aria-controls="@collapseId">
+                    @if (!string.IsNullOrWhiteSpace(menu.IconClass))
+                    {
+                        <i class="@menu.IconClass"></i>
+                    }
+                    <span>@menu.MenuName</span>
+                </a>
+                <div class="collapse menu-dropdown" id="@collapseId">
+                    <ul class="nav nav-sm flex-column">
+                        @foreach (var child in menu.Children)
+                        {
+                            <li class="nav-item">
+                                <a href="@child.MenuUrl" class="nav-link">@child.MenuName</a>
+                            </li>
+                        }
+                    </ul>
+                </div>
+            </li>
+        }
+        else
+        {
+            <li class="nav-item">
+                <a class="nav-link menu-link" href="@menu.MenuUrl">
+                    @if (!string.IsNullOrWhiteSpace(menu.IconClass))
+                    {
+                        <i class="@menu.IconClass"></i>
+                    }
+                    <span>@menu.MenuName</span>
+                </a>
+            </li>
+        }
+    }
+</ul>

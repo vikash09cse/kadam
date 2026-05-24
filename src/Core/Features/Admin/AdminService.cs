@@ -799,6 +799,32 @@ namespace Core.Features.Admin
         {
             return await _adminRepository.GetMenus();
         }
+
+        public async Task<IEnumerable<UserMenuPermissionItemDTO>> GetUserMenuPermissions(int userId)
+        {
+            return await _adminRepository.GetUserMenuPermissions(userId);
+        }
+
+        public async Task<ServiceResponseDTO> SaveUserMenuPermissions(UserMenuPermissionsDTO userMenuPermissions, int createdBy)
+        {
+            if (userMenuPermissions.UserId <= 0)
+            {
+                return new ServiceResponseDTO(false, AppStatusCodes.BadRequest, true, MessageError.InvalidData);
+            }
+
+            bool isSaved = await _adminRepository.SaveUserMenuPermissions(userMenuPermissions, createdBy);
+            return new ServiceResponseDTO(isSaved, isSaved ? AppStatusCodes.Success : AppStatusCodes.Unauthorized, isSaved, isSaved ? MessageSuccess.Saved : MessageError.CodeIssue);
+        }
+
+        public async Task<IEnumerable<NavigationMenuDTO>> GetUserNavigationMenus(int userId)
+        {
+            return await _adminRepository.GetUserNavigationMenus(userId);
+        }
+
+        public async Task EnsureNavigationMenusSeeded()
+        {
+            await _adminRepository.EnsureNavigationMenusSeeded();
+        }
         #endregion
 
         #region "Subjects"

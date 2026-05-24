@@ -10,6 +10,9 @@ namespace Core.Entities
     {
         public string MenuName { get; set; } = string.Empty;
         public int? ParentId { get; set; }
-
+        public string? MenuUrl { get; set; }
+        public string? IconClass { get; set; }
+        public int SortOrder { get; set; }
+        public string? MenuKey { get; set; }
     }
 }

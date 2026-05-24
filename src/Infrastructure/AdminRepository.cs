@@ -799,11 +799,82 @@ namespace Infrastructure
         }
         public async Task<IEnumerable<MenuPermissionDTO>> GetMenuPermissions()
         {
-            return await Task.FromResult(_context.MenuPermissions.ToList().Select(x => new MenuPermissionDTO
+            return await _context.MenuPermissions
+                .Where(x => !x.IsDeleted)
+                .OrderBy(x => x.SortOrder)
+                .Select(x => new MenuPermissionDTO
+                {
+                    Id = x.Id,
+                    MenuName = x.MenuName,
+                })
+                .ToListAsync();
+        }
+
+        public async Task<IEnumerable<UserMenuPermissionItemDTO>> GetUserMenuPermissions(int userId)
+        {
+            var storedProcedure = "dbo.usp_GetUserMenuPermissions";
+            var parameters = new DynamicParameters();
+            parameters.Add("@UserId", userId);
+            return await _db.Connection.QueryAsync<UserMenuPermissionItemDTO>(
+                storedProcedure,
+                parameters,
+                _db.Transaction,
+                commandType: CommandType.StoredProcedure);
+        }
+
+        public async Task<bool> SaveUserMenuPermissions(UserMenuPermissionsDTO userMenuPermissions, int createdBy)
+        {
+            var existing = await _context.UserMenuPermissions
+                .Where(x => x.UserId == userMenuPermissions.UserId)
+                .ToListAsync();
+            _context.UserMenuPermissions.RemoveRange(existing);
+
+            foreach (var menuId in userMenuPermissions.MenuIds.Distinct())
             {
-                Id = x.Id,
-                MenuName = x.MenuName,
-            }));
+                _context.UserMenuPermissions.Add(new UserMenuPermission
+                {
+                    UserId = userMenuPermissions.UserId,
+                    MenuId = menuId,
+                    CreatedBy = createdBy,
+                    DateCreated = DateTime.UtcNow,
+                    CurrentStatus = Enums.Status.Active
+                });
+            }
+
+            await _context.SaveChangesAsync();
+            return true;
+        }
+
+        public async Task<IEnumerable<NavigationMenuDTO>> GetUserNavigationMenus(int userId)
+        {
+            var storedProcedure = "dbo.usp_GetUserNavigationMenus";
+            var parameters = new DynamicParameters();
+            parameters.Add("@UserId", userId);
+            return await _db.Connection.QueryAsync<NavigationMenuDTO>(
+                storedProcedure,
+                parameters,
+                _db.Transaction,
+                commandType: CommandType.StoredProcedure);
+        }
+
+        public async Task SeedNavigationMenus()
+        {
+            await _db.Connection.ExecuteAsync(
+                "dbo.usp_SeedNavigationMenus",
+                null,
+                _db.Transaction,
+                commandType: CommandType.StoredProcedure);
+        }
+
+        public async Task EnsureNavigationMenusSeeded()
+        {
+            var hasNavigationMenus = await _context.MenuPermissions
+                .AnyAsync(x => !x.IsDeleted && x.MenuUrl != null);
+
+            if (!hasNavigationMenus)
+            {
+                await SeedNavigationMenus();
+            }
         }
         public async Task<IEnumerable<DropdownDTO>> GetRolesDropDown()
         {

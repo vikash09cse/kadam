@@ -102,6 +102,9 @@
                                             ng-click="vm.assignInstitution('${row.id}', '${safeName}', '${row.roleName}')">
                                         <i class="mdi mdi-building"></i> Assign Institution
                                     </button>
+                                    <a href="/Admin/UserMenuPermissions/${row.id}" class="btn btn-sm btn-secondary" title="Menu Permission">
+                                        <i class="mdi mdi-menu"></i> Menu Permission
+                                    </a>
                                 </div>
                             `;
                         }

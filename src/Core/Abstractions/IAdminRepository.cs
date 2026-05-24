@@ -102,6 +102,11 @@ namespace Core.Abstractions
         Task<IEnumerable<DropdownDTO>> GetMenus();
         Task<bool> CheckDuplicateMenuName(string menuName, int id);
         Task<IEnumerable<MenuPermissionDTO>> GetMenuPermissions();
+        Task<IEnumerable<UserMenuPermissionItemDTO>> GetUserMenuPermissions(int userId);
+        Task<bool> SaveUserMenuPermissions(UserMenuPermissionsDTO userMenuPermissions, int createdBy);
+        Task<IEnumerable<NavigationMenuDTO>> GetUserNavigationMenus(int userId);
+        Task SeedNavigationMenus();
+        Task EnsureNavigationMenusSeeded();
         #endregion
 
         #region "Subjects"
