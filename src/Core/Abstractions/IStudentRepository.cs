@@ -25,6 +25,6 @@ namespace Core.Abstractions
         Task<StudentMainstreamDetailDTO> GetStudentDetailForMainstream(int id);
         Task<bool> SaveStudentMainstream(StudentMainstream studentMainstream);
         Task<bool> HasBaselineDetails(int studentId);
-        Task<IEnumerable<KadamProgrammeReportDTO>> GetKadamProgrammeReport(int? userId);
+        Task<IEnumerable<KadamProgrammeReportDTO>> GetKadamProgrammeReport(int? userId, KadamProgrammeReportFilterDTO? filter = null);
     }
 }

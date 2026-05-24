@@ -197,9 +197,9 @@ namespace Core.Features.Admin
             return new ServiceResponseDTO(isSaved, isSaved ? AppStatusCodes.Success : AppStatusCodes.Unauthorized, result: studentMainstream.Id, isSaved ? MessageSuccess.Saved : MessageError.CodeIssue);
         }
 
-        public async Task<IEnumerable<KadamProgrammeReportDTO>> GetKadamProgrammeReport(int? userId)
+        public async Task<IEnumerable<KadamProgrammeReportDTO>> GetKadamProgrammeReport(int? userId, KadamProgrammeReportFilterDTO? filter = null)
         {
-            return await _studentRepository.GetKadamProgrammeReport(userId);
+            return await _studentRepository.GetKadamProgrammeReport(userId, filter);
         }
     }
 }

@@ -1,55 +1,119 @@
 using ClosedXML.Excel;
 using Core.DTOs;
 using Core.Features.Admin;
+using Core.Utilities;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 
 namespace WebUI.Pages.Admin
 {
-    public class ReportModel(StudentService studentService, AuthenticationService authenticationService) : PageModel
+    public class ReportModel(StudentService studentService, AdminService adminService, AuthenticationService authenticationService) : PageModel
     {
-        public IActionResult OnGet()
+        public IEnumerable<DropdownDTO> States { get; set; } = [];
+        public IEnumerable<DropdownDTO> Divisions { get; set; } = [];
+
+        [BindProperty]
+        public int? StateId { get; set; }
+
+        [BindProperty]
+        public int? DivisionId { get; set; }
+
+        [BindProperty]
+        public DateTime? FromDate { get; set; }
+
+        [BindProperty]
+        public DateTime? ToDate { get; set; }
+
+        [BindProperty]
+        public bool IncludeAll { get; set; } = true;
+
+        [BindProperty]
+        public bool IncludeKadam { get; set; }
+
+        [BindProperty]
+        public bool IncludeKadamPlus { get; set; }
+
+        public async Task<IActionResult> OnGetAsync()
         {
+            await LoadDropdownsAsync();
             return Page();
         }
 
-        public async Task<IActionResult> OnGetDownloadReport()
+        public async Task<IActionResult> OnPostDownloadReportAsync()
         {
             var userId = authenticationService.GetCurrentUserId();
-            var data = await studentService.GetKadamProgrammeReport(userId > 0 ? userId : null);
-
-            using var workbook = new XLWorkbook();
-            var worksheet = workbook.Worksheets.Add("Kadam Programme Report");
-
-            // Header row - match Report Format Excel
-            var headerColumns = GetReportColumns();
-            for (int col = 1; col <= headerColumns.Count; col++)
+            if (userId <= 0)
             {
-                worksheet.Cell(1, col).Value = headerColumns[col - 1].Header;
+                return RedirectToPage("/Login");
             }
-            worksheet.Row(1).Style.Font.Bold = true;
-            worksheet.Row(1).Style.Fill.BackgroundColor = XLColor.LightGray;
 
-            // Data rows
-            int row = 2;
-            foreach (var item in data)
+            if (FromDate.HasValue && ToDate.HasValue && FromDate > ToDate)
             {
+                await LoadDropdownsAsync();
+                ModelState.AddModelError(string.Empty, "From Date cannot be later than To Date.");
+                return Page();
+            }
+
+            var includeAll = IncludeAll || (!IncludeKadam && !IncludeKadamPlus);
+
+            try
+            {
+                var filter = new KadamProgrammeReportFilterDTO
+                {
+                    StateId = StateId > 0 ? StateId : null,
+                    DivisionId = DivisionId > 0 ? DivisionId : null,
+                    FromDate = FromDate,
+                    ToDate = ToDate,
+                    IncludeAll = includeAll,
+                    IncludeKadam = includeAll ? false : IncludeKadam,
+                    IncludeKadamPlus = includeAll ? false : IncludeKadamPlus
+                };
+
+                var data = await studentService.GetKadamProgrammeReport(userId, filter);
+
+                using var workbook = new XLWorkbook();
+                var worksheet = workbook.Worksheets.Add("Kadam Programme Report");
+
+                var headerColumns = GetReportColumns();
                 for (int col = 1; col <= headerColumns.Count; col++)
                 {
-                    var val = headerColumns[col - 1].Getter(item);
-                    worksheet.Cell(row, col).Value = val ?? "";
+                    worksheet.Cell(1, col).Value = headerColumns[col - 1].Header;
                 }
-                row++;
+                worksheet.Row(1).Style.Font.Bold = true;
+                worksheet.Row(1).Style.Fill.BackgroundColor = XLColor.LightGray;
+
+                int row = 2;
+                foreach (var item in data)
+                {
+                    for (int col = 1; col <= headerColumns.Count; col++)
+                    {
+                        var val = headerColumns[col - 1].Getter(item);
+                        worksheet.Cell(row, col).Value = val ?? "";
+                    }
+                    row++;
+                }
+
+                worksheet.Columns().AdjustToContents();
+
+                using var stream = new MemoryStream();
+                workbook.SaveAs(stream, false);
+                stream.Position = 0;
+
+                var fileName = $"Kadam_Programme_Report_{DateTime.Now:yyyyMMdd_HHmmss}.xlsx";
+                return File(stream.ToArray(), "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", fileName);
             }
+            catch (Exception ex)
+            {
+                await LoadDropdownsAsync();
+                ModelState.AddModelError(string.Empty, $"Unable to generate report. {ex.Message}");
+                return Page();
+            }
+        }
 
-            worksheet.Columns().AdjustToContents();
-
-            using var stream = new MemoryStream();
-            workbook.SaveAs(stream, false);
-            stream.Position = 0;
-
-            var fileName = $"Kadam_Programme_Report_{DateTime.Now:yyyyMMdd_HHmmss}.xlsx";
-            return File(stream.ToArray(), "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", fileName);
+        private async Task LoadDropdownsAsync()
+        {
+            States = await adminService.GetStatesByStatus(Enums.Status.Active);
+            Divisions = await adminService.GetDivisionsByStatus(Enums.Status.Active);
         }
 
         private static List<(string Header, Func<KadamProgrammeReportDTO, string?> Getter)> GetReportColumns()

@@ -268,11 +268,18 @@ namespace Infrastructure
                 .AnyAsync(x => x.StudentId == studentId && !x.IsDeleted);
         }
 
-        public async Task<IEnumerable<KadamProgrammeReportDTO>> GetKadamProgrammeReport(int? userId)
+        public async Task<IEnumerable<KadamProgrammeReportDTO>> GetKadamProgrammeReport(int? userId, KadamProgrammeReportFilterDTO? filter = null)
         {
             using var connection = _context.Database.GetDbConnection();
             var parameters = new DynamicParameters();
             parameters.Add("@UserId", userId);
+            parameters.Add("@StateId", filter?.StateId);
+            parameters.Add("@DivisionId", filter?.DivisionId);
+            parameters.Add("@FromDate", filter?.FromDate);
+            parameters.Add("@ToDate", filter?.ToDate);
+            parameters.Add("@IncludeAll", filter?.IncludeAll ?? true);
+            parameters.Add("@IncludeKadam", filter?.IncludeKadam ?? false);
+            parameters.Add("@IncludeKadamPlus", filter?.IncludeKadamPlus ?? false);
             var result = await connection.QueryAsync<KadamProgrammeReportDTO>(
                 "usp_KadamProgrammeReport",
                 parameters,

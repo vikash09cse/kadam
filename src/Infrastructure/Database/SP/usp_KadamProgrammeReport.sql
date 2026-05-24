@@ -1,7 +1,14 @@
 -- Kadam Programme Report - Matches Report Format Excel
 -- Returns student data with institution, location, family, baseline, endline, mainstream details
 CREATE OR ALTER PROCEDURE [dbo].[usp_KadamProgrammeReport]
-    @UserId INT = NULL  -- Current user; admin role returns all data, others are filtered by assigned institutions
+    @UserId INT = NULL,  -- Current user; admin role returns all data, others are filtered by assigned institutions
+    @StateId INT = NULL,
+    @DivisionId INT = NULL,
+    @FromDate DATE = NULL,
+    @ToDate DATE = NULL,
+    @IncludeAll BIT = 1,
+    @IncludeKadam BIT = 0,
+    @IncludeKadamPlus BIT = 0
 AS
 BEGIN
     SET NOCOUNT ON;
@@ -220,6 +227,17 @@ BEGIN
             @InstitutionIds IS NOT NULL
             AND LTRIM(RTRIM(@InstitutionIds)) <> ''
             AND i.Id IN (SELECT Item FROM dbo.SplitString(@InstitutionIds, ','))
+        )
+    )
+    AND (@StateId IS NULL OR @StateId = 0 OR i.StateId = @StateId)
+    AND (@DivisionId IS NULL OR @DivisionId = 0 OR i.DivisionId = @DivisionId)
+    AND (@FromDate IS NULL OR s.EnrollmentDate >= @FromDate)
+    AND (@ToDate IS NULL OR s.EnrollmentDate <= @ToDate)
+    AND (
+        @IncludeAll = 1
+        OR (
+            (@IncludeKadam = 1 AND s.IsKadamPlusStudent = 0)
+            OR (@IncludeKadamPlus = 1 AND s.IsKadamPlusStudent = 1)
         )
     )
     ORDER BY s.DateCreated, s.Id;
