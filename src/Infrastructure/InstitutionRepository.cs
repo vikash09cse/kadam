@@ -2,6 +2,7 @@
 using Core.DTOs;
 using Core.Entities;
 using Dapper;
+using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
 using System.Data;
@@ -238,6 +239,108 @@ namespace Infrastructure
                 commandType: CommandType.StoredProcedure
             );
             return institutions;
+        }
+
+        public async Task<InstitutionImportResultDTO> BulkImportInstitutions(IEnumerable<InstitutionImportRowDTO> rows, int createdBy)
+        {
+            var importId = Guid.NewGuid();
+            var sqlConn = (SqlConnection)_db.Connection;
+            var sqlTran = _db.Transaction as SqlTransaction;
+
+            var table = new DataTable();
+            table.Columns.Add("ImportId", typeof(Guid));
+            table.Columns.Add("RowNumber", typeof(int));
+            table.Columns.Add("DivisionName", typeof(string));
+            table.Columns.Add("StateName", typeof(string));
+            table.Columns.Add("DistrictName", typeof(string));
+            table.Columns.Add("BlockName", typeof(string));
+            table.Columns.Add("VillageName", typeof(string));
+            table.Columns.Add("InstitutionTypeName", typeof(string));
+            table.Columns.Add("InstitutionBuildingName", typeof(string));
+            table.Columns.Add("InstitutionName", typeof(string));
+            table.Columns.Add("InstitutionCode", typeof(string));
+            table.Columns.Add("InstitutionBusinessId", typeof(string));
+            table.Columns.Add("InstitutionHeadMasterName", typeof(string));
+            table.Columns.Add("InstitutionPhone", typeof(string));
+            table.Columns.Add("MaleTeachers", typeof(string));
+            table.Columns.Add("FemaleTeachers", typeof(string));
+            table.Columns.Add("TotalStudents", typeof(string));
+            table.Columns.Add("FinancialYearStart", typeof(string));
+            table.Columns.Add("FinancialYearEnd", typeof(string));
+            table.Columns.Add("GradeSections", typeof(string));
+
+            foreach (var row in rows)
+            {
+                table.Rows.Add(
+                    importId,
+                    row.RowNumber,
+                    row.DivisionName,
+                    row.StateName,
+                    row.DistrictName,
+                    row.BlockName,
+                    row.VillageName,
+                    row.InstitutionTypeName,
+                    row.InstitutionBuildingName,
+                    row.InstitutionName,
+                    row.InstitutionCode,
+                    row.InstitutionBusinessId,
+                    row.InstitutionHeadMasterName,
+                    row.InstitutionPhone,
+                    row.MaleTeachers,
+                    row.FemaleTeachers,
+                    row.TotalStudents,
+                    row.FinancialYearStart,
+                    row.FinancialYearEnd,
+                    row.GradeSections);
+            }
+
+            using (var bulkCopy = sqlTran != null
+                ? new SqlBulkCopy(sqlConn, SqlBulkCopyOptions.Default, sqlTran)
+                : new SqlBulkCopy(sqlConn))
+            {
+                bulkCopy.DestinationTableName = "dbo.InstitutionImportStaging";
+                bulkCopy.BatchSize = 1000;
+                bulkCopy.BulkCopyTimeout = 300;
+                bulkCopy.ColumnMappings.Add("ImportId", "ImportId");
+                bulkCopy.ColumnMappings.Add("RowNumber", "RowNumber");
+                bulkCopy.ColumnMappings.Add("DivisionName", "DivisionName");
+                bulkCopy.ColumnMappings.Add("StateName", "StateName");
+                bulkCopy.ColumnMappings.Add("DistrictName", "DistrictName");
+                bulkCopy.ColumnMappings.Add("BlockName", "BlockName");
+                bulkCopy.ColumnMappings.Add("VillageName", "VillageName");
+                bulkCopy.ColumnMappings.Add("InstitutionTypeName", "InstitutionTypeName");
+                bulkCopy.ColumnMappings.Add("InstitutionBuildingName", "InstitutionBuildingName");
+                bulkCopy.ColumnMappings.Add("InstitutionName", "InstitutionName");
+                bulkCopy.ColumnMappings.Add("InstitutionCode", "InstitutionCode");
+                bulkCopy.ColumnMappings.Add("InstitutionBusinessId", "InstitutionBusinessId");
+                bulkCopy.ColumnMappings.Add("InstitutionHeadMasterName", "InstitutionHeadMasterName");
+                bulkCopy.ColumnMappings.Add("InstitutionPhone", "InstitutionPhone");
+                bulkCopy.ColumnMappings.Add("MaleTeachers", "MaleTeachers");
+                bulkCopy.ColumnMappings.Add("FemaleTeachers", "FemaleTeachers");
+                bulkCopy.ColumnMappings.Add("TotalStudents", "TotalStudents");
+                bulkCopy.ColumnMappings.Add("FinancialYearStart", "FinancialYearStart");
+                bulkCopy.ColumnMappings.Add("FinancialYearEnd", "FinancialYearEnd");
+                bulkCopy.ColumnMappings.Add("GradeSections", "GradeSections");
+                await bulkCopy.WriteToServerAsync(table);
+            }
+
+            var parameters = new DynamicParameters();
+            parameters.Add("@ImportId", importId);
+            parameters.Add("@CreatedBy", createdBy);
+            parameters.Add("@Inserted", dbType: DbType.Int32, direction: ParameterDirection.Output);
+
+            var errors = await sqlConn.QueryAsync<InstitutionImportErrorDTO>(
+                "dbo.usp_BulkImportInstitutionsFromStaging",
+                parameters,
+                sqlTran,
+                commandTimeout: 600,
+                commandType: CommandType.StoredProcedure);
+
+            return new InstitutionImportResultDTO
+            {
+                Errors = errors.ToList(),
+                Inserted = parameters.Get<int>("@Inserted")
+            };
         }
     }
 }

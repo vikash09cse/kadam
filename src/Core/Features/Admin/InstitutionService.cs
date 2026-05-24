@@ -103,6 +103,20 @@ namespace Core.Features.Admin
             return await _institutionRepository.GetInstitutionsByVillageId(villageId, institutionTypeId);
         }
 
+        public async Task<ServiceResponseDTO> BulkImportInstitutions(IEnumerable<InstitutionImportRowDTO> rows, int currentUserId)
+        {
+            var result = await _institutionRepository.BulkImportInstitutions(rows, currentUserId);
+            if (result.HasErrors)
+            {
+                return new ServiceResponseDTO(false, AppStatusCodes.BadRequest, result.Errors,
+                    $"{result.Errors.Count} validation error(s) found. No records were imported.");
+            }
+
+            return new ServiceResponseDTO(true, AppStatusCodes.Success,
+                new { result.Inserted },
+                $"{result.Inserted} institution(s) imported successfully.");
+        }
+
         #endregion
     }
 }

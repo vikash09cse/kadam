@@ -1,0 +1,100 @@
+@page
+@model WebUI.Pages.Admin.InstitutionBulkImportModel
+@{
+    ViewData["Title"] = "Institution Bulk Import";
+}
+
+<div class="page-content">
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-12">
+                <div class="page-title-box d-sm-flex align-items-center justify-content-between">
+                    <h4 class="mb-sm-0">Institution Bulk Import</h4>
+                    <div class="text-end">
+                        <a href="/Admin/Institutions" class="btn btn-light">
+                            <i class="mdi mdi-arrow-left"></i> Back to Institutions
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-body">
+                        @if (!string.IsNullOrWhiteSpace(Model.SuccessMessage))
+                        {
+                            <div class="alert alert-success">@Model.SuccessMessage</div>
+                        }
+                        @if (!string.IsNullOrWhiteSpace(Model.ErrorMessage))
+                        {
+                            <div class="alert alert-danger">@Model.ErrorMessage</div>
+                        }
+
+                        <p class="text-muted mb-4">
+                            Upload an Excel file to import institutions in bulk. All location names, institution types, and grade sections are validated against the database before any records are inserted.
+                        </p>
+
+                        <div class="mb-4">
+                            <a href="?handler=DownloadTemplate" class="btn btn-outline-primary">
+                                <i class="mdi mdi-download"></i> Download Excel Template
+                            </a>
+                        </div>
+
+                        <form method="post" enctype="multipart/form-data" asp-page-handler="Import">
+                            <div class="row g-3 align-items-end">
+                                <div class="col-md-6">
+                                    <label for="excelFile" class="form-label">Excel File</label>
+                                    <input type="file" class="form-control" id="excelFile" name="excelFile" accept=".xlsx,.xls" required />
+                                </div>
+                                <div class="col-md-6">
+                                    <button type="submit" class="btn btn-success">
+                                        <i class="mdi mdi-file-excel"></i> Upload and Import
+                                    </button>
+                                </div>
+                            </div>
+                        </form>
+
+                        @if (Model.ImportErrors.Count > 0)
+                        {
+                            <div class="mt-4">
+                                <h5 class="text-danger">Validation Errors</h5>
+                                <div class="table-responsive">
+                                    <table class="table table-bordered table-sm">
+                                        <thead class="table-light">
+                                            <tr>
+                                                <th style="width: 120px;">Excel Row</th>
+                                                <th>Error</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            @foreach (var error in Model.ImportErrors)
+                                            {
+                                                <tr>
+                                                    <td>@error.RowNumber</td>
+                                                    <td>@error.ErrorMessage</td>
+                                                </tr>
+                                            }
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        }
+
+                        <div class="mt-4">
+                            <h6>Template Notes</h6>
+                            <ul class="text-muted mb-0">
+                                <li><strong>Institution Type:</strong> Primary School, Middle School, High School, Pre School, DIET</li>
+                                <li><strong>Institution Building:</strong> Public, Private, Govt. School</li>
+                                <li><strong>Grade Sections:</strong> Use format <code>1st:A,B|2nd:A|Kadam STC:NA</code></li>
+                                <li>Division, State, District, Block, and Village must already exist in the system.</li>
+                                <li>Total Teachers is calculated automatically from Male Teachers + Female Teachers.</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
