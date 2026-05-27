@@ -49,6 +49,7 @@ namespace Infrastructure
 
         // Define DbSet properties for your entities
         public DbSet<Division> Divisions { get; set; }
+        public DbSet<DivisionLocation> DivisionLocations { get; set; }
         public DbSet<State> States { get; set; }
         public DbSet<District> Districts { get; set; }
         public DbSet<Block> Blocks { get; set; }

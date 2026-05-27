@@ -30,6 +30,10 @@ namespace Core.Abstractions
         Task<bool> CheckDuplicateDivisionName(string divisionName, int id);
         Task<bool> CheckDuplicateDivisionCode(string divisionCode, int id);
         Task<IEnumerable<DropdownDTO>> GetDivisionsByStatus(Enums.Status? currentStatus);
+        Task<DivisionLocationAssignmentDTO> GetDivisionLocationAssignment(int divisionId);
+        Task<bool> SaveDivisionLocation(SaveDivisionLocationDTO assignment, int currentUserId);
+        Task<IEnumerable<DropdownDTO>> GetBlocksByDistrictIds(IEnumerable<int> districtIds);
+        Task<IEnumerable<DropdownDTO>> GetVillagesByBlockIds(IEnumerable<int> blockIds);
         #endregion
 
         #region States

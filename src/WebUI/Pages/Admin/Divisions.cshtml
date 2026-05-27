@@ -36,7 +36,7 @@
                                             <th style="width: 8%;">Sr.No.</th>
                                             <th>Division Name</th>
                                             <th style="width: 15%;">Division Code</th>
-                                            <th style="width: 8%;">Action</th>
+                                            <th style="width: 12%;">Action</th>
                                         </tr>
                                     </thead>
                                 </table>
@@ -74,6 +74,127 @@
                         <button class="btn btn-sm btn-primary" type="submit" ng-disabled="isSaving">
                             <span ng-if="isSaving" class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
                             <span ng-if="!isSaving">Save</span>
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    <!-- Assign Location Modal -->
+    <div id="assignLocationModal" class="modal fade" tabindex="-1" aria-labelledby="assignLocationModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-xl modal-dialog-scrollable" role="document">
+            <div class="modal-content">
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title text-white" id="assignLocationModalLabel">Assign Location</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <form ng-submit="submitLocationAssignment()">
+                    <div class="modal-body">
+                        <div class="form-group mb-3">
+                            <label for="locationDivision">Division<span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="locationDivision" ng-model="locationAssignment.divisionName" readonly>
+                        </div>
+
+                        <hr class="border-primary border-2 border-dashed opacity-50">
+
+                        <div class="mb-3" ng-show="locationAssignment.states.length">
+                            <label class="fw-semibold mb-2">
+                                <i class="mdi mdi-flag text-primary"></i> State<span class="text-danger">*</span>
+                            </label>
+                            <div class="row">
+                                <div class="col-md-4 mb-2" ng-repeat="state in locationAssignment.states">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="radio" name="assignState"
+                                               id="state_{{state.value}}"
+                                               ng-value="state.value"
+                                               ng-model="locationAssignment.stateId"
+                                               ng-change="onStateSelected()"
+                                               ng-disabled="locationAssignment.isStateLocked">
+                                        <label class="form-check-label" for="state_{{state.value}}">{{state.text}}</label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <hr class="border-primary border-2 border-dashed opacity-50" ng-show="locationAssignment.districts.length">
+
+                        <div class="mb-3" ng-show="locationAssignment.districts.length">
+                            <label class="fw-semibold mb-2">
+                                <i class="mdi mdi-flag text-primary"></i> District<span class="text-danger">*</span>
+                            </label>
+                            <div class="form-check mb-2">
+                                <input class="form-check-input" type="checkbox" id="selectAllDistricts"
+                                       ng-model="locationAssignment.selectAllDistricts"
+                                       ng-change="toggleSelectAllDistricts()">
+                                <label class="form-check-label fw-semibold" for="selectAllDistricts">Select All</label>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-4 mb-2" ng-repeat="district in locationAssignment.districts">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox"
+                                               id="district_{{district.value}}"
+                                               ng-model="district.selected"
+                                               ng-change="onDistrictSelectionChange()">
+                                        <label class="form-check-label" for="district_{{district.value}}">{{district.text}}</label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <hr class="border-primary border-2 border-dashed opacity-50" ng-show="locationAssignment.blocks.length">
+
+                        <div class="mb-3" ng-show="locationAssignment.blocks.length">
+                            <label class="fw-semibold mb-2">
+                                <i class="mdi mdi-flag text-primary"></i> Block<span class="text-danger">*</span>
+                            </label>
+                            <div class="form-check mb-2">
+                                <input class="form-check-input" type="checkbox" id="selectAllBlocks"
+                                       ng-model="locationAssignment.selectAllBlocks"
+                                       ng-change="toggleSelectAllBlocks()">
+                                <label class="form-check-label fw-semibold" for="selectAllBlocks">Select All</label>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-4 mb-2" ng-repeat="block in locationAssignment.blocks">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox"
+                                               id="block_{{block.value}}"
+                                               ng-model="block.selected"
+                                               ng-change="onBlockSelectionChange()">
+                                        <label class="form-check-label" for="block_{{block.value}}">{{block.text}}</label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <hr class="border-primary border-2 border-dashed opacity-50" ng-show="locationAssignment.villages.length">
+
+                        <div class="mb-3" ng-show="locationAssignment.villages.length">
+                            <label class="fw-semibold mb-2">
+                                <i class="mdi mdi-map-marker text-primary"></i> Village / Town / City<span class="text-danger">*</span>
+                            </label>
+                            <div class="form-check mb-2">
+                                <input class="form-check-input" type="checkbox" id="selectAllVillages"
+                                       ng-model="locationAssignment.selectAllVillages"
+                                       ng-change="toggleSelectAllVillages()">
+                                <label class="form-check-label fw-semibold" for="selectAllVillages">Select All</label>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-4 mb-2" ng-repeat="village in locationAssignment.villages">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox"
+                                               id="village_{{village.value}}"
+                                               ng-model="village.selected"
+                                               ng-change="updateSelectAllVillages()">
+                                        <label class="form-check-label" for="village_{{village.value}}">{{village.text}}</label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button class="btn btn-primary" type="submit" ng-disabled="isSavingLocation">
+                            <span ng-if="isSavingLocation" class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                            <span ng-if="!isSavingLocation"><i class="mdi mdi-check"></i> Submit</span>
                         </button>
                     </div>
                 </form>
@@ -144,6 +265,9 @@
                         render: function (data, type, row) {
                             var buttons = `
                                 <div class="btn-group">
+                                    <button class="btn btn-sm btn-info" title="Assign Location" onclick="assignLocation(${row.id})">
+                                        <i class="mdi mdi-map-marker"></i>
+                                    </button>
                                     <button class="btn btn-sm btn-warning" title="Edit" onclick="editDivision(${row.id})">
                                         <i class="mdi mdi-pencil"></i>
                                     </button>
@@ -271,6 +395,255 @@
 
             $scope.openAddDivisionModal = function() {
                 $('#addDivisionModal').modal('show');
+            };
+
+            $scope.locationAssignment = {
+                divisionId: 0,
+                divisionName: '',
+                hasLocation: false,
+                isStateLocked: false,
+                stateId: null,
+                states: [],
+                districts: [],
+                blocks: [],
+                villages: [],
+                selectAllDistricts: false,
+                selectAllBlocks: false,
+                selectAllVillages: false
+            };
+            $scope.isSavingLocation = false;
+
+            function getAntiForgeryHeaders() {
+                return { 'RequestVerificationToken': $('input:hidden[name="__RequestVerificationToken"]').val() };
+            }
+
+            function normalizeDropdownItem(item) {
+                var value = item.value != null ? item.value : item.Value;
+                return {
+                    value: parseInt(value, 10),
+                    text: item.text || item.Text || ''
+                };
+            }
+
+            function mapWithSelection(items, selectedIds) {
+                selectedIds = (selectedIds || []).map(function(id) { return parseInt(id, 10); });
+                return (items || []).map(function(item) {
+                    var normalized = normalizeDropdownItem(item);
+                    return {
+                        value: normalized.value,
+                        text: normalized.text,
+                        selected: selectedIds.indexOf(normalized.value) !== -1
+                    };
+                });
+            }
+
+            function getSelectedIds(items) {
+                return (items || []).filter(function(item) { return item.selected; }).map(function(item) { return item.value; });
+            }
+
+            function updateSelectAllState(items, selectAllProperty) {
+                if (!items || items.length === 0) {
+                    $scope.locationAssignment[selectAllProperty] = false;
+                    return;
+                }
+                $scope.locationAssignment[selectAllProperty] = items.every(function(item) { return item.selected; });
+            }
+
+            $scope.loadDistricts = function(selectedDistrictIds) {
+                if (!$scope.locationAssignment.stateId) {
+                    $scope.locationAssignment.districts = [];
+                    $scope.locationAssignment.blocks = [];
+                    $scope.locationAssignment.villages = [];
+                    return Promise.resolve();
+                }
+
+                return $http({
+                    method: 'GET',
+                    url: '?handler=DistrictListByState',
+                    params: { stateId: $scope.locationAssignment.stateId },
+                    headers: getAntiForgeryHeaders()
+                }).then(function(response) {
+                    $scope.locationAssignment.districts = mapWithSelection(response.data, selectedDistrictIds);
+                    updateSelectAllState($scope.locationAssignment.districts, 'selectAllDistricts');
+                });
+            };
+
+            $scope.loadBlocks = function(selectedBlockIds) {
+                var districtIds = getSelectedIds($scope.locationAssignment.districts);
+                if (districtIds.length === 0) {
+                    $scope.locationAssignment.blocks = [];
+                    $scope.locationAssignment.villages = [];
+                    return Promise.resolve();
+                }
+
+                return $http({
+                    method: 'GET',
+                    url: '?handler=BlockListByDistrictIds',
+                    params: { districtIds: districtIds.join(',') },
+                    headers: getAntiForgeryHeaders()
+                }).then(function(response) {
+                    $scope.locationAssignment.blocks = mapWithSelection(response.data, selectedBlockIds);
+                    updateSelectAllState($scope.locationAssignment.blocks, 'selectAllBlocks');
+                });
+            };
+
+            $scope.loadVillages = function(selectedVillageIds) {
+                var blockIds = getSelectedIds($scope.locationAssignment.blocks);
+                if (blockIds.length === 0) {
+                    $scope.locationAssignment.villages = [];
+                    return Promise.resolve();
+                }
+
+                return $http({
+                    method: 'GET',
+                    url: '?handler=VillageListByBlockIds',
+                    params: { blockIds: blockIds.join(',') },
+                    headers: getAntiForgeryHeaders()
+                }).then(function(response) {
+                    $scope.locationAssignment.villages = mapWithSelection(response.data, selectedVillageIds);
+                    updateSelectAllState($scope.locationAssignment.villages, 'selectAllVillages');
+                });
+            };
+
+            $scope.onStateSelected = function() {
+                $scope.locationAssignment.districts = [];
+                $scope.locationAssignment.blocks = [];
+                $scope.locationAssignment.villages = [];
+                $scope.locationAssignment.selectAllDistricts = false;
+                $scope.locationAssignment.selectAllBlocks = false;
+                $scope.locationAssignment.selectAllVillages = false;
+                $scope.loadDistricts();
+            };
+
+            $scope.onDistrictSelectionChange = function() {
+                updateSelectAllState($scope.locationAssignment.districts, 'selectAllDistricts');
+                var selectedBlockIds = getSelectedIds($scope.locationAssignment.blocks);
+                $scope.loadBlocks(selectedBlockIds).then(function() {
+                    var selectedVillageIds = getSelectedIds($scope.locationAssignment.villages);
+                    return $scope.loadVillages(selectedVillageIds);
+                });
+            };
+
+            $scope.onBlockSelectionChange = function() {
+                updateSelectAllState($scope.locationAssignment.blocks, 'selectAllBlocks');
+                var selectedVillageIds = getSelectedIds($scope.locationAssignment.villages);
+                $scope.loadVillages(selectedVillageIds);
+            };
+
+            $scope.updateSelectAllVillages = function() {
+                updateSelectAllState($scope.locationAssignment.villages, 'selectAllVillages');
+            };
+
+            $scope.toggleSelectAllDistricts = function() {
+                var selectAll = $scope.locationAssignment.selectAllDistricts;
+                $scope.locationAssignment.districts.forEach(function(district) {
+                    district.selected = selectAll;
+                });
+                $scope.onDistrictSelectionChange();
+            };
+
+            $scope.toggleSelectAllBlocks = function() {
+                var selectAll = $scope.locationAssignment.selectAllBlocks;
+                $scope.locationAssignment.blocks.forEach(function(block) {
+                    block.selected = selectAll;
+                });
+                $scope.onBlockSelectionChange();
+            };
+
+            $scope.toggleSelectAllVillages = function() {
+                var selectAll = $scope.locationAssignment.selectAllVillages;
+                $scope.locationAssignment.villages.forEach(function(village) {
+                    village.selected = selectAll;
+                });
+            };
+
+            window.assignLocation = function(divisionId) {
+                $scope.locationAssignment = {
+                    divisionId: divisionId,
+                    divisionName: '',
+                    hasLocation: false,
+                    isStateLocked: false,
+                    stateId: null,
+                    states: [],
+                    districts: [],
+                    blocks: [],
+                    villages: [],
+                    selectAllDistricts: false,
+                    selectAllBlocks: false,
+                    selectAllVillages: false
+                };
+
+                $http({
+                    method: 'GET',
+                    url: '?handler=StateList',
+                    headers: getAntiForgeryHeaders()
+                }).then(function(statesResponse) {
+                    $scope.locationAssignment.states = (statesResponse.data || []).map(function(state) {
+                        return { value: parseInt(state.value, 10), text: state.text };
+                    });
+
+                    return $http({
+                        method: 'GET',
+                        url: '?handler=DivisionLocation',
+                        params: { divisionId: divisionId },
+                        headers: getAntiForgeryHeaders()
+                    });
+                }).then(function(assignmentResponse) {
+                    var assignment = assignmentResponse.data;
+                    var hasLocation = assignment.hasLocation === true || assignment.hasLocation === 1;
+                    $scope.locationAssignment.hasLocation = hasLocation;
+                    $scope.locationAssignment.divisionName = assignment.divisionName || '';
+                    $scope.locationAssignment.isStateLocked = hasLocation && !!assignment.stateId;
+
+                    if (hasLocation && assignment.stateId) {
+                        $scope.locationAssignment.stateId = parseInt(assignment.stateId, 10);
+                        return $scope.loadDistricts(assignment.districtIds || []).then(function() {
+                            return $scope.loadBlocks(assignment.blockIds || []);
+                        }).then(function() {
+                            return $scope.loadVillages(assignment.villageIds || []);
+                        });
+                    }
+                }).then(function() {
+                    $('#assignLocationModal').modal('show');
+                }).catch(function(error) {
+                    ShowNotification(error.message || 'Unable to load location data.', 1);
+                });
+            };
+
+            $scope.submitLocationAssignment = function() {
+                if (!$scope.locationAssignment.stateId) {
+                    ShowNotification('Please select a state.', 1);
+                    return;
+                }
+
+                var villageIds = getSelectedIds($scope.locationAssignment.villages);
+                if (villageIds.length === 0) {
+                    ShowNotification('Please select at least one village.', 1);
+                    return;
+                }
+
+                $scope.isSavingLocation = true;
+                $http({
+                    method: 'POST',
+                    url: '?handler=SaveDivisionLocation',
+                    data: {
+                        divisionId: $scope.locationAssignment.divisionId,
+                        stateId: $scope.locationAssignment.stateId,
+                        villageIds: villageIds
+                    },
+                    headers: getAntiForgeryHeaders()
+                }).then(function(response) {
+                    $scope.isSavingLocation = false;
+                    if (response.data.success) {
+                        ShowNotification(response.data.message, 0);
+                        $('#assignLocationModal').modal('hide');
+                    } else {
+                        ShowNotification(response.data.message, 1);
+                    }
+                }).catch(function(error) {
+                    $scope.isSavingLocation = false;
+                    ShowNotification(error.message, 1);
+                });
             };
         });
     </script>

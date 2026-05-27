@@ -29,7 +29,7 @@ BEGIN
 		, endlineCompletedDate.CompletedDate as EndlineCompletedDate
     FROM 
         Students s
-    LEFT JOIN StudentFamilyDetails SF ON S.Id = SF.StudentId
+    Inner JOIN StudentFamilyDetails SF ON S.Id = SF.StudentId
     LEFT JOIN Grades g ON s.GradeId = g.Id
     LEFT JOIN Institutions i ON s.InstitutionId = i.Id
     LEFT JOIN (
@@ -68,3 +68,4 @@ BEGIN
     ORDER BY 
         s.EnrollmentDate DESC, s.FirstName, s.LastName;
 END
+

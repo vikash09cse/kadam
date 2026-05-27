@@ -7,6 +7,7 @@ using Dapper;
 using Kadam.Core.DTOs;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
+using Newtonsoft.Json;
 using System.Collections.Generic;
 using System.Data;
 
@@ -255,6 +256,103 @@ namespace Infrastructure
             var parameters = new DynamicParameters();
             parameters.Add("@CurrentStatus", currentStatus);
             return await _db.Connection.QueryAsync<DropdownDTO>(storedProcedure, parameters, _db.Transaction, commandType: CommandType.StoredProcedure);
+        }
+
+        public async Task<DivisionLocationAssignmentDTO> GetDivisionLocationAssignment(int divisionId)
+        {
+            const string storedProcedure = "dbo.usp_GetDivisionLocationAssignment";
+            var parameters = new DynamicParameters();
+            parameters.Add("@DivisionId", divisionId);
+
+            var row = await _db.Connection.QueryFirstOrDefaultAsync<DivisionLocationAssignmentRowDTO>(
+                storedProcedure,
+                parameters,
+                _db.Transaction,
+                commandType: CommandType.StoredProcedure);
+
+            if (row == null)
+            {
+                return new DivisionLocationAssignmentDTO { DivisionId = divisionId };
+            }
+
+            return new DivisionLocationAssignmentDTO
+            {
+                DivisionId = row.DivisionId,
+                DivisionName = row.DivisionName,
+                HasLocation = row.HasLocation,
+                StateId = row.StateId,
+                DistrictIds = ParseIdJson(row.DistrictIdsJson),
+                BlockIds = ParseIdJson(row.BlockIdsJson),
+                VillageIds = ParseIdJson(row.VillageIdsJson)
+            };
+        }
+
+        public async Task<bool> SaveDivisionLocation(SaveDivisionLocationDTO assignment, int currentUserId)
+        {
+            const string storedProcedure = "dbo.usp_SaveDivisionLocation";
+            var villageIdsJson = JsonConvert.SerializeObject(assignment.VillageIds.Distinct().ToList());
+
+            var parameters = new DynamicParameters();
+            parameters.Add("@DivisionId", assignment.DivisionId);
+            parameters.Add("@StateId", assignment.StateId);
+            parameters.Add("@VillageIds", villageIdsJson);
+            parameters.Add("@UserId", currentUserId);
+
+            var success = await _db.Connection.ExecuteScalarAsync<int>(
+                storedProcedure,
+                parameters,
+                _db.Transaction,
+                commandType: CommandType.StoredProcedure);
+
+            return success == 1;
+        }
+
+        public async Task<IEnumerable<DropdownDTO>> GetBlocksByDistrictIds(IEnumerable<int> districtIds)
+        {
+            var ids = districtIds.Distinct().ToList();
+            if (ids.Count == 0)
+            {
+                return [];
+            }
+
+            const string storedProcedure = "dbo.usp_GetBlocksByDistrictIds";
+            var parameters = new DynamicParameters();
+            parameters.Add("@DistrictIds", JsonConvert.SerializeObject(ids));
+
+            return await _db.Connection.QueryAsync<DropdownDTO>(
+                storedProcedure,
+                parameters,
+                _db.Transaction,
+                commandType: CommandType.StoredProcedure);
+        }
+
+        public async Task<IEnumerable<DropdownDTO>> GetVillagesByBlockIds(IEnumerable<int> blockIds)
+        {
+            var ids = blockIds.Distinct().ToList();
+            if (ids.Count == 0)
+            {
+                return [];
+            }
+
+            const string storedProcedure = "dbo.usp_GetVillagesByBlockIds";
+            var parameters = new DynamicParameters();
+            parameters.Add("@BlockIds", JsonConvert.SerializeObject(ids));
+
+            return await _db.Connection.QueryAsync<DropdownDTO>(
+                storedProcedure,
+                parameters,
+                _db.Transaction,
+                commandType: CommandType.StoredProcedure);
+        }
+
+        private static List<int> ParseIdJson(string? json)
+        {
+            if (string.IsNullOrWhiteSpace(json) || json == "[]")
+            {
+                return [];
+            }
+
+            return JsonConvert.DeserializeObject<List<int>>(json) ?? [];
         }
         #endregion
 

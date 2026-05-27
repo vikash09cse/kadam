@@ -263,6 +263,41 @@ namespace Core.Features.Admin
         {
             return await _adminRepository.GetDivisionsByStatus(currentStatus);
         }
+
+        public async Task<DivisionLocationAssignmentDTO> GetDivisionLocationAssignment(int divisionId)
+        {
+            return await _adminRepository.GetDivisionLocationAssignment(divisionId);
+        }
+
+        public async Task<ServiceResponseDTO> SaveDivisionLocation(SaveDivisionLocationDTO assignment, int currentUserId)
+        {
+            if (assignment == null || assignment.DivisionId <= 0 || assignment.StateId <= 0)
+            {
+                return new ServiceResponseDTO(false, AppStatusCodes.BadRequest, false, MessageError.InvalidData);
+            }
+
+            if (assignment.VillageIds == null || assignment.VillageIds.Count == 0)
+            {
+                return new ServiceResponseDTO(false, AppStatusCodes.BadRequest, false, "Please select at least one village.");
+            }
+
+            var isSaved = await _adminRepository.SaveDivisionLocation(assignment, currentUserId);
+            return new ServiceResponseDTO(
+                isSaved,
+                isSaved ? AppStatusCodes.Success : AppStatusCodes.Unauthorized,
+                isSaved,
+                isSaved ? MessageSuccess.Saved : MessageError.CodeIssue);
+        }
+
+        public async Task<IEnumerable<DropdownDTO>> GetBlocksByDistrictIds(IEnumerable<int> districtIds)
+        {
+            return await _adminRepository.GetBlocksByDistrictIds(districtIds);
+        }
+
+        public async Task<IEnumerable<DropdownDTO>> GetVillagesByBlockIds(IEnumerable<int> blockIds)
+        {
+            return await _adminRepository.GetVillagesByBlockIds(blockIds);
+        }
         #endregion
 
         #region "State"
