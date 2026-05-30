@@ -82,6 +82,7 @@ namespace Infrastructure
         public DbSet<ThemeActivity> ThemeActivities { get; set; }
         public DbSet<StudentAttendance> StudentAttendances { get; set; }
         public DbSet<StudentTrio> StudentTrios { get; set; }
+        public DbSet<StudentDeleteLog> StudentDeleteLogs { get; set; }
 
     }
 }

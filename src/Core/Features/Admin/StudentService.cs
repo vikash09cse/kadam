@@ -48,10 +48,17 @@ namespace Core.Features.Admin
 
         public async Task<ServiceResponseDTO> DeleteStudent(int id, int userId)
         {
-            ServiceResponseDTO response;
-            var isDeleted = await _studentRepository.DeleteStudent(id, userId);
-            response = new(isDeleted, isDeleted ? AppStatusCodes.Success : AppStatusCodes.Unauthorized, isDeleted, isDeleted ? MessageSuccess.Deleted : MessageError.CodeIssue);
-            return response;
+            var result = await _studentRepository.DeleteStudentWithLog(id, userId);
+            return new ServiceResponseDTO(
+                result.Success,
+                result.Success ? AppStatusCodes.Success : AppStatusCodes.Unauthorized,
+                result.Success,
+                result.Success ? MessageSuccess.Deleted : result.Message);
+        }
+
+        public async Task<bool> IsAdminUser(int userId)
+        {
+            return await _studentRepository.IsAdminUser(userId);
         }
 
         public async Task<ServiceResponseDTO> GetStudent(int id)

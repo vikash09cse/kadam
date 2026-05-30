@@ -2,6 +2,7 @@ using Core.Abstractions;
 using Core.DTOs;
 using Core.DTOs.App;
 using Core.Entities;
+using Core.Utilities;
 using Dapper;
 using Microsoft.EntityFrameworkCore;
 using System.Data;
@@ -38,15 +39,37 @@ namespace Infrastructure
 
         public async Task<bool> DeleteStudent(int id, int deletedBy)
         {
-            var student = await _context.Students.FirstOrDefaultAsync(x => x.Id == id);
-            if (student != null)
-            {
-                student.IsDeleted = true;
-                student.DeletedBy = deletedBy;
-                student.DeletedDate = DateTime.UtcNow;
-                return await _context.SaveChangesAsync() > 0;
-            }
-            return false;
+            var result = await DeleteStudentWithLog(id, deletedBy);
+            return result.Success;
+        }
+
+        public async Task<bool> IsAdminUser(int userId)
+        {
+            using var connection = _context.Database.GetDbConnection();
+            var parameters = new DynamicParameters();
+            parameters.Add("@UserId", userId);
+
+            return await connection.ExecuteScalarAsync<bool>(
+                "dbo.usp_IsAdminUser",
+                parameters,
+                commandType: CommandType.StoredProcedure);
+        }
+
+        public async Task<StudentDeleteResultDTO> DeleteStudentWithLog(int studentRecordId, int deletedBy)
+        {
+            using var connection = _context.Database.GetDbConnection();
+            var parameters = new DynamicParameters();
+            parameters.Add("@StudentRecordId", studentRecordId);
+            parameters.Add("@DeletedBy", deletedBy);
+
+            return await connection.QueryFirstOrDefaultAsync<StudentDeleteResultDTO>(
+                "dbo.usp_DeleteStudent",
+                parameters,
+                commandType: CommandType.StoredProcedure) ?? new StudentDeleteResultDTO
+                {
+                    Success = false,
+                    Message = MessageError.CodeIssue
+                };
         }
 
         public async Task<Student> GetStudent(int id)

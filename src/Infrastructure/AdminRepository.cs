@@ -1021,13 +1021,11 @@ namespace Infrastructure
 
         public async Task EnsureNavigationMenusSeeded()
         {
-            var hasNavigationMenus = await _context.MenuPermissions
-                .AnyAsync(x => !x.IsDeleted && x.MenuUrl != null);
-
-            if (!hasNavigationMenus)
-            {
-                await SeedNavigationMenus();
-            }
+            await _db.Connection.ExecuteAsync(
+                "dbo.usp_EnsureNavigationMenusSeeded",
+                null,
+                _db.Transaction,
+                commandType: CommandType.StoredProcedure);
         }
         public async Task<IEnumerable<DropdownDTO>> GetRolesDropDown()
         {

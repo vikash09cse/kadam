@@ -1,4 +1,7 @@
 ﻿using Core.Abstractions;
+using Core.DTOs;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Infrastructure;
@@ -27,6 +30,18 @@ public static class DependencyInject
         services.AddScoped<IStudentTrioRepository, StudentTrioRepository>();
         services.AddScoped<IDbSession, DbSession>();
         services.AddScoped<IUnitOfWork, UnitOfWork>();
-        services.AddDbContext<DatabaseContext>();
+        services.AddDbContext<DatabaseContext>((serviceProvider, options) =>
+        {
+            var configuration = serviceProvider.GetRequiredService<IConfiguration>();
+            var connectionString = configuration.GetConnectionString("DBConnection")
+                ?? AppSettings.ConnectionStrings?.DBConnection;
+
+            if (string.IsNullOrWhiteSpace(connectionString))
+            {
+                throw new InvalidOperationException("Database connection string is not configured.");
+            }
+
+            options.UseSqlServer(connectionString);
+        });
     }
 }

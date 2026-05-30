@@ -10,6 +10,8 @@ namespace Core.Abstractions
         Task<bool> CheckDuplicateAadhaarNumber(string aadhaarNumber, int id);
         Task<bool> CheckDuplicateStudent(string firstName, string lastName, int age, int institutionId, int id);
         Task<bool> DeleteStudent(int id, int deletedBy);
+        Task<bool> IsAdminUser(int userId);
+        Task<StudentDeleteResultDTO> DeleteStudentWithLog(int studentRecordId, int deletedBy);
         Task<Student> GetStudent(int id);
         Task<IEnumerable<Student>> GetAllStudents();
         Task<bool> SaveStudent(Student student);
