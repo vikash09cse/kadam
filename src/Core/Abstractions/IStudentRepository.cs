@@ -23,6 +23,7 @@ namespace Core.Abstractions
         Task<bool> UpdateStudentPromotion(StudentPromotionUpdateDTO studentPromotionUpdateDTO);
         Task<bool> GenerateStudentId(int studentId);
         Task<DashboardDTO> GetDashboardCount(int createdBy);
+        Task<DashboardDTO> GetAdminDashboardCount(int userId);
         Task<bool> UpdateStudentStatus(StudentStatusUpdateDTO model);
         Task<StudentMainstreamDetailDTO> GetStudentDetailForMainstream(int id);
         Task<bool> SaveStudentMainstream(StudentMainstream studentMainstream);

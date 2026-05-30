@@ -9,8 +9,9 @@ using System.Data;
 
 namespace Infrastructure
 {
-    public class StudentRepository(DatabaseContext context) : IStudentRepository
+    public class StudentRepository(IDbSession db, DatabaseContext context) : IStudentRepository
     {
+        private readonly IDbSession _db = db;
         private readonly DatabaseContext _context = context;
 
         public async Task<bool> CheckDuplicateStudentRegistrationNumber(string registrationNumber, int institutionId, int id)
@@ -45,14 +46,15 @@ namespace Infrastructure
 
         public async Task<bool> IsAdminUser(int userId)
         {
-            using var connection = _context.Database.GetDbConnection();
             var parameters = new DynamicParameters();
             parameters.Add("@UserId", userId);
 
-            return await connection.ExecuteScalarAsync<bool>(
+            return await _db.Connection.ExecuteScalarAsync<bool>(
                 "dbo.usp_IsAdminUser",
                 parameters,
-                commandType: CommandType.StoredProcedure);
+                _db.Transaction,
+                null,
+                CommandType.StoredProcedure);
         }
 
         public async Task<StudentDeleteResultDTO> DeleteStudentWithLog(int studentRecordId, int deletedBy)
@@ -216,14 +218,28 @@ namespace Infrastructure
         }
         public async Task<DashboardDTO> GetDashboardCount(int createdBy)
         {
-            using (var connection = _context.Database.GetDbConnection())
-            {
-                var parameters = new DynamicParameters();
-                parameters.Add("@CreatedBy", createdBy);
-                var result = await connection.QuerySingleAsync<DashboardDTO>("usp_DashboardCount", parameters, commandType: CommandType.StoredProcedure);
+            var parameters = new DynamicParameters();
+            parameters.Add("@CreatedBy", createdBy);
 
-                return result;
-            }
+            return await _db.Connection.QuerySingleAsync<DashboardDTO>(
+                "dbo.usp_DashboardCount",
+                parameters,
+                _db.Transaction,
+                null,
+                CommandType.StoredProcedure);
+        }
+
+        public async Task<DashboardDTO> GetAdminDashboardCount(int userId)
+        {
+            var parameters = new DynamicParameters();
+            parameters.Add("@UserId", userId);
+
+            return await _db.Connection.QuerySingleAsync<DashboardDTO>(
+                "dbo.usp_GetAdminDashboardCount",
+                parameters,
+                _db.Transaction,
+                null,
+                CommandType.StoredProcedure);
         }
 
         public async Task<bool> UpdateStudentStatus(StudentStatusUpdateDTO model)

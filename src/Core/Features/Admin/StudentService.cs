@@ -185,6 +185,12 @@ namespace Core.Features.Admin
             return response;
         }
 
+        public async Task<ServiceResponseDTO> GetAdminDashboardCount(int userId)
+        {
+            var dashboardCount = await _studentRepository.GetAdminDashboardCount(userId);
+            return new ServiceResponseDTO(true, AppStatusCodes.Success, dashboardCount, MessageSuccess.Found);
+        }
+
         public async Task<ServiceResponseDTO> UpdateStudentStatus(StudentStatusUpdateDTO model)
         {
             var isUpdated = await _studentRepository.UpdateStudentStatus(model);

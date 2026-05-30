@@ -1,4 +1,67 @@
 ﻿@page
 @model WebUI.Pages.Admin.IndexModel
 @{
+    ViewData["Title"] = "Dashboard";
 }
+
+<div class="page-content">
+    <div class="container-fluid">
+
+        <div class="row">
+            <div class="col-12">
+                <div class="page-title-box d-sm-flex align-items-center justify-content-between">
+                    <h4 class="mb-sm-0">Dashboard</h4>
+                </div>
+            </div>
+        </div>
+
+        <div class="row g-3">
+            <div class="col-md-4">
+                <div class="card border-0 shadow-sm h-100 text-white" style="background-color: #4CAF50;">
+                    <div class="card-body">
+                        <div class="d-flex align-items-center mb-2">
+                            <i class="mdi mdi-account-check fs-4 me-2"></i>
+                            <span class="fw-semibold">Active</span>
+                        </div>
+                        <h2 class="mb-0 text-center fw-bold">@Model.ActiveCount</h2>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card border-0 shadow-sm h-100 text-white" style="background-color: #FFC107;">
+                    <div class="card-body">
+                        <div class="d-flex align-items-center mb-2">
+                            <i class="mdi mdi-account-off fs-4 me-2"></i>
+                            <span class="fw-semibold">Inactive</span>
+                        </div>
+                        <h2 class="mb-0 text-center fw-bold">@Model.InactiveCount</h2>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card border-0 shadow-sm h-100 text-white" style="background-color: #2196F3;">
+                    <div class="card-body">
+                        <div class="d-flex align-items-center mb-2">
+                            <i class="mdi mdi-account-star fs-4 me-2"></i>
+                            <span class="fw-semibold">Completed</span>
+                        </div>
+                        <h2 class="mb-0 text-center fw-bold">@Model.CompletedCount</h2>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row mt-4">
+            <div class="col-12">
+                <div class="card shadow-sm">
+                    <div class="card-body">
+                        <h5 class="card-title text-primary mb-3">Recent Activity</h5>
+                        <hr class="mt-0" />
+                        <p class="text-muted text-center mb-0 py-4">No recent activity</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
