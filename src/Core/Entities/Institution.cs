@@ -35,5 +35,9 @@
             GradeSections = new List<InstitutionGradeSection>();
         }
         public IEnumerable<InstitutionGradeSection> GradeSections { get; set; }
+        public string StateName { get; set; } = string.Empty;
+        public string DistrictName { get; set; } = string.Empty;
+        public string BlockName { get; set; } = string.Empty;
+        public string VillageName { get; set; } = string.Empty;
     }
 }

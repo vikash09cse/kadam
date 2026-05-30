@@ -157,6 +157,23 @@ namespace Infrastructure
             institutionDetails.CreatedBy = institution.CreatedBy;
             institutionDetails.ModifyBy = institution.ModifyBy;
 
+            institutionDetails.StateName = (await _context.States
+                .Where(x => x.Id == institution.StateId && !x.IsDeleted)
+                .Select(x => x.StateName)
+                .FirstOrDefaultAsync()) ?? string.Empty;
+            institutionDetails.DistrictName = (await _context.Districts
+                .Where(x => x.Id == institution.DistrictId && !x.IsDeleted)
+                .Select(x => x.DistrictName)
+                .FirstOrDefaultAsync()) ?? string.Empty;
+            institutionDetails.BlockName = (await _context.Blocks
+                .Where(x => x.Id == institution.BlockId && !x.IsDeleted)
+                .Select(x => x.BlockName)
+                .FirstOrDefaultAsync()) ?? string.Empty;
+            institutionDetails.VillageName = (await _context.Villages
+                .Where(x => x.Id == institution.VillageId && !x.IsDeleted)
+                .Select(x => x.VillageName)
+                .FirstOrDefaultAsync()) ?? string.Empty;
+
             var gradeSections = await _context.InstitutionGradeSections.Where(x => x.InstitutionId == id).ToListAsync();
             institutionDetails.GradeSections = gradeSections;
 

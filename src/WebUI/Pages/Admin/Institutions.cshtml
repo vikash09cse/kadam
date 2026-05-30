@@ -557,6 +557,23 @@
                     });
                 };
 
+                vm.ensureLocationInList = function(list, id, text) {
+                    id = parseInt(id, 10);
+                    if (!id) {
+                        return list || [];
+                    }
+
+                    list = list || [];
+                    if (!list.some(function(item) { return item.value === id; })) {
+                        list.push({
+                            value: id,
+                            text: text || ('Location ' + id)
+                        });
+                    }
+
+                    return list;
+                };
+
                 vm.resetLocationDropdowns = function() {
                     vm.institutionInfo.stateId = null;
                     vm.institutionInfo.districtId = null;
@@ -838,22 +855,34 @@
                                         return InstitutionService.getStatesByDivision(response.divisionId);
                                     })
                                     .then(function(states) {
-                                        vm.states = vm.normalizeDropdownList(states);
+                                        vm.states = vm.ensureLocationInList(
+                                            vm.normalizeDropdownList(states),
+                                            response.stateId,
+                                            response.stateName);
                                         vm.institutionInfo.stateId = parseInt(response.stateId, 10);
                                         return InstitutionService.getDistrictsByDivision(response.divisionId, response.stateId);
                                     })
                                     .then(function(districts) {
-                                        vm.districts = vm.normalizeDropdownList(districts);
+                                        vm.districts = vm.ensureLocationInList(
+                                            vm.normalizeDropdownList(districts),
+                                            response.districtId,
+                                            response.districtName);
                                         vm.institutionInfo.districtId = parseInt(response.districtId, 10);
                                         return InstitutionService.getBlocksByDivision(response.divisionId, response.districtId);
                                     })
                                     .then(function(blocks) {
-                                        vm.blocks = vm.normalizeDropdownList(blocks);
+                                        vm.blocks = vm.ensureLocationInList(
+                                            vm.normalizeDropdownList(blocks),
+                                            response.blockId,
+                                            response.blockName);
                                         vm.institutionInfo.blockId = parseInt(response.blockId, 10);
                                         return InstitutionService.getVillagesByDivision(response.divisionId, response.blockId);
                                     })
                                     .then(function(villages) {
-                                        vm.villages = vm.normalizeDropdownList(villages);
+                                        vm.villages = vm.ensureLocationInList(
+                                            vm.normalizeDropdownList(villages),
+                                            response.villageId,
+                                            response.villageName);
                                         vm.institutionInfo.villageId = parseInt(response.villageId, 10);
 
                                         $('#addInstitutionModal').modal('show');
