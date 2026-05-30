@@ -298,6 +298,26 @@ namespace Core.Features.Admin
         {
             return await _adminRepository.GetVillagesByBlockIds(blockIds);
         }
+
+        public async Task<IEnumerable<DropdownDTO>> GetStatesByDivisionId(int divisionId)
+        {
+            return await _adminRepository.GetStatesByDivisionId(divisionId);
+        }
+
+        public async Task<IEnumerable<DropdownDTO>> GetDistrictsByDivisionId(int divisionId, int stateId)
+        {
+            return await _adminRepository.GetDistrictsByDivisionId(divisionId, stateId);
+        }
+
+        public async Task<IEnumerable<DropdownDTO>> GetBlocksByDivisionId(int divisionId, int districtId)
+        {
+            return await _adminRepository.GetBlocksByDivisionId(divisionId, districtId);
+        }
+
+        public async Task<IEnumerable<DropdownDTO>> GetVillagesByDivisionId(int divisionId, int blockId)
+        {
+            return await _adminRepository.GetVillagesByDivisionId(divisionId, blockId);
+        }
         #endregion
 
         #region "State"

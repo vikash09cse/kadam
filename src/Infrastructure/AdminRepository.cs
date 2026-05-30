@@ -345,6 +345,61 @@ namespace Infrastructure
                 commandType: CommandType.StoredProcedure);
         }
 
+        public async Task<IEnumerable<DropdownDTO>> GetStatesByDivisionId(int divisionId)
+        {
+            const string storedProcedure = "dbo.usp_GetStatesByDivisionId";
+            var parameters = new DynamicParameters();
+            parameters.Add("@DivisionId", divisionId);
+
+            return await _db.Connection.QueryAsync<DropdownDTO>(
+                storedProcedure,
+                parameters,
+                _db.Transaction,
+                commandType: CommandType.StoredProcedure);
+        }
+
+        public async Task<IEnumerable<DropdownDTO>> GetDistrictsByDivisionId(int divisionId, int stateId)
+        {
+            const string storedProcedure = "dbo.usp_GetDistrictsByDivisionId";
+            var parameters = new DynamicParameters();
+            parameters.Add("@DivisionId", divisionId);
+            parameters.Add("@StateId", stateId);
+
+            return await _db.Connection.QueryAsync<DropdownDTO>(
+                storedProcedure,
+                parameters,
+                _db.Transaction,
+                commandType: CommandType.StoredProcedure);
+        }
+
+        public async Task<IEnumerable<DropdownDTO>> GetBlocksByDivisionId(int divisionId, int districtId)
+        {
+            const string storedProcedure = "dbo.usp_GetBlocksByDivisionId";
+            var parameters = new DynamicParameters();
+            parameters.Add("@DivisionId", divisionId);
+            parameters.Add("@DistrictId", districtId);
+
+            return await _db.Connection.QueryAsync<DropdownDTO>(
+                storedProcedure,
+                parameters,
+                _db.Transaction,
+                commandType: CommandType.StoredProcedure);
+        }
+
+        public async Task<IEnumerable<DropdownDTO>> GetVillagesByDivisionId(int divisionId, int blockId)
+        {
+            const string storedProcedure = "dbo.usp_GetVillagesByDivisionId";
+            var parameters = new DynamicParameters();
+            parameters.Add("@DivisionId", divisionId);
+            parameters.Add("@BlockId", blockId);
+
+            return await _db.Connection.QueryAsync<DropdownDTO>(
+                storedProcedure,
+                parameters,
+                _db.Transaction,
+                commandType: CommandType.StoredProcedure);
+        }
+
         private static List<int> ParseIdJson(string? json)
         {
             if (string.IsNullOrWhiteSpace(json) || json == "[]")

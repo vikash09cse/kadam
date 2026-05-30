@@ -34,6 +34,10 @@ namespace Core.Abstractions
         Task<bool> SaveDivisionLocation(SaveDivisionLocationDTO assignment, int currentUserId);
         Task<IEnumerable<DropdownDTO>> GetBlocksByDistrictIds(IEnumerable<int> districtIds);
         Task<IEnumerable<DropdownDTO>> GetVillagesByBlockIds(IEnumerable<int> blockIds);
+        Task<IEnumerable<DropdownDTO>> GetStatesByDivisionId(int divisionId);
+        Task<IEnumerable<DropdownDTO>> GetDistrictsByDivisionId(int divisionId, int stateId);
+        Task<IEnumerable<DropdownDTO>> GetBlocksByDivisionId(int divisionId, int districtId);
+        Task<IEnumerable<DropdownDTO>> GetVillagesByDivisionId(int divisionId, int blockId);
         #endregion
 
         #region States

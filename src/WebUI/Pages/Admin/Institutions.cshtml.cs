@@ -123,11 +123,34 @@ namespace WebUI.Pages.Admin
                 InstitutionTypes = EnumHelper<InstitutionType>.GetEnumDropdownList() ,
                 InstitutionBuildings = EnumHelper<InstitutionBuilding>.GetEnumDropdownList(),
                 Divisions = await adminService.GetDivisionsByStatus(Enums.Status.Active),
-                States = await adminService.GetStatesByStatus(Enums.Status.Active),
                 Grades = await adminService.GetGradesAndSections(),
             };
 
             return new JsonResult(response);
+        }
+
+        public async Task<IActionResult> OnGetStateListByDivision(int divisionId)
+        {
+            var states = await adminService.GetStatesByDivisionId(divisionId);
+            return new JsonResult(states);
+        }
+
+        public async Task<IActionResult> OnGetDistrictListByDivision(int divisionId, int stateId)
+        {
+            var districts = await adminService.GetDistrictsByDivisionId(divisionId, stateId);
+            return new JsonResult(districts);
+        }
+
+        public async Task<IActionResult> OnGetBlockListByDivision(int divisionId, int districtId)
+        {
+            var blocks = await adminService.GetBlocksByDivisionId(divisionId, districtId);
+            return new JsonResult(blocks);
+        }
+
+        public async Task<IActionResult> OnGetVillageListByDivision(int divisionId, int blockId)
+        {
+            var villages = await adminService.GetVillagesByDivisionId(divisionId, blockId);
+            return new JsonResult(villages);
         }
 
         //public async Task<IActionResult> OnGetDivisionList()
