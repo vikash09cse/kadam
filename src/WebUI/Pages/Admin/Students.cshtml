@@ -1,0 +1,198 @@
+@page
+@model WebUI.Pages.Admin.StudentsModel
+@{
+    ViewData["Title"] = "Students";
+}
+@Html.AntiForgeryToken()
+
+<div class="page-content" ng-app="studentListApp" ng-controller="StudentListController as vm">
+    <div class="container-fluid">
+
+        <div class="row">
+            <div class="col-12">
+                <div class="page-title-box d-sm-flex align-items-center justify-content-between">
+                    <h4 class="mb-sm-0">Students</h4>
+                </div>
+            </div>
+        </div>
+
+        <div class="row dashboard-listing">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-body">
+                        <div class="row g-3 align-items-end mb-3">
+                            <div class="col-md-4">
+                                <label for="studentNameFilter" class="form-label">Student Name</label>
+                                <input type="text" id="studentNameFilter" class="form-control"
+                                       ng-model="vm.filters.studentName"
+                                       placeholder="Search by student name"
+                                       ng-keypress="vm.onFilterKeyPress($event)">
+                            </div>
+                            <div class="col-md-4">
+                                <label for="studentIdFilter" class="form-label">Student Id</label>
+                                <input type="text" id="studentIdFilter" class="form-control"
+                                       ng-model="vm.filters.studentId"
+                                       placeholder="Search by Kadam student id"
+                                       ng-keypress="vm.onFilterKeyPress($event)">
+                            </div>
+                            <div class="col-md-4">
+                                <button type="button" class="btn btn-primary me-2" ng-click="vm.searchStudents()">
+                                    <i class="mdi mdi-magnify"></i> Search
+                                </button>
+                                <button type="button" class="btn btn-secondary" ng-click="vm.clearFilters()">
+                                    Clear
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="table-responsive table-card">
+                            <table id="studentTable" class="table table-nowrap w-100" aria-label="Students">
+                                <thead class="table-primary">
+                                    <tr>
+                                        <th style="width: 6%;">Sr.No.</th>
+                                        <th style="width: 12%;">Student Id</th>
+                                        <th>Student Name</th>
+                                        <th>Institution</th>
+                                        <th style="width: 10%;">Grade</th>
+                                        <th style="width: 8%;">Section</th>
+                                        <th style="width: 6%;">Age</th>
+                                        <th style="width: 10%;">Enrollment Date</th>
+                                        <th style="width: 8%;">Status</th>
+                                    </tr>
+                                </thead>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+    <div id="loader" class="loader" ng-show="isLoading"></div>
+</div>
+
+<script src="//cdn.jsdelivr.net/npm/toastify-js"></script>
+<script src="~/js/custom-notification.js"></script>
+
+@section Scripts {
+    <script src="~/js/angular.js"></script>
+    <script src="~/js/angular-sanitize.js"></script>
+    <script src="~/js/loaderInterceptor.js"></script>
+
+    <script type="text/javascript">
+        var app = angular.module('studentListApp', ['app']);
+
+        app.config(['$httpProvider', function($httpProvider) {
+            $httpProvider.interceptors.push('loaderInterceptor');
+        }]);
+
+        app.run(['$rootScope', function($rootScope) {
+            $rootScope.isLoading = false;
+        }]);
+
+        app.controller('StudentListController', ['$http', function($http) {
+            var vm = this;
+
+            vm.filters = {
+                studentName: '',
+                studentId: ''
+            };
+
+            function formatDate(value) {
+                if (!value) {
+                    return '';
+                }
+                var date = new Date(value);
+                if (isNaN(date.getTime())) {
+                    return value;
+                }
+                return date.toLocaleDateString('en-GB');
+            }
+
+            vm.initDataTable = function() {
+                vm.dataTable = $('#studentTable').DataTable({
+                    serverSide: true,
+                    processing: true,
+                    paging: true,
+                    searching: false,
+                    ordering: false,
+                    ajax: function(data, callback) {
+                        $http({
+                            method: 'GET',
+                            url: '?handler=StudentList',
+                            params: {
+                                draw: data.draw,
+                                start: data.start,
+                                length: data.length,
+                                studentName: vm.filters.studentName,
+                                studentId: vm.filters.studentId
+                            },
+                            headers: {
+                                'RequestVerificationToken': $('input:hidden[name="__RequestVerificationToken"]').val()
+                            }
+                        }).then(function(response) {
+                            callback(response.data);
+                        }).catch(function(error) {
+                            console.error('Error fetching student list:', error);
+                            ShowNotification('Unable to load student list.', 1);
+                        });
+                    },
+                    columns: [
+                        { data: 'rowNumber' },
+                        { data: 'studentId' },
+                        { data: 'studentName' },
+                        { data: 'institutionName' },
+                        { data: 'gradeName' },
+                        { data: 'section' },
+                        { data: 'age' },
+                        {
+                            data: 'enrollmentDate',
+                            render: function(data) {
+                                return formatDate(data);
+                            }
+                        },
+                        { data: 'currentStatusText' }
+                    ],
+                    lengthMenu: [
+                        [10, 25, 50, 100],
+                        [10, 25, 50, 100]
+                    ],
+                    language: {
+                        info: "Showing _START_ to _END_ of _TOTAL_ records",
+                        lengthMenu: "Show _MENU_ records",
+                        infoEmpty: "Showing 0 to 0 of 0 records",
+                        emptyTable: "No records found!"
+                    },
+                    stateSave: true,
+                    stateSaveCallback: function(oSettings, oData) {
+                        localStorage.setItem('StudentTable_' + window.location.pathname, JSON.stringify(oData));
+                    },
+                    stateLoadCallback: function(oSettings) {
+                        return JSON.parse(localStorage.getItem('StudentTable_' + window.location.pathname));
+                    }
+                });
+            };
+
+            vm.searchStudents = function() {
+                if (vm.dataTable) {
+                    vm.dataTable.ajax.reload();
+                }
+            };
+
+            vm.clearFilters = function() {
+                vm.filters.studentName = '';
+                vm.filters.studentId = '';
+                vm.searchStudents();
+            };
+
+            vm.onFilterKeyPress = function(event) {
+                if (event.which === 13) {
+                    event.preventDefault();
+                    vm.searchStudents();
+                }
+            };
+
+            vm.initDataTable();
+        }]);
+    </script>
+}

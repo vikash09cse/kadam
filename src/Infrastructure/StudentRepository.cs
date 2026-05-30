@@ -286,5 +286,21 @@ namespace Infrastructure
                 commandType: CommandType.StoredProcedure);
             return result;
         }
+
+        public async Task<IEnumerable<StudentAdminListDTO>> GetStudents(int pageNumber, int pageSize, string? studentName, string? studentId, int userId)
+        {
+            using var connection = _context.Database.GetDbConnection();
+            var parameters = new DynamicParameters();
+            parameters.Add("@PageNumber", pageNumber);
+            parameters.Add("@PageSize", pageSize);
+            parameters.Add("@StudentName", string.IsNullOrWhiteSpace(studentName) ? null : studentName.Trim());
+            parameters.Add("@StudentId", string.IsNullOrWhiteSpace(studentId) ? null : studentId.Trim());
+            parameters.Add("@UserId", userId);
+
+            return await connection.QueryAsync<StudentAdminListDTO>(
+                "dbo.usp_GetStudents",
+                parameters,
+                commandType: CommandType.StoredProcedure);
+        }
     }
 }

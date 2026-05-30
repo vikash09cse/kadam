@@ -197,6 +197,30 @@ namespace Core.Features.Admin
             return new ServiceResponseDTO(isSaved, isSaved ? AppStatusCodes.Success : AppStatusCodes.Unauthorized, result: studentMainstream.Id, isSaved ? MessageSuccess.Saved : MessageError.CodeIssue);
         }
 
+        public async Task<DataTableResponseDTO<StudentAdminListDTO>> GetStudentList(
+            int draw,
+            int pageNumber,
+            int pageSize,
+            string? studentName,
+            string? studentId,
+            int userId)
+        {
+            var students = await _studentRepository.GetStudents(
+                pageNumber,
+                pageSize,
+                studentName,
+                studentId,
+                userId);
+
+            return new DataTableResponseDTO<StudentAdminListDTO>
+            {
+                Draw = draw,
+                RecordsTotal = students.FirstOrDefault()?.TotalCount ?? 0,
+                RecordsFiltered = students.FirstOrDefault()?.TotalCount ?? 0,
+                Data = students
+            };
+        }
+
         public async Task<IEnumerable<KadamProgrammeReportDTO>> GetKadamProgrammeReport(int? userId, KadamProgrammeReportFilterDTO? filter = null)
         {
             return await _studentRepository.GetKadamProgrammeReport(userId, filter);

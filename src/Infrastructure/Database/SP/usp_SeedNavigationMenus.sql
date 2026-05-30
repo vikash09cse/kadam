@@ -33,7 +33,8 @@ BEGIN
     (17, N'Steps', N'Kadam', N'/Admin/Kadam/Steps', NULL, NULL),
     (18, N'Themes', N'Kadam', N'/Admin/Kadam/Themes', NULL, NULL),
     (19, N'Reports', NULL, N'#reportlist', N'ri-file-edit-line', N'reportlist'),
-    (20, N'Kadam Programme Report', N'Reports', N'/Admin/Report', NULL, NULL);
+    (20, N'Kadam Programme Report', N'Reports', N'/Admin/Report', NULL, NULL),
+    (21, N'Students', N'Settings', N'/Admin/Students', NULL, NULL);
 
     ;WITH ParentMenus AS (
         SELECT m.MenuName, m.Id
