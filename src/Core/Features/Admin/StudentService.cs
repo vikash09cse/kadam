@@ -185,9 +185,9 @@ namespace Core.Features.Admin
             return response;
         }
 
-        public async Task<ServiceResponseDTO> GetAdminDashboardCount(int userId)
+        public async Task<ServiceResponseDTO> GetAdminDashboardCount(int userId, KadamProgrammeReportFilterDTO? filter = null)
         {
-            var dashboardCount = await _studentRepository.GetAdminDashboardCount(userId);
+            var dashboardCount = await _studentRepository.GetAdminDashboardCount(userId, filter);
             return new ServiceResponseDTO(true, AppStatusCodes.Success, dashboardCount, MessageSuccess.Found);
         }
 

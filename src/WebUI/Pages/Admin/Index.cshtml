@@ -15,7 +15,81 @@
             </div>
         </div>
 
-        <div class="row g-3">
+        <div class="row">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-body">
+                        <form method="get">
+                            <div asp-validation-summary="All" class="text-danger mb-3"></div>
+
+                            <div class="row g-3">
+                                <div class="col-md-3">
+                                    <label asp-for="StateId" class="form-label">State</label>
+                                    <select asp-for="StateId" class="form-select">
+                                        <option value="">All States</option>
+                                        @foreach (var state in Model.States)
+                                        {
+                                            <option value="@state.Value">@state.Text</option>
+                                        }
+                                    </select>
+                                </div>
+
+                                <div class="col-md-3">
+                                    <label asp-for="DivisionId" class="form-label">Division</label>
+                                    <select asp-for="DivisionId" class="form-select">
+                                        <option value="">All Divisions</option>
+                                        @foreach (var division in Model.Divisions)
+                                        {
+                                            <option value="@division.Value">@division.Text</option>
+                                        }
+                                    </select>
+                                </div>
+
+                                <div class="col-md-3">
+                                    <label asp-for="FromDate" class="form-label">From Date</label>
+                                    <input asp-for="FromDate" type="date" class="form-control" />
+                                </div>
+
+                                <div class="col-md-3">
+                                    <label asp-for="ToDate" class="form-label">To Date</label>
+                                    <input asp-for="ToDate" type="date" class="form-control" />
+                                </div>
+                            </div>
+
+                            <div class="row g-3 mt-1">
+                                <div class="col-12">
+                                    <label class="form-label d-block">Student Type</label>
+                                    <div class="d-flex flex-wrap gap-4">
+                                        <div class="form-check">
+                                            <input asp-for="IncludeAll" class="form-check-input" type="checkbox" id="includeAll" />
+                                            <label class="form-check-label" for="includeAll">All</label>
+                                        </div>
+                                        <div class="form-check">
+                                            <input asp-for="IncludeKadam" class="form-check-input student-type-filter" type="checkbox" id="includeKadam" />
+                                            <label class="form-check-label" for="includeKadam">Kadam</label>
+                                        </div>
+                                        <div class="form-check">
+                                            <input asp-for="IncludeKadamPlus" class="form-check-input student-type-filter" type="checkbox" id="includeKadamPlus" />
+                                            <label class="form-check-label" for="includeKadamPlus">Kadam Plus</label>
+                                        </div>
+                                    </div>
+                                    <small class="text-muted">Kadam uses students where IsKadamPlusStudent is false; Kadam Plus uses students where IsKadamPlusStudent is true.</small>
+                                </div>
+                            </div>
+
+                            <div class="mt-4">
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="mdi mdi-filter"></i> Apply Filters
+                                </button>
+                                <a asp-page="/Admin/Index" class="btn btn-secondary">Clear</a>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row g-3 mt-1">
             <div class="col-md-4">
                 <div class="card border-0 shadow-sm h-100 text-white" style="background-color: #4CAF50;">
                     <div class="card-body">
@@ -65,3 +139,31 @@
 
     </div>
 </div>
+
+@section Scripts {
+    <script>
+        (function () {
+            const includeAll = document.getElementById('includeAll');
+            const typeFilters = document.querySelectorAll('.student-type-filter');
+
+            function syncStudentTypeFilters() {
+                if (includeAll.checked) {
+                    typeFilters.forEach(function (checkbox) {
+                        checkbox.checked = false;
+                    });
+                }
+            }
+
+            includeAll.addEventListener('change', syncStudentTypeFilters);
+            typeFilters.forEach(function (checkbox) {
+                checkbox.addEventListener('change', function () {
+                    if (checkbox.checked) {
+                        includeAll.checked = false;
+                    }
+                });
+            });
+
+            syncStudentTypeFilters();
+        })();
+    </script>
+}

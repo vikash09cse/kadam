@@ -1,26 +1,61 @@
 CREATE OR ALTER PROCEDURE dbo.usp_GetAdminDashboardCount
-    @UserId INT
+    @UserId INT,
+    @StateId INT = NULL,
+    @DivisionId INT = NULL,
+    @FromDate DATE = NULL,
+    @ToDate DATE = NULL,
+    @IncludeAll BIT = 1,
+    @IncludeKadam BIT = 0,
+    @IncludeKadamPlus BIT = 0
 AS
 BEGIN
     SET NOCOUNT ON;
 
-    DECLARE @FilterByUser BIT = 1;
+    DECLARE @InstitutionIds VARCHAR(2000) = NULL;
+    DECLARE @FilterByInstitution BIT = 0;
 
-    IF EXISTS (
-        SELECT 1
-        FROM dbo.Users u
-        INNER JOIN dbo.Roles r ON u.RoleId = r.Id AND r.IsDeleted = 0
-        WHERE u.Id = @UserId
-          AND u.IsDeleted = 0
-          AND LOWER(LTRIM(RTRIM(r.RoleName))) = 'admin'
-    )
-        SET @FilterByUser = 0;
+    IF @UserId IS NOT NULL AND @UserId > 0
+    BEGIN
+        IF EXISTS (
+            SELECT 1
+            FROM dbo.Users u
+            INNER JOIN dbo.Roles r ON u.RoleId = r.Id AND r.IsDeleted = 0
+            WHERE u.Id = @UserId
+              AND u.IsDeleted = 0
+              AND LOWER(LTRIM(RTRIM(r.RoleName))) = 'admin'
+        )
+            SET @FilterByInstitution = 0;
+        ELSE
+        BEGIN
+            SET @FilterByInstitution = 1;
+            SELECT @InstitutionIds = InstitutionIds FROM dbo.PeopleInstitutions WHERE UserId = @UserId;
+        END
+    END
 
     SELECT
         ISNULL(SUM(CASE WHEN s.CurrentStatus = 1 THEN 1 ELSE 0 END), 0) AS ActiveCount,
         ISNULL(SUM(CASE WHEN s.CurrentStatus = 2 THEN 1 ELSE 0 END), 0) AS InactiveCount,
         ISNULL(SUM(CASE WHEN s.CurrentStatus = 3 THEN 1 ELSE 0 END), 0) AS CompletedCount
     FROM dbo.Students s
+    INNER JOIN dbo.Institutions i ON s.InstitutionId = i.Id AND i.IsDeleted = 0
     WHERE s.IsDeleted = 0
-      AND (@FilterByUser = 0 OR s.CreatedBy = @UserId);
+      AND (
+          @FilterByInstitution = 0
+          OR (
+              @InstitutionIds IS NOT NULL
+              AND LTRIM(RTRIM(@InstitutionIds)) <> ''
+              AND i.Id IN (SELECT Item FROM dbo.SplitString(@InstitutionIds, ','))
+          )
+      )
+      AND (@StateId IS NULL OR @StateId = 0 OR i.StateId = @StateId)
+      AND (@DivisionId IS NULL OR @DivisionId = 0 OR i.DivisionId = @DivisionId)
+      AND (@FromDate IS NULL OR s.EnrollmentDate >= @FromDate)
+      AND (@ToDate IS NULL OR s.EnrollmentDate <= @ToDate)
+      AND (
+          @IncludeAll = 1
+          OR (
+              (@IncludeKadam = 1 AND s.IsKadamPlusStudent = 0)
+              OR (@IncludeKadamPlus = 1 AND s.IsKadamPlusStudent = 1)
+          )
+      );
 END

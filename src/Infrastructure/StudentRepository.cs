@@ -229,10 +229,17 @@ namespace Infrastructure
                 CommandType.StoredProcedure);
         }
 
-        public async Task<DashboardDTO> GetAdminDashboardCount(int userId)
+        public async Task<DashboardDTO> GetAdminDashboardCount(int userId, KadamProgrammeReportFilterDTO? filter = null)
         {
             var parameters = new DynamicParameters();
             parameters.Add("@UserId", userId);
+            parameters.Add("@StateId", filter?.StateId);
+            parameters.Add("@DivisionId", filter?.DivisionId);
+            parameters.Add("@FromDate", filter?.FromDate);
+            parameters.Add("@ToDate", filter?.ToDate);
+            parameters.Add("@IncludeAll", filter?.IncludeAll ?? true);
+            parameters.Add("@IncludeKadam", filter?.IncludeKadam ?? false);
+            parameters.Add("@IncludeKadamPlus", filter?.IncludeKadamPlus ?? false);
 
             return await _db.Connection.QuerySingleAsync<DashboardDTO>(
                 "dbo.usp_GetAdminDashboardCount",
