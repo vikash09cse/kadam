@@ -12,7 +12,7 @@ BEGIN
         SET stg.DivisionId = d.Id
         FROM dbo.InstitutionImportStaging stg
         INNER JOIN dbo.Divisions d
-            ON d.DivisionName = LTRIM(RTRIM(stg.DivisionName))
+            ON d.DivisionName COLLATE DATABASE_DEFAULT = LTRIM(RTRIM(stg.DivisionName)) COLLATE DATABASE_DEFAULT
             AND d.IsDeleted = 0
         WHERE stg.ImportId = @ImportId;
 
@@ -20,7 +20,7 @@ BEGIN
         SET stg.StateId = s.Id
         FROM dbo.InstitutionImportStaging stg
         INNER JOIN dbo.States s
-            ON s.StateName = LTRIM(RTRIM(stg.StateName))
+            ON s.StateName COLLATE DATABASE_DEFAULT = LTRIM(RTRIM(stg.StateName)) COLLATE DATABASE_DEFAULT
             AND s.IsDeleted = 0
         WHERE stg.ImportId = @ImportId;
 
@@ -28,7 +28,7 @@ BEGIN
         SET stg.DistrictId = dist.Id
         FROM dbo.InstitutionImportStaging stg
         INNER JOIN dbo.Districts dist
-            ON dist.DistrictName = LTRIM(RTRIM(stg.DistrictName))
+            ON dist.DistrictName COLLATE DATABASE_DEFAULT = LTRIM(RTRIM(stg.DistrictName)) COLLATE DATABASE_DEFAULT
             AND dist.StateId = stg.StateId
             AND dist.IsDeleted = 0
         WHERE stg.ImportId = @ImportId
@@ -38,7 +38,7 @@ BEGIN
         SET stg.BlockId = b.Id
         FROM dbo.InstitutionImportStaging stg
         INNER JOIN dbo.Blocks b
-            ON b.BlockName = LTRIM(RTRIM(stg.BlockName))
+            ON b.BlockName COLLATE DATABASE_DEFAULT = LTRIM(RTRIM(stg.BlockName)) COLLATE DATABASE_DEFAULT
             AND b.DistrictId = stg.DistrictId
             AND b.IsDeleted = 0
         WHERE stg.ImportId = @ImportId
@@ -48,7 +48,7 @@ BEGIN
         SET stg.VillageId = v.Id
         FROM dbo.InstitutionImportStaging stg
         INNER JOIN dbo.Villages v
-            ON v.VillageName = LTRIM(RTRIM(stg.VillageName))
+            ON v.VillageName COLLATE DATABASE_DEFAULT = LTRIM(RTRIM(stg.VillageName)) COLLATE DATABASE_DEFAULT
             AND v.BlockId = stg.BlockId
             AND v.IsDeleted = 0
         WHERE stg.ImportId = @ImportId
@@ -280,7 +280,7 @@ BEGIN
         SELECT stg.RowNumber, 'Institution Code "' + stg.InstitutionCode + '" already exists.'
         FROM dbo.InstitutionImportStaging stg
         INNER JOIN dbo.Institutions i
-            ON i.InstitutionCode = LTRIM(RTRIM(stg.InstitutionCode))
+            ON i.InstitutionCode COLLATE DATABASE_DEFAULT = LTRIM(RTRIM(stg.InstitutionCode)) COLLATE DATABASE_DEFAULT
             AND i.IsDeleted = 0
         WHERE stg.ImportId = @ImportId
           AND stg.RowNumber NOT IN (SELECT RowNumber FROM #Errors);
@@ -289,7 +289,7 @@ BEGIN
         SELECT stg.RowNumber, 'Institution Id "' + stg.InstitutionBusinessId + '" already exists.'
         FROM dbo.InstitutionImportStaging stg
         INNER JOIN dbo.Institutions i
-            ON i.InstitutionId = LTRIM(RTRIM(stg.InstitutionBusinessId))
+            ON i.InstitutionId COLLATE DATABASE_DEFAULT = LTRIM(RTRIM(stg.InstitutionBusinessId)) COLLATE DATABASE_DEFAULT
             AND i.IsDeleted = 0
         WHERE stg.ImportId = @ImportId
           AND stg.RowNumber NOT IN (SELECT RowNumber FROM #Errors);
@@ -298,15 +298,15 @@ BEGIN
         SELECT stg.RowNumber, 'Institution Name "' + stg.InstitutionName + '" already exists.'
         FROM dbo.InstitutionImportStaging stg
         INNER JOIN dbo.Institutions i
-            ON i.InstitutionName = LTRIM(RTRIM(stg.InstitutionName))
+            ON i.InstitutionName COLLATE DATABASE_DEFAULT = LTRIM(RTRIM(stg.InstitutionName)) COLLATE DATABASE_DEFAULT
             AND i.IsDeleted = 0
         WHERE stg.ImportId = @ImportId
           AND stg.RowNumber NOT IN (SELECT RowNumber FROM #Errors);
 
         CREATE TABLE #ParsedGradeSections (
             RowNumber INT NOT NULL,
-            GradeName NVARCHAR(50) NOT NULL,
-            Sections NVARCHAR(55) NOT NULL
+            GradeName NVARCHAR(50) COLLATE DATABASE_DEFAULT NOT NULL,
+            Sections NVARCHAR(55) COLLATE DATABASE_DEFAULT NOT NULL
         );
 
         INSERT INTO #ParsedGradeSections (RowNumber, GradeName, Sections)
@@ -331,7 +331,7 @@ BEGIN
         SELECT DISTINCT p.RowNumber, 'Grade "' + p.GradeName + '" not found.'
         FROM #ParsedGradeSections p
         LEFT JOIN dbo.Grades g
-            ON g.GradeName = p.GradeName
+            ON g.GradeName COLLATE DATABASE_DEFAULT = p.GradeName COLLATE DATABASE_DEFAULT
             AND g.IsDeleted = 0
         WHERE g.Id IS NULL
           AND p.RowNumber NOT IN (SELECT RowNumber FROM #Errors);
@@ -441,7 +441,9 @@ BEGIN
             p.Sections
         FROM #ParsedGradeSections p
         INNER JOIN #InsertedInstitutions ins ON ins.RowNumber = p.RowNumber
-        INNER JOIN dbo.Grades g ON g.GradeName = p.GradeName AND g.IsDeleted = 0;
+        INNER JOIN dbo.Grades g
+            ON g.GradeName COLLATE DATABASE_DEFAULT = p.GradeName COLLATE DATABASE_DEFAULT
+            AND g.IsDeleted = 0;
 
         DROP TABLE #InsertedInstitutions;
         DROP TABLE #ReadyRows;
