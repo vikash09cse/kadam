@@ -11,7 +11,7 @@ BEGIN
     SELECT 
         ROW_NUMBER() OVER(ORDER BY u.Id) AS RowNumber,
          u.Id, Email, UserName, FirstName, LastName, 
-        Phone, Gender, 
+        Phone, AlternatePhone, Gender, 
         r.RoleName AS RoleName, rr.RoleName AS ReporteeRoleName,
         u.LastGeneratedPassword,
         COUNT(*) OVER() AS TotalCount

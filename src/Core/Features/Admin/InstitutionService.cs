@@ -21,6 +21,11 @@ namespace Core.Features.Admin
             return await _institutionRepository.GetInstitutions(pageNumber, pageSize, currentStatus, searchTerm);
         }
 
+        public async Task<IEnumerable<InstitutionExportDTO>> GetInstitutionExportList()
+        {
+            return await _institutionRepository.GetInstitutionExportList();
+        }
+
         public async Task<ServiceResponseDTO> SaveInstitution(InstitutionSave institution, int currentUserId)
         {
             if (await _institutionRepository.CheckInstitutionName(institution.InstitutionName, institution.Id))

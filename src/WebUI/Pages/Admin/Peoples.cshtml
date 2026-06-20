@@ -16,6 +16,12 @@
                 <div class="page-title-box d-sm-flex align-items-center justify-content-between">
                     <h4 class="mb-sm-0">Peoples </h4>
                     <div class="text-end">
+                        <form method="post" asp-page-handler="DownloadExcel" class="d-inline-block me-2">
+                            @Html.AntiForgeryToken()
+                            <button type="submit" class="btn btn-success">
+                                <i class="mdi mdi-file-excel"></i> Download Excel
+                            </button>
+                        </form>
                         <button type="button" class="btn btn-primary" ng-click="vm.openAddPeopleModal()">
                             Add People
                         </button>
@@ -42,6 +48,7 @@
                                             <th>User Name</th>
                                             <th>Gender</th>
                                             <th>Phone</th>
+                                            <th>Alternate Phone</th>
                                             <th>Email</th>
                                             <th>Role</th>
                                             <th>Reportee Role</th>

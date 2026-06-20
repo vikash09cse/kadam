@@ -6,6 +6,7 @@ namespace Core.Abstractions
     public interface IInstitutionRepository
     {
         Task<IEnumerable<InstitutionListDTO>> GetInstitutions(int pageNumber, int pageSize, Utilities.Enums.Status? currentStatus, string searchTerm);
+        Task<IEnumerable<InstitutionExportDTO>> GetInstitutionExportList();
         Task<InstitutionSave> GetInstitutionById(int id);
         Task<bool> SaveInstitution(InstitutionSave institution);
         Task<bool> DeleteInstitution(int id, int userId);

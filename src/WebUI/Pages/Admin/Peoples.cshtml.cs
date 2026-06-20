@@ -1,3 +1,4 @@
+using ClosedXML.Excel;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Core.Features.Admin;
@@ -23,6 +24,77 @@ namespace WebUI.Pages.Admin
 
         public void OnGet()
         {
+        }
+
+        public async Task<IActionResult> OnPostDownloadExcelAsync()
+        {
+            var userId = _authenticationService.GetCurrentUserId();
+            if (userId <= 0)
+            {
+                return RedirectToPage("/Login");
+            }
+
+            try
+            {
+                var data = await _adminService.GetPeopleExportList();
+
+                using var workbook = new XLWorkbook();
+                var worksheet = workbook.Worksheets.Add("Peoples");
+
+                var headers = new[]
+                {
+                    "Sr. No.",
+                    "Full Name",
+                    "User Name",
+                    "Gender",
+                    "Phone",
+                    "Alternate Phone",
+                    "Email",
+                    "Role",
+                    "Reportee Role",
+                    "Assigned Institutions",
+                    "Password (last set)"
+                };
+
+                for (int col = 1; col <= headers.Length; col++)
+                {
+                    worksheet.Cell(1, col).Value = headers[col - 1];
+                }
+
+                worksheet.Row(1).Style.Font.Bold = true;
+                worksheet.Row(1).Style.Fill.BackgroundColor = XLColor.LightGray;
+
+                int row = 2;
+                foreach (var item in data)
+                {
+                    worksheet.Cell(row, 1).Value = item.SrNo;
+                    worksheet.Cell(row, 2).Value = item.FullName;
+                    worksheet.Cell(row, 3).Value = item.UserName;
+                    worksheet.Cell(row, 4).Value = item.GenderName;
+                    worksheet.Cell(row, 5).Value = item.Phone;
+                    worksheet.Cell(row, 6).Value = item.AlternatePhone;
+                    worksheet.Cell(row, 7).Value = item.Email;
+                    worksheet.Cell(row, 8).Value = item.RoleName;
+                    worksheet.Cell(row, 9).Value = item.ReporteeRoleName;
+                    worksheet.Cell(row, 10).Value = item.AssignedInstitutions;
+                    worksheet.Cell(row, 11).Value = item.LastGeneratedPassword ?? string.Empty;
+                    row++;
+                }
+
+                worksheet.Columns().AdjustToContents();
+
+                using var stream = new MemoryStream();
+                workbook.SaveAs(stream, false);
+                stream.Position = 0;
+
+                var fileName = $"Peoples_{DateTime.Now:yyyyMMdd_HHmmss}.xlsx";
+                return File(stream.ToArray(), "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", fileName);
+            }
+            catch (Exception ex)
+            {
+                TempData["ErrorMessage"] = $"Unable to generate Excel file. {ex.Message}";
+                return RedirectToPage();
+            }
         }
 
         public async Task<IActionResult> OnGetInitialData(int id)

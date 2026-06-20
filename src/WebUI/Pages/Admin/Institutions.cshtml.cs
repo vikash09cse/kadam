@@ -1,3 +1,4 @@
+using ClosedXML.Excel;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Core.Features.Admin;
@@ -16,6 +17,87 @@ namespace WebUI.Pages.Admin
         public void OnGet()
         {
             // Render the Institutions.cshtml page
+        }
+
+        public async Task<IActionResult> OnPostDownloadExcelAsync()
+        {
+            var userId = authenticationService.GetCurrentUserId();
+            if (userId <= 0)
+            {
+                return RedirectToPage("/Login");
+            }
+
+            try
+            {
+                var data = await _institutionService.GetInstitutionExportList();
+                var columns = GetExportColumns();
+
+                using var workbook = new XLWorkbook();
+                var worksheet = workbook.Worksheets.Add("Institutions");
+
+                for (int col = 1; col <= columns.Count; col++)
+                {
+                    worksheet.Cell(1, col).Value = columns[col - 1].Header;
+                }
+
+                worksheet.Row(1).Style.Font.Bold = true;
+                worksheet.Row(1).Style.Fill.BackgroundColor = XLColor.LightGray;
+
+                int row = 2;
+                foreach (var item in data)
+                {
+                    for (int col = 1; col <= columns.Count; col++)
+                    {
+                        worksheet.Cell(row, col).Value = columns[col - 1].Getter(item) ?? string.Empty;
+                    }
+                    row++;
+                }
+
+                worksheet.Columns().AdjustToContents();
+
+                using var stream = new MemoryStream();
+                workbook.SaveAs(stream, false);
+                stream.Position = 0;
+
+                var fileName = $"Institutions_{DateTime.Now:yyyyMMdd_HHmmss}.xlsx";
+                return File(stream.ToArray(), "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", fileName);
+            }
+            catch (Exception ex)
+            {
+                TempData["ErrorMessage"] = $"Unable to generate Excel file. {ex.Message}";
+                return RedirectToPage();
+            }
+        }
+
+        private static List<(string Header, Func<InstitutionExportDTO, string?> Getter)> GetExportColumns()
+        {
+            return
+            [
+                ("Sr. No.", x => x.SrNo.ToString()),
+                ("Division", x => x.DivisionName),
+                ("State", x => x.StateName),
+                ("District", x => x.DistrictName),
+                ("Block", x => x.BlockName),
+                ("Village", x => x.VillageName),
+                ("Institution Type", x => x.InstitutionTypeName),
+                ("Institution Building", x => x.InstitutionBuildingName),
+                ("Institution Name", x => x.InstitutionName),
+                ("Institution Code", x => x.InstitutionCode),
+                ("Institution ID", x => x.InstitutionBusinessId),
+                ("Headmaster Name", x => x.InstitutionHeadMasterName),
+                ("Phone", x => x.InstitutionPhone),
+                ("Email", x => x.InstitutionEmail),
+                ("Website", x => x.InstitutionWebsite),
+                ("Address", x => x.InstitutionAddress),
+                ("Male Teachers", x => x.InstitutionMaleTeacherCount.ToString()),
+                ("Female Teachers", x => x.InstitutionFemaleTeacherCount.ToString()),
+                ("Total Teachers", x => x.InstitutionTotalTeacherCount.ToString()),
+                ("Total Students", x => x.InstitutionTotalStudentCount.ToString()),
+                ("Financial Year Start", x => x.FinancialYearStart),
+                ("Financial Year End", x => x.FinancialYearEnd),
+                ("Status", x => x.CurrentStatusName),
+                ("Grade Sections", x => x.GradeSections)
+            ];
         }
 
         /// <summary>

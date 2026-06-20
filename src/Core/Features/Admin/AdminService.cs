@@ -178,6 +178,12 @@ namespace Core.Features.Admin
 
             return response;
         }
+
+        public async Task<IEnumerable<PeopleExportDTO>> GetPeopleExportList()
+        {
+            return await _adminRepository.GetPeopleExportList();
+        }
+
         public async Task<IEnumerable<UserProgramDTO>> GetUserPrograms(int userId)
         {
             return await _adminRepository.GetUserPrograms(userId);

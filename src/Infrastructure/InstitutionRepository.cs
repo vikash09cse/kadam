@@ -198,6 +198,19 @@ namespace Infrastructure
             return institutions;
         }
 
+        public async Task<IEnumerable<InstitutionExportDTO>> GetInstitutionExportList()
+        {
+            var result = await _db.Connection.QueryAsync<InstitutionExportDTO>(
+                "dbo.usp_ExportInstitutionList",
+                null,
+                _db.Transaction,
+                null,
+                CommandType.StoredProcedure
+            );
+
+            return result;
+        }
+
         public async Task<bool> SaveInstitution(InstitutionSave institution)
         {
             try

@@ -126,6 +126,19 @@ namespace Infrastructure
 
             return result;
         }
+
+        public async Task<IEnumerable<PeopleExportDTO>> GetPeopleExportList()
+        {
+            var result = await _db.Connection.QueryAsync<PeopleExportDTO>(
+                "dbo.usp_ExportPeopleList",
+                null,
+                _db.Transaction,
+                null,
+                CommandType.StoredProcedure
+            );
+
+            return result;
+        }
         public async Task<IEnumerable<UserProgramDTO>> GetUserPrograms(int userId)
         {
             var SP = "dbo.usp_GetUserPrograms";
