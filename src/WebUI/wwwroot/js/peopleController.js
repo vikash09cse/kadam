@@ -60,6 +60,7 @@
                     { data: 'userName' },
                     { data: 'genderName' },
                     { data: 'phone' },
+                    { data: 'alternatePhone' },
                     { data: 'email' },
                     { data: 'roleName' },
                     { data: 'reporteeRoleName' },
