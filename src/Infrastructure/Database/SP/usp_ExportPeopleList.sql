@@ -24,14 +24,18 @@ BEGIN
     FROM Users u
     LEFT JOIN Roles r ON u.RoleId = r.Id
     LEFT JOIN Roles rr ON u.ReporteeRoleId = rr.Id
-    LEFT JOIN PeopleInstitutions pi ON pi.UserId = u.Id
     OUTER APPLY (
-        SELECT STRING_AGG(i.InstitutionName, ', ') WITHIN GROUP (ORDER BY i.InstitutionName) AS AssignedInstitutions
-        FROM dbo.SplitString(pi.InstitutionIds, ',') s
-        INNER JOIN Institutions i
-            ON i.Id = TRY_CAST(LTRIM(RTRIM(s.Item)) AS INT)
-            AND i.IsDeleted = 0
-        WHERE LTRIM(RTRIM(ISNULL(pi.InstitutionIds, ''))) <> ''
+        SELECT STRING_AGG(x.InstitutionName, ', ') WITHIN GROUP (ORDER BY x.InstitutionName) AS AssignedInstitutions
+        FROM (
+            SELECT DISTINCT i.InstitutionName
+            FROM dbo.PeopleInstitutions pi
+            CROSS APPLY dbo.SplitString(pi.InstitutionIds, ',') s
+            INNER JOIN Institutions i
+                ON i.Id = TRY_CAST(LTRIM(RTRIM(s.Item)) AS INT)
+                AND i.IsDeleted = 0
+            WHERE pi.UserId = u.Id
+              AND LTRIM(RTRIM(ISNULL(pi.InstitutionIds, ''))) <> ''
+        ) x
     ) inst
     WHERE u.IsDeleted = 0
     ORDER BY u.Id;

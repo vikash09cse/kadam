@@ -17,9 +17,10 @@
             deleteUser: deleteUser,
             getUserPrograms: getUserPrograms,
             saveUserPrograms: saveUserPrograms,
-            getDistrictsByState: getDistrictsByState,
-            getBlocksByDistrict: getBlocksByDistrict,
-            getVillagesByBlock: getVillagesByBlock,
+            getStatesByDivision: getStatesByDivision,
+            getDistrictsByDivision: getDistrictsByDivision,
+            getBlocksByDivision: getBlocksByDivision,
+            getVillagesByDivision: getVillagesByDivision,
             getLocationData: getLocationData,
             getInstitutionsByVillageId: getInstitutionsByVillageId,
             savePeopleInstitution: savePeopleInstitution
@@ -94,20 +95,26 @@
             .catch(error => $q.reject(error));
         }
 
-        function getDistrictsByState(stateId) {
-            return $http.get('?handler=DistrictListByState&stateId=' + stateId)
+        function getStatesByDivision(divisionId) {
+            return $http.get('?handler=StateListByDivision&divisionId=' + divisionId)
                 .then(response => response.data)
                 .catch(error => $q.reject(error));
         }
 
-        function getBlocksByDistrict(districtId) {
-            return $http.get('?handler=BlockListByDistrict&districtId=' + districtId)
+        function getDistrictsByDivision(divisionId, stateId) {
+            return $http.get('?handler=DistrictListByDivision&divisionId=' + divisionId + '&stateId=' + stateId)
                 .then(response => response.data)
                 .catch(error => $q.reject(error));
         }
 
-        function getVillagesByBlock(blockId) {
-            return $http.get('?handler=VillagesByBlock&blockId=' + blockId)
+        function getBlocksByDivision(divisionId, districtId) {
+            return $http.get('?handler=BlockListByDivision&divisionId=' + divisionId + '&districtId=' + districtId)
+                .then(response => response.data)
+                .catch(error => $q.reject(error));
+        }
+
+        function getVillagesByDivision(divisionId, blockId) {
+            return $http.get('?handler=VillageListByDivision&divisionId=' + divisionId + '&blockId=' + blockId)
                 .then(response => response.data)
                 .catch(error => $q.reject(error));
         }

@@ -122,6 +122,7 @@ namespace WebUI.Pages.Admin
             [
                 ("Sr. No.", x => x.SrNo.ToString()),
                 ("Created By", x => x.CreatedBy),
+                ("Email Id", x => x.EmailId),
                 ("User ID", x => x.UserId),
                 ("State", x => x.State),
                 ("Division", x => x.Division),

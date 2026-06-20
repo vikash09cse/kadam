@@ -122,11 +122,9 @@ namespace WebUI.Pages.Admin
             int length,
             string searchValue)
         {
-            int pageNumber = (start / length) + 1;
-
             var result = await _adminService.GetUserList(
                 draw: draw,
-                start: pageNumber,
+                start: start,
                 length: length,
                 searchValue: searchValue
             );
@@ -185,11 +183,34 @@ namespace WebUI.Pages.Admin
             {
                 InstitutionTypes = EnumHelper<InstitutionType>.GetEnumDropdownList(),
                 Divisions = await _adminService.GetDivisionsByStatus(Enums.Status.Active),
-                States = await _adminService.GetStatesByStatus(Enums.Status.Active),
                 PeopleInstitution = await _adminService.GetPeopleInstitution(userId)
             };
 
             return new JsonResult(response);
+        }
+
+        public async Task<IActionResult> OnGetStateListByDivision(int divisionId)
+        {
+            var states = await _adminService.GetStatesByDivisionId(divisionId);
+            return new JsonResult(states);
+        }
+
+        public async Task<IActionResult> OnGetDistrictListByDivision(int divisionId, int stateId)
+        {
+            var districts = await _adminService.GetDistrictsByDivisionId(divisionId, stateId);
+            return new JsonResult(districts);
+        }
+
+        public async Task<IActionResult> OnGetBlockListByDivision(int divisionId, int districtId)
+        {
+            var blocks = await _adminService.GetBlocksByDivisionId(divisionId, districtId);
+            return new JsonResult(blocks);
+        }
+
+        public async Task<IActionResult> OnGetVillageListByDivision(int divisionId, int blockId)
+        {
+            var villages = await _adminService.GetVillagesByDivisionId(divisionId, blockId);
+            return new JsonResult(villages);
         }
         public async Task<IActionResult> OnGetDistrictListByState(int stateId)
         {

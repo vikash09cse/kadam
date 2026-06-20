@@ -400,21 +400,104 @@
         vm.institutionTypes = [];
         vm.institutions = [];
 
+        vm.normalizeDropdownList = function(items) {
+            return (items || []).map(function(item) {
+                var value = item.value != null ? item.value : item.Value;
+                return {
+                    value: parseInt(value, 10),
+                    text: item.text || item.Text || ''
+                };
+            });
+        };
+
+        vm.ensureLocationInList = function(list, id) {
+            id = parseInt(id, 10);
+            if (!id) {
+                return list || [];
+            }
+
+            list = list || [];
+            if (!list.some(function(item) { return item.value === id; })) {
+                list.push({
+                    value: id,
+                    text: 'Location ' + id
+                });
+            }
+
+            return list;
+        };
+
+        vm.resetLocationDropdowns = function() {
+            vm.institutionData.stateId = null;
+            vm.institutionData.districtId = null;
+            vm.institutionData.blockId = null;
+            vm.institutionData.villageId = null;
+            vm.institutionData.selectedInstitutions = [];
+            vm.states = [];
+            vm.districts = [];
+            vm.blocks = [];
+            vm.villages = [];
+            vm.institutions = [];
+        };
+
+        vm.loadDistrictsByDivision = function() {
+            vm.institutionData.districtId = null;
+            vm.institutionData.blockId = null;
+            vm.institutionData.villageId = null;
+            vm.institutionData.selectedInstitutions = [];
+            vm.districts = [];
+            vm.blocks = [];
+            vm.villages = [];
+            vm.institutions = [];
+
+            if (!vm.institutionData.divisionId || !vm.institutionData.stateId) {
+                return $q.resolve([]);
+            }
+
+            return PeopleService.getDistrictsByDivision(vm.institutionData.divisionId, vm.institutionData.stateId)
+                .then(function(data) {
+                    vm.districts = vm.normalizeDropdownList(data);
+                    return vm.districts;
+                });
+        };
+
+        vm.onDivisionChange = function() {
+            vm.resetLocationDropdowns();
+            if (!vm.institutionData.divisionId) {
+                return;
+            }
+
+            PeopleService.getStatesByDivision(vm.institutionData.divisionId)
+                .then(function(states) {
+                    vm.states = vm.normalizeDropdownList(states);
+                    if (vm.states.length === 0) {
+                        ShowNotification('No location assigned to this division.', 1);
+                        return;
+                    }
+                    if (vm.states.length === 1) {
+                        vm.institutionData.stateId = vm.states[0].value;
+                        vm.loadDistrictsByDivision();
+                    }
+                })
+                .catch(function(error) {
+                    ShowNotification(error.message || 'Error fetching division states', 1);
+                });
+        };
+
         vm.assignInstitution = function(id, fullName, roleName) {
             vm.selectedUserId = id;
             vm.selectedPerson = {
                 fullName: fullName,
                 roleName: roleName
             };
-            
-            // Reset form
+
             vm.institutionData = {
-                divisionId: '',
-                stateId: '',
-                districtId: '',
-                blockId: '',
-                villageId: '',
-                institutionTypeId: '',
+                divisionId: null,
+                stateId: null,
+                districtId: null,
+                blockId: null,
+                villageId: null,
+                institutionTypeId: null,
                 selectedInstitutions: []
             };
             vm.divisions = [];
@@ -423,53 +506,54 @@
             vm.blocks = [];
             vm.villages = [];
             vm.institutions = [];
-            
-            // Get location data
+
             PeopleService.getLocationData(id)
-                .then(function (response) {
-                    // Set initial dropdown options
-                    vm.divisions = response.divisions || [];
-                    vm.states = response.states || [];
+                .then(function(response) {
+                    vm.divisions = vm.normalizeDropdownList(response.divisions || []);
                     vm.institutionTypes = response.institutionTypes || [];
-                    
-                    if (response.peopleInstitution) {
-                        // Set initial values first
-                        vm.institutionData = {
-                            divisionId: response.peopleInstitution.divisionId ? response.peopleInstitution.divisionId + '' : '',
-                            stateId: response.peopleInstitution.stateId ? response.peopleInstitution.stateId + '' : '',
-                            
-                        };
-                        console.log(vm.institutionData);
 
+                    if (response.peopleInstitution && response.peopleInstitution.divisionId) {
+                        var pi = response.peopleInstitution;
+                        vm.institutionData.divisionId = parseInt(pi.divisionId, 10);
 
-                        // Chain the dropdown population
-                        return PeopleService.getDistrictsByState(response.peopleInstitution.stateId)
-                            .then(function(districts) {
-                                vm.districts = districts || [];
-                                vm.institutionData.districtId = response.peopleInstitution.districtId ? response.peopleInstitution.districtId + '' : '';
-                                return PeopleService.getBlocksByDistrict(response.peopleInstitution.districtId);
+                        return PeopleService.getStatesByDivision(pi.divisionId)
+                            .then(function(states) {
+                                vm.states = vm.ensureLocationInList(
+                                    vm.normalizeDropdownList(states),
+                                    pi.stateId);
+                                vm.institutionData.stateId = parseInt(pi.stateId, 10);
+                                return PeopleService.getDistrictsByDivision(pi.divisionId, pi.stateId);
                             })
-                            .then(function(blocks) {    
-                                vm.blocks = blocks || [];
-                                vm.institutionData.blockId = response.peopleInstitution.blockId ? response.peopleInstitution.blockId + '' : '';
-                                return PeopleService.getVillagesByBlock(response.peopleInstitution.blockId);
+                            .then(function(districts) {
+                                vm.districts = vm.ensureLocationInList(
+                                    vm.normalizeDropdownList(districts),
+                                    pi.districtId);
+                                vm.institutionData.districtId = parseInt(pi.districtId, 10);
+                                return PeopleService.getBlocksByDivision(pi.divisionId, pi.districtId);
+                            })
+                            .then(function(blocks) {
+                                vm.blocks = vm.ensureLocationInList(
+                                    vm.normalizeDropdownList(blocks),
+                                    pi.blockId);
+                                vm.institutionData.blockId = parseInt(pi.blockId, 10);
+                                return PeopleService.getVillagesByDivision(pi.divisionId, pi.blockId);
                             })
                             .then(function(villages) {
-                                vm.villages = villages || [];
-                                vm.institutionData.villageId = response.peopleInstitution.villageId ? response.peopleInstitution.villageId + '' : '';
-                                vm.institutionData.institutionTypeId = response.peopleInstitution.institutionTypeId ? response.peopleInstitution.institutionTypeId + '' : '';
-                                if (response.peopleInstitution.villageId && response.peopleInstitution.institutionTypeId) {
-                                    return PeopleService.getInstitutionsByVillageId(
-                                        response.peopleInstitution.villageId,
-                                        response.peopleInstitution.institutionTypeId
-                                    );
+                                vm.villages = vm.ensureLocationInList(
+                                    vm.normalizeDropdownList(villages),
+                                    pi.villageId);
+                                vm.institutionData.villageId = parseInt(pi.villageId, 10);
+                                vm.institutionData.institutionTypeId = parseInt(pi.institutionTypeId, 10);
+
+                                if (pi.villageId && pi.institutionTypeId) {
+                                    return PeopleService.getInstitutionsByVillageId(pi.villageId, pi.institutionTypeId);
                                 }
                             })
                             .then(function(institutions) {
-                                if (institutions) { 
+                                if (institutions) {
                                     vm.institutions = institutions;
-                                    vm.institutionData.selectedInstitutions = response.peopleInstitution.institutionIds ? 
-                                        response.peopleInstitution.institutionIds.split(',') : [];
+                                    vm.institutionData.selectedInstitutions = pi.institutionIds ?
+                                        pi.institutionIds.split(',') : [];
                                 }
                             });
                     }
@@ -522,52 +606,38 @@
 
         // Add similar handlers for other dropdowns
         vm.onStateChange = function() {
-            vm.institutionData.districtId = '';
-            vm.institutionData.blockId = '';
-            vm.institutionData.villageId = '';
-            vm.districts = [];
-            vm.blocks = [];
-            vm.villages = [];
-            vm.institutions = [];
-            
-            if (vm.institutionData.stateId) {
-                PeopleService.getDistrictsByState(vm.institutionData.stateId)
-                    .then(function(data) {
-                        $timeout(function() {
-                            vm.districts = data || [];
-
-                        });
-                    });
-            }
+            vm.loadDistrictsByDivision();
         };
 
         vm.onDistrictChange = function() {
-            vm.institutionData.blockId = '';
-            vm.institutionData.villageId = '';
+            vm.institutionData.blockId = null;
+            vm.institutionData.villageId = null;
+            vm.institutionData.selectedInstitutions = [];
             vm.blocks = [];
             vm.villages = [];
             vm.institutions = [];
-            
-            if (vm.institutionData.districtId) {
-                PeopleService.getBlocksByDistrict(vm.institutionData.districtId)
+
+            if (vm.institutionData.divisionId && vm.institutionData.districtId) {
+                PeopleService.getBlocksByDivision(vm.institutionData.divisionId, vm.institutionData.districtId)
                     .then(function(data) {
                         $timeout(function() {
-                            vm.blocks = data || [];
+                            vm.blocks = vm.normalizeDropdownList(data);
                         });
                     });
             }
         };
 
         vm.onBlockChange = function() {
-            vm.institutionData.villageId = '';
+            vm.institutionData.villageId = null;
+            vm.institutionData.selectedInstitutions = [];
             vm.villages = [];
             vm.institutions = [];
-            
-            if (vm.institutionData.blockId) {
-                PeopleService.getVillagesByBlock(vm.institutionData.blockId)
+
+            if (vm.institutionData.divisionId && vm.institutionData.blockId) {
+                PeopleService.getVillagesByDivision(vm.institutionData.divisionId, vm.institutionData.blockId)
                     .then(function(data) {
                         $timeout(function() {
-                            vm.villages = data || [];
+                            vm.villages = vm.normalizeDropdownList(data);
                         });
                     });
             }

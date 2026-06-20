@@ -7,6 +7,7 @@ namespace Core.DTOs
     {
         public int SrNo { get; set; }
         public string? CreatedBy { get; set; }
+        public string? EmailId { get; set; }
         public string? UserId { get; set; }
         public string? State { get; set; }
         public string? Division { get; set; }

@@ -23,24 +23,20 @@
                             <label class="form-label">Division<span class="text-danger">*</span></label>
                             <select class="form-select"
                                     ng-model="vm.institutionData.divisionId"
+                                    ng-options="division.value as division.text for division in vm.divisions"
                                     ng-change="vm.onDivisionChange()"
                                     required>
-                                <option value="">Select</option>
-                                <option ng-repeat="division in vm.divisions" value="{{division.value}}">
-                                    {{division.text}}
-                                </option>
+                                <option value="">Select Division</option>
                             </select>
                         </div>
                         <div class="col-md-6">
                             <label class="form-label">State<span class="text-danger">*</span></label>
                             <select class="form-select"
                                     ng-model="vm.institutionData.stateId"
+                                    ng-options="state.value as state.text for state in vm.states"
                                     ng-change="vm.onStateChange()"
                                     required>
-                                <option value="">Select</option>
-                                <option ng-repeat="state in vm.states" value="{{state.value}}">
-                                    {{state.text}}
-                                </option>
+                                <option value="">Select State</option>
                             </select>
                         </div>
                     </div>
@@ -50,24 +46,20 @@
                             <label class="form-label">District<span class="text-danger">*</span></label>
                             <select class="form-select"
                                     ng-model="vm.institutionData.districtId"
+                                    ng-options="district.value as district.text for district in vm.districts"
                                     ng-change="vm.onDistrictChange()"
                                     required>
-                                <option value="">Select</option>
-                                <option ng-repeat="district in vm.districts" value="{{district.value}}">
-                                    {{district.text}}
-                                </option>
+                                <option value="">Select District</option>
                             </select>
                         </div>
                         <div class="col-md-6">
                             <label class="form-label">Block<span class="text-danger">*</span></label>
                             <select class="form-select"
                                     ng-model="vm.institutionData.blockId"
+                                    ng-options="block.value as block.text for block in vm.blocks"
                                     ng-change="vm.onBlockChange()"
                                     required>
-                                <option value="">Select</option>
-                                <option ng-repeat="block in vm.blocks" value="{{block.value}}">
-                                    {{block.text}}
-                                </option>
+                                <option value="">Select Block</option>
                             </select>
                         </div>
                     </div>
@@ -77,12 +69,10 @@
                             <label class="form-label">Village<span class="text-danger">*</span></label>
                             <select class="form-select"
                                     ng-model="vm.institutionData.villageId"
+                                    ng-options="village.value as village.text for village in vm.villages"
                                     ng-change="vm.onVillageChange()"
                                     required>
-                                <option value="">Select</option>
-                                <option ng-repeat="village in vm.villages" value="{{village.value}}">
-                                    {{village.text}}
-                                </option>
+                                <option value="">Select Village</option>
                             </select>
                         </div>
                         <div class="col-md-6">

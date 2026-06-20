@@ -37,7 +37,8 @@ BEGIN
     SELECT
         ROW_NUMBER() OVER (ORDER BY s.DateCreated, s.Id) AS SrNo,
         u.FirstName + ' ' + u.LastName AS CreatedBy,
-        u.Email AS UserId,
+        u.Email AS EmailId,
+        u.UserName AS UserId,
         st.StateName AS [State],
         d.DivisionName AS [Division],
         dist.DistrictName AS [District],
