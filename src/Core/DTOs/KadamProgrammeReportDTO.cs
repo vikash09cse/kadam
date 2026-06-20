@@ -68,6 +68,7 @@ namespace Core.DTOs
         public string? BaselineEVS { get; set; }
         public string? BaselineHindi { get; set; }
         public string? BaselineTotal { get; set; }
+        public string? BaselineTotalMarks { get; set; }
         public string? BaselinePercentage { get; set; }
         public string? BaselineDate { get; set; }
         public string? EntryLevelStep { get; set; }
@@ -94,6 +95,7 @@ namespace Core.DTOs
         public string? EndlineEVS { get; set; }
         public string? EndlineHindi { get; set; }
         public string? EndlineTotal { get; set; }
+        public string? EndlineTotalMarks { get; set; }
         public string? EndlinePercentage { get; set; }
         public string? EndlineDate { get; set; }
         public string? IsMainstreamInstitutionSame { get; set; }

@@ -97,7 +97,8 @@ BEGIN
         CAST(baselineEng.ObtainedMarks AS VARCHAR) AS BaselineEnglish,
         CAST(baselineEVS.ObtainedMarks AS VARCHAR) AS BaselineEVS,
         CAST(baselineHindi.ObtainedMarks AS VARCHAR) AS BaselineHindi,
-        CAST(baselineTotal.TotalMarks AS VARCHAR) AS BaselineTotal,
+        CAST(baselineTotal.ObtainedTotal AS VARCHAR) AS BaselineTotal,
+        CAST(baselineTotal.SubjectTotalMarks AS VARCHAR) AS BaselineTotalMarks,
         CAST(baselineTotal.Pct AS VARCHAR) AS BaselinePercentage,
         CONVERT(VARCHAR(10), baselineTotal.CompletedDate, 120) AS BaselineDate,
         CAST(sge.EntryStepId AS VARCHAR) AS EntryLevelStep,
@@ -123,7 +124,8 @@ BEGIN
         CAST(endlineEng.ObtainedMarks AS VARCHAR) AS EndlineEnglish,
         CAST(endlineEVS.ObtainedMarks AS VARCHAR) AS EndlineEVS,
         CAST(endlineHindi.ObtainedMarks AS VARCHAR) AS EndlineHindi,
-        CAST(endlineTotal.TotalMarks AS VARCHAR) AS EndlineTotal,
+        CAST(endlineTotal.ObtainedTotal AS VARCHAR) AS EndlineTotal,
+        CAST(endlineTotal.SubjectTotalMarks AS VARCHAR) AS EndlineTotalMarks,
         CAST(endlineTotal.Pct AS VARCHAR) AS EndlinePercentage,
         CONVERT(VARCHAR(10), endlineTotal.CompletedDate, 120) AS EndlineDate,
         CASE WHEN sm.Id IS NOT NULL THEN (CASE WHEN sm.IsMainstreamInstitutionSame = 1 THEN 'Yes' ELSE 'No' END) ELSE '' END AS IsMainstreamInstitutionSame,
@@ -187,7 +189,16 @@ BEGIN
         WHERE BaselineType = 'baselinepreAssessment' AND IsDeleted = 0
     ) baselineHindi ON s.Id = baselineHindi.StudentId AND baselineHindi.SubjectId = (SELECT TOP 1 Id FROM Subjects WHERE SubjectName LIKE '%Hindi%' AND IsDeleted = 0)
     LEFT JOIN (
-        SELECT StudentId, SUM(ObtainedMarks) AS TotalMarks, MAX(PercentageMarks) AS Pct, MAX(CompletedDate) AS CompletedDate
+        SELECT
+            StudentId,
+            SUM(ObtainedMarks) AS ObtainedTotal,
+            SUM(TotalMarks) AS SubjectTotalMarks,
+            CASE
+                WHEN SUM(TotalMarks) > 0
+                THEN ROUND((SUM(ObtainedMarks) / SUM(TotalMarks)) * 100, 0)
+                ELSE NULL
+            END AS Pct,
+            MAX(CompletedDate) AS CompletedDate
         FROM StudentBaselineDetails
         WHERE BaselineType = 'baselinepreAssessment' AND IsDeleted = 0
         GROUP BY StudentId
@@ -213,7 +224,16 @@ BEGIN
         WHERE BaselineType = 'endlinepreAssessment' AND IsDeleted = 0
     ) endlineHindi ON s.Id = endlineHindi.StudentId AND endlineHindi.SubjectId = (SELECT TOP 1 Id FROM Subjects WHERE SubjectName LIKE '%Hindi%' AND IsDeleted = 0)
     LEFT JOIN (
-        SELECT StudentId, SUM(ObtainedMarks) AS TotalMarks, MAX(PercentageMarks) AS Pct, MAX(CompletedDate) AS CompletedDate
+        SELECT
+            StudentId,
+            SUM(ObtainedMarks) AS ObtainedTotal,
+            SUM(TotalMarks) AS SubjectTotalMarks,
+            CASE
+                WHEN SUM(TotalMarks) > 0
+                THEN ROUND((SUM(ObtainedMarks) / SUM(TotalMarks)) * 100, 0)
+                ELSE NULL
+            END AS Pct,
+            MAX(CompletedDate) AS CompletedDate
         FROM StudentBaselineDetails
         WHERE BaselineType = 'endlinepreAssessment' AND IsDeleted = 0
         GROUP BY StudentId
