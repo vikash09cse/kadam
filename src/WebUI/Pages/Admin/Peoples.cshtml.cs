@@ -179,11 +179,30 @@ namespace WebUI.Pages.Admin
         }
         public async Task<IActionResult> OnGetLocationData(int userId)
         {
+            var peopleInstitution = await _adminService.GetPeopleInstitution(userId);
+            var assignedInstitutions = Enumerable.Empty<Core.DTOs.DropdownDTO>();
+
+            if (peopleInstitution != null && !string.IsNullOrWhiteSpace(peopleInstitution.InstitutionIds))
+            {
+                var institutionIds = peopleInstitution.InstitutionIds
+                    .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                    .Select(id => int.TryParse(id, out var parsedId) ? parsedId : 0)
+                    .Where(id => id > 0)
+                    .Distinct()
+                    .ToList();
+
+                if (institutionIds.Count > 0)
+                {
+                    assignedInstitutions = await _adminService.GetInstitutionsByIds(institutionIds);
+                }
+            }
+
             var response = new
             {
                 InstitutionTypes = EnumHelper<InstitutionType>.GetEnumDropdownList(),
                 Divisions = await _adminService.GetDivisionsByStatus(Enums.Status.Active),
-                PeopleInstitution = await _adminService.GetPeopleInstitution(userId)
+                PeopleInstitution = peopleInstitution,
+                AssignedInstitutions = assignedInstitutions
             };
 
             return new JsonResult(response);

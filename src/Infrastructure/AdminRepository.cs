@@ -174,20 +174,106 @@ namespace Infrastructure
 
         public async Task<bool> SavePeopleInstitution(PeopleInstitution peopleInstitution)
         {
-            if (peopleInstitution.Id > 0)
+            try
             {
-                _context.PeopleInstitutions.Update(peopleInstitution);
+                var institutionIds = (peopleInstitution.InstitutionIds ?? string.Empty)
+                    .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                    .Select(id => int.TryParse(id, out var parsedId) ? parsedId : 0)
+                    .Where(id => id > 0)
+                    .Distinct()
+                    .ToList();
+
+                if (institutionIds.Count == 0)
+                {
+                    return false;
+                }
+
+                var selectedInstitutions = await _context.Institutions
+                    .Where(x => institutionIds.Contains(x.Id) && !x.IsDeleted)
+                    .ToListAsync();
+
+                if (selectedInstitutions.Count == 0)
+                {
+                    return false;
+                }
+
+                var existingAssignments = _context.PeopleInstitutions
+                    .Where(x => x.UserId == peopleInstitution.UserId);
+                _context.PeopleInstitutions.RemoveRange(existingAssignments);
+
+                foreach (var institution in selectedInstitutions)
+                {
+                    _context.PeopleInstitutions.Add(new PeopleInstitution
+                    {
+                        UserId = peopleInstitution.UserId,
+                        DivisionId = institution.DivisionId,
+                        StateId = institution.StateId,
+                        DistrictId = institution.DistrictId,
+                        BlockId = institution.BlockId,
+                        VillageId = institution.VillageId,
+                        InstitutionTypeId = institution.InstitutionType,
+                        InstitutionIds = institution.Id.ToString()
+                    });
+                }
+
+                return await _context.SaveChangesAsync() > 0;
             }
-            else
+            catch (Exception)
             {
-                _context.PeopleInstitutions.Add(peopleInstitution);
+                return false;
             }
-            return await _context.SaveChangesAsync() > 0;
         }
 
-        public async Task<PeopleInstitution> GetPeopleInstitution(int userId)
+        public async Task<PeopleInstitution?> GetPeopleInstitution(int userId)
         {
-            return await _context.PeopleInstitutions.FirstOrDefaultAsync(x => x.UserId == userId);
+            var assignments = await _context.PeopleInstitutions
+                .Where(x => x.UserId == userId)
+                .ToListAsync();
+
+            if (!assignments.Any())
+            {
+                return null;
+            }
+
+            var firstAssignment = assignments.First();
+            var locationAssignment = assignments.FirstOrDefault(a => a.InstitutionTypeId > 0) ?? firstAssignment;
+            var assignedInstitutionIds = assignments
+                .SelectMany(assignment => (assignment.InstitutionIds ?? string.Empty)
+                    .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .ToList();
+
+            return new PeopleInstitution
+            {
+                Id = firstAssignment.Id,
+                UserId = firstAssignment.UserId,
+                DivisionId = locationAssignment.DivisionId,
+                StateId = locationAssignment.StateId,
+                DistrictId = locationAssignment.DistrictId,
+                BlockId = locationAssignment.BlockId,
+                VillageId = locationAssignment.VillageId,
+                InstitutionTypeId = locationAssignment.InstitutionTypeId,
+                InstitutionIds = string.Join(",", assignedInstitutionIds)
+            };
+        }
+
+        public async Task<IEnumerable<DropdownDTO>> GetInstitutionsByIds(IEnumerable<int> institutionIds)
+        {
+            var ids = institutionIds?.Distinct().ToList() ?? [];
+            if (ids.Count == 0)
+            {
+                return [];
+            }
+
+            return await _context.Institutions
+                .Where(i => ids.Contains(i.Id) && !i.IsDeleted)
+                .OrderBy(i => i.InstitutionName)
+                .Select(i => new DropdownDTO
+                {
+                    Value = i.Id,
+                    Text = i.InstitutionName
+                })
+                .ToListAsync();
         }
 
         #endregion

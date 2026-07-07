@@ -79,12 +79,10 @@
                             <label class="form-label">Institution Type<span class="text-danger">*</span></label>
                             <select class="form-select"
                                     ng-model="vm.institutionData.institutionTypeId"
+                                    ng-options="type.value as type.text for type in vm.institutionTypes"
                                     ng-change="vm.onInstitutionTypeChange()"
                                     required>
                                 <option value="">Select</option>
-                                <option ng-repeat="type in vm.institutionTypes" value="{{type.value}}">
-                                    {{type.text}}
-                                </option>
                             </select>
                         </div>
                     </div>

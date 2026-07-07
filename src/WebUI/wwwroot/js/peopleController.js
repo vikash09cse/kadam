@@ -84,7 +84,6 @@
                         data: null,
                         orderable: false,
                         render: function(data, type, row) {
-                            var safeName = String(row.fullName || '').replace(/\\/g, '\\\\').replace(/'/g, "\\'");
                             return `
                                 <div class="btn-group">
                                     <button class="btn btn-sm btn-warning" title="Edit" ng-click="vm.editPerson(${row.id})">
@@ -99,10 +98,9 @@
                                     <button class="btn btn-sm btn-primary" title="Assign Program" ng-click="vm.assignProgram(${row.id})">
                                         <i class="mdi mdi-plus"></i> Assign Program
                                     </button>
-                                    <button class="btn btn-sm btn-success" title="Assign Institution" 
-                                            ng-click="vm.assignInstitution('${row.id}', '${safeName}', '${row.roleName}')">
+                                    <a href="/Admin/AssignInstitution?id=${row.id}" class="btn btn-sm btn-success" title="Assign Institution">
                                         <i class="mdi mdi-building"></i> Assign Institution
-                                    </button>
+                                    </a>
                                     <a href="/Admin/UserMenuPermissions/${row.id}" class="btn btn-sm btn-secondary" title="Menu Permission">
                                         <i class="mdi mdi-menu"></i> Menu Permission
                                     </a>
@@ -427,6 +425,108 @@
             return list;
         };
 
+        vm.parseAssignedInstitutionIds = function(source) {
+            if (!source) {
+                return [];
+            }
+
+            var institutionIds = source.institutionIds || source.InstitutionIds;
+            if (!institutionIds) {
+                return [];
+            }
+
+            return String(institutionIds)
+                .split(',')
+                .map(function(id) { return String(id).trim(); })
+                .filter(function(id) { return id.length > 0; });
+        };
+
+        vm.normalizeInstitutionTypes = function(items) {
+            return (items || []).map(function(item) {
+                var value = item.value != null ? item.value : item.Value;
+                return {
+                    value: parseInt(value, 10),
+                    text: item.text || item.Text || ''
+                };
+            });
+        };
+
+        vm.normalizeInstitutionOptions = function(items) {
+            return (items || []).map(function(item) {
+                var value = item.value != null ? item.value : item.Value;
+                return {
+                    value: String(value),
+                    text: item.text || item.Text || ''
+                };
+            });
+        };
+
+        vm.retainMatchingSelectedInstitutions = function(options) {
+            var allowedValues = new Set((options || []).map(function(item) {
+                return String(item.value);
+            }));
+
+            vm.institutionData.selectedInstitutions = (vm.institutionData.selectedInstitutions || []).filter(function(id) {
+                return allowedValues.has(String(id));
+            });
+        };
+
+        vm.mergeInstitutionOptions = function(primaryList, assignedList, selectedIds) {
+            var merged = {};
+            var lists = [primaryList || [], assignedList || []];
+
+            lists.forEach(function(list) {
+                vm.normalizeInstitutionOptions(list).forEach(function(item) {
+                    merged[item.value] = item;
+                });
+            });
+
+            (selectedIds || []).forEach(function(id) {
+                var key = String(id);
+                if (!merged[key]) {
+                    merged[key] = {
+                        value: key,
+                        text: 'Institution ' + key
+                    };
+                }
+            });
+
+            return Object.keys(merged).map(function(key) {
+                return merged[key];
+            });
+        };
+
+        vm.initializeInstitutionSelect = function() {
+            $timeout(function() {
+                var institutionSelect = $('#institutionSelect');
+
+                if (institutionSelect.data('select2')) {
+                    institutionSelect.off('.institutionSelect');
+                    institutionSelect.select2('destroy');
+                }
+
+                var select2Instance = institutionSelect.select2({
+                    placeholder: 'Search and select institutions',
+                    allowClear: true,
+                    closeOnSelect: false,
+                    width: '100%',
+                    dropdownParent: $('#assignInstitutionModal')
+                });
+
+                if (vm.institutionData.selectedInstitutions &&
+                    vm.institutionData.selectedInstitutions.length > 0) {
+                    select2Instance.val(vm.institutionData.selectedInstitutions).trigger('change');
+                }
+
+                select2Instance.off('change.institutionSelect').on('change.institutionSelect', function(e) {
+                    $timeout(function() {
+                        var selectedValues = $(e.target).val();
+                        vm.institutionData.selectedInstitutions = selectedValues ? selectedValues : [];
+                    });
+                });
+            }, 300);
+        };
+
         vm.resetLocationDropdowns = function() {
             vm.institutionData.stateId = null;
             vm.institutionData.districtId = null;
@@ -506,15 +606,18 @@
             vm.blocks = [];
             vm.villages = [];
             vm.institutions = [];
+            var assignedInstitutions = [];
 
             PeopleService.getLocationData(id)
                 .then(function(response) {
                     vm.divisions = vm.normalizeDropdownList(response.divisions || []);
-                    vm.institutionTypes = response.institutionTypes || [];
+                    vm.institutionTypes = vm.normalizeInstitutionTypes(response.institutionTypes || []);
+                    assignedInstitutions = response.assignedInstitutions || response.AssignedInstitutions || [];
 
                     if (response.peopleInstitution && response.peopleInstitution.divisionId) {
                         var pi = response.peopleInstitution;
                         vm.institutionData.divisionId = parseInt(pi.divisionId, 10);
+                        vm.institutionData.selectedInstitutions = vm.parseAssignedInstitutionIds(pi);
 
                         return PeopleService.getStatesByDivision(pi.divisionId)
                             .then(function(states) {
@@ -543,58 +646,29 @@
                                     vm.normalizeDropdownList(villages),
                                     pi.villageId);
                                 vm.institutionData.villageId = parseInt(pi.villageId, 10);
-                                vm.institutionData.institutionTypeId = parseInt(pi.institutionTypeId, 10);
+                                vm.institutionData.institutionTypeId = parseInt(pi.institutionTypeId, 10) || null;
 
                                 if (pi.villageId && pi.institutionTypeId) {
                                     return PeopleService.getInstitutionsByVillageId(pi.villageId, pi.institutionTypeId);
                                 }
+
+                                return [];
                             })
                             .then(function(institutions) {
-                                if (institutions) {
-                                    vm.institutions = institutions;
-                                    vm.institutionData.selectedInstitutions = pi.institutionIds ?
-                                        pi.institutionIds.split(',') : [];
-                                }
+                                vm.institutions = vm.mergeInstitutionOptions(
+                                    institutions,
+                                    assignedInstitutions,
+                                    vm.institutionData.selectedInstitutions
+                                );
                             });
                     }
                 })
                 .then(function() {
-                    // Show modal after all data is loaded
-                    var modal = new bootstrap.Modal(document.getElementById('assignInstitutionModal'));
-                    modal.show();
-                    
-                    // Initialize Select2 after modal is shown
-                    $('#assignInstitutionModal').on('shown.bs.modal', function() {
-                        $timeout(function() {
-                            // Destroy existing Select2 instance if it exists
-                            if ($('#institutionSelect').data('select2')) {
-                                $('#institutionSelect').select2('destroy');
-                            }
-
-                            const select2Instance = $('#institutionSelect').select2({
-                                placeholder: 'Select institutions',
-                                allowClear: true,
-                                width: '100%',
-                                dropdownParent: $('#assignInstitutionModal')
-                            });
-
-                            // Set the initial values after Select2 initialization
-                            if (vm.institutionData.selectedInstitutions && 
-                                vm.institutionData.selectedInstitutions.length > 0) {
-                                select2Instance.val(vm.institutionData.selectedInstitutions).trigger('change');
-                            }
-
-                            // Handle Select2 changes
-                            select2Instance.on('change', function(e) {
-                                $timeout(function() {
-                                    const selectedValues = $(e.target).val(); // Use e.target to get the correct context
-                                    console.log(selectedValues);
-                                    // Update the AngularJS model
-                                    vm.institutionData.selectedInstitutions = selectedValues ? selectedValues : [];
-                                });
-                            });
-                        }, 100);
-                    });
+                    $timeout(function() {
+                        var modal = new bootstrap.Modal(document.getElementById('assignInstitutionModal'));
+                        modal.show();
+                        vm.initializeInstitutionSelect();
+                    }, 0);
                 })
                 .catch(function(error) {
                     ShowNotification(error.message || 'Error loading location data', 1);
@@ -656,7 +730,9 @@
                 PeopleService.getInstitutionsByVillageId(vm.institutionData.villageId, vm.institutionData.institutionTypeId)
                     .then(function(data) {
                         $timeout(function() {
-                            vm.institutions = data || [];
+                            vm.institutions = vm.normalizeInstitutionOptions(data);
+                            vm.retainMatchingSelectedInstitutions(vm.institutions);
+                            vm.initializeInstitutionSelect();
                         });
                     });
             }

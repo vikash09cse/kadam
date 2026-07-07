@@ -1,0 +1,412 @@
+@page
+@model WebUI.Pages.Admin.AssignInstitutionModel
+@{
+    ViewData["Title"] = "Assign Institution";
+    var jsonOptions = new System.Text.Json.JsonSerializerOptions
+    {
+        PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase
+    };
+    var assignedInstitutionsJson = System.Text.Json.JsonSerializer.Serialize(Model.AssignedInstitutions, jsonOptions);
+    var selectedInstitutionIdsJson = System.Text.Json.JsonSerializer.Serialize(Model.SelectedInstitutionIds, jsonOptions);
+}
+
+<div class="page-content">
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-12">
+                <div class="page-title-box d-sm-flex align-items-center justify-content-between">
+                    <div>
+                        <h4 class="mb-sm-0">Assign Institution</h4>
+                        <p class="text-muted mb-0">Select institutions for the user and save the updated assignment.</p>
+                    </div>
+                    <div class="text-end">
+                        <a href="/Admin/Peoples" class="btn btn-outline-secondary">
+                            <i class="mdi mdi-arrow-left"></i> Back to Peoples
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        @if (TempData["SuccessMessage"] != null)
+        {
+            <div class="alert alert-success">@TempData["SuccessMessage"]</div>
+        }
+
+        @if (TempData["ErrorMessage"] != null)
+        {
+            <div class="alert alert-danger">@TempData["ErrorMessage"]</div>
+        }
+
+        <div class="row">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-body">
+                        <div class="row g-3 mb-4">
+                            <div class="col-md-6">
+                                <label class="form-label">Person Name</label>
+                                <div class="form-control bg-light">@Model.UserFullName</div>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Assigned Role</label>
+                                <div class="form-control bg-light">@Model.RoleName</div>
+                            </div>
+                        </div>
+
+                        <form method="post" asp-page-handler="Save">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" asp-for="Id" />
+                            <div id="selectedInstitutionInputs"></div>
+
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <div>
+                                    <h5 class="mb-1">Assigned Institution List</h5>
+                                    <p class="text-muted mb-0">Default list of institutions currently assigned to this user.</p>
+                                </div>
+                                <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addInstitutionModal">
+                                    <i class="mdi mdi-plus"></i> Assign Institution
+                                </button>
+                            </div>
+
+                            <div class="table-responsive">
+                                <table class="table table-bordered align-middle">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th>Division</th>
+                                            <th>State</th>
+                                            <th>District</th>
+                                            <th>Block</th>
+                                            <th>Village</th>
+                                            <th>Institution Name</th>
+                                            <th style="width: 80px;">Action</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="assignedInstitutionTableBody"></tbody>
+                                </table>
+                            </div>
+
+                            <div id="noAssignedInstitutions" class="alert alert-warning mt-3 d-none">
+                                No institutions assigned yet.
+                            </div>
+
+                            <div class="mt-4 text-end">
+                                <a href="/Admin/Peoples" class="btn btn-light me-2">Cancel</a>
+                                <button type="submit" class="btn btn-primary">Save Assignment</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="addInstitutionModal" class="modal fade" tabindex="-1" aria-labelledby="addInstitutionModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="addInstitutionModalLabel">Assign Institution</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row g-3 mb-3">
+                    <div class="col-md-6">
+                        <label class="form-label">Division</label>
+                        <div class="form-control bg-light" id="modalDivisionName">@Model.DivisionName</div>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">State</label>
+                        <div class="form-control bg-light" id="modalStateName">@Model.StateName</div>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">District<span class="text-danger">*</span></label>
+                        <select id="modalDistrict" class="form-select"></select>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Block<span class="text-danger">*</span></label>
+                        <select id="modalBlock" class="form-select"></select>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Village<span class="text-danger">*</span></label>
+                        <select id="modalVillage" class="form-select"></select>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Institution Type<span class="text-danger">*</span></label>
+                        <select id="modalInstitutionType" class="form-select">
+                            <option value="">Select Institution Type</option>
+                            @foreach (var item in Model.InstitutionTypes)
+                            {
+                                <option value="@item.Value">@item.Text</option>
+                            }
+                        </select>
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label for="modalInstitutionSearch" class="form-label">Filter Institution Name</label>
+                    <input type="text" id="modalInstitutionSearch" class="form-control" placeholder="Search institution name..." />
+                </div>
+
+                <div id="modalInstitutionList" class="border rounded p-3 modal-institution-list"></div>
+                <div id="modalInstitutionEmpty" class="alert alert-warning mt-3 d-none">
+                    No institutions found for the selected district, block, village and institution type.
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" id="saveModalInstitutions" class="btn btn-primary">Save</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        (function () {
+            const assignedInstitutionTableBody = document.getElementById('assignedInstitutionTableBody');
+            const noAssignedInstitutions = document.getElementById('noAssignedInstitutions');
+            const selectedInstitutionInputs = document.getElementById('selectedInstitutionInputs');
+            const modalDistrict = document.getElementById('modalDistrict');
+            const modalBlock = document.getElementById('modalBlock');
+            const modalVillage = document.getElementById('modalVillage');
+            const modalInstitutionType = document.getElementById('modalInstitutionType');
+            const modalInstitutionList = document.getElementById('modalInstitutionList');
+            const modalInstitutionEmpty = document.getElementById('modalInstitutionEmpty');
+            const modalInstitutionSearch = document.getElementById('modalInstitutionSearch');
+            const saveModalInstitutions = document.getElementById('saveModalInstitutions');
+
+            const pageState = {
+                id: @Model.Id,
+                divisionId: @Model.CurrentDivisionId,
+                stateId: @Model.CurrentStateId,
+                districtId: @Model.CurrentDistrictId,
+                blockId: @Model.CurrentBlockId,
+                villageId: @Model.CurrentVillageId,
+                institutionTypeId: @Model.CurrentInstitutionTypeId,
+                assignedInstitutions: @Html.Raw(assignedInstitutionsJson),
+                selectedInstitutionIds: @Html.Raw(selectedInstitutionIdsJson),
+                availableInstitutions: []
+            };
+
+            function normalizeOption(item) {
+                return {
+                    value: Number(item.value ?? item.Value ?? 0),
+                    text: item.text ?? item.Text ?? ''
+                };
+            }
+
+            function createOption(select, value, text, selectedValue) {
+                const option = document.createElement('option');
+                option.value = value;
+                option.textContent = text;
+                option.selected = String(value) === String(selectedValue);
+                return option;
+            }
+
+            function renderSelectedInputs() {
+                selectedInstitutionInputs.innerHTML = '';
+                pageState.selectedInstitutionIds.forEach(function (id) {
+                    const input = document.createElement('input');
+                    input.type = 'hidden';
+                    input.name = 'SelectedInstitutionIds';
+                    input.value = id;
+                    selectedInstitutionInputs.appendChild(input);
+                });
+            }
+
+            function renderAssignedTable() {
+                assignedInstitutionTableBody.innerHTML = '';
+
+                pageState.assignedInstitutions.forEach(function (institution) {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>${institution.divisionName || ''}</td>
+                        <td>${institution.stateName || ''}</td>
+                        <td>${institution.districtName || ''}</td>
+                        <td>${institution.blockName || ''}</td>
+                        <td>${institution.villageName || ''}</td>
+                        <td>${institution.institutionName || ''}</td>
+                        <td>
+                            <button type="button" class="btn btn-sm btn-outline-danger remove-assigned-institution" data-id="${institution.id}">
+                                <i class="mdi mdi-delete"></i>
+                            </button>
+                        </td>
+                    `;
+                    assignedInstitutionTableBody.appendChild(row);
+                });
+
+                noAssignedInstitutions.classList.toggle('d-none', pageState.assignedInstitutions.length > 0);
+                renderSelectedInputs();
+            }
+
+            function populateSelect(select, items, selectedValue, placeholder) {
+                select.innerHTML = '';
+                select.appendChild(createOption(select, '', placeholder, ''));
+                (items || []).forEach(function (item) {
+                    const option = normalizeOption(item);
+                    select.appendChild(createOption(select, option.value, option.text, selectedValue));
+                });
+            }
+
+            async function fetchJson(url) {
+                const response = await fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest' } });
+                if (!response.ok) {
+                    throw new Error('Request failed');
+                }
+                return response.json();
+            }
+
+            async function loadDistricts(selectedDistrictId) {
+                const data = await fetchJson(`?handler=DistrictListByDivision&divisionId=${pageState.divisionId}&stateId=${pageState.stateId}`);
+                populateSelect(modalDistrict, data, selectedDistrictId, 'Select District');
+            }
+
+            async function loadBlocks(selectedBlockId) {
+                if (!modalDistrict.value) {
+                    populateSelect(modalBlock, [], '', 'Select Block');
+                    return;
+                }
+                const data = await fetchJson(`?handler=BlockListByDivision&divisionId=${pageState.divisionId}&districtId=${modalDistrict.value}`);
+                populateSelect(modalBlock, data, selectedBlockId, 'Select Block');
+            }
+
+            async function loadVillages(selectedVillageId) {
+                if (!modalBlock.value) {
+                    populateSelect(modalVillage, [], '', 'Select Village');
+                    return;
+                }
+                const data = await fetchJson(`?handler=VillageListByDivision&divisionId=${pageState.divisionId}&blockId=${modalBlock.value}`);
+                populateSelect(modalVillage, data, selectedVillageId, 'Select Village');
+            }
+
+            function renderAvailableInstitutions() {
+                const searchTerm = (modalInstitutionSearch.value || '').trim().toLowerCase();
+                modalInstitutionList.innerHTML = '';
+
+                const filtered = pageState.availableInstitutions.filter(function (institution) {
+                    return !searchTerm || (institution.text || '').toLowerCase().includes(searchTerm);
+                });
+
+                filtered.forEach(function (institution) {
+                    const wrapper = document.createElement('div');
+                    wrapper.className = 'form-check mb-2';
+
+                    wrapper.innerHTML = `
+                        <input class="form-check-input modal-institution-checkbox" type="checkbox" value="${institution.value}" id="modalInstitution_${institution.value}">
+                        <label class="form-check-label" for="modalInstitution_${institution.value}">${institution.text}</label>
+                    `;
+                    modalInstitutionList.appendChild(wrapper);
+                });
+
+                modalInstitutionEmpty.classList.toggle('d-none', filtered.length > 0);
+            }
+
+            async function loadInstitutions() {
+                if (!modalVillage.value || !modalInstitutionType.value) {
+                    pageState.availableInstitutions = [];
+                    renderAvailableInstitutions();
+                    return;
+                }
+
+                pageState.availableInstitutions = await fetchJson(`?handler=InstitutionsByVillageId&villageId=${modalVillage.value}&institutionTypeId=${modalInstitutionType.value}`);
+                pageState.availableInstitutions = pageState.availableInstitutions.map(normalizeOption);
+                renderAvailableInstitutions();
+            }
+
+            async function initializeModal() {
+                await loadDistricts(pageState.districtId);
+                await loadBlocks(pageState.blockId);
+                await loadVillages(pageState.villageId);
+                modalInstitutionType.value = String(pageState.institutionTypeId || '');
+                await loadInstitutions();
+            }
+
+            modalDistrict.addEventListener('change', async function () {
+                await loadBlocks('');
+                populateSelect(modalVillage, [], '', 'Select Village');
+                pageState.availableInstitutions = [];
+                renderAvailableInstitutions();
+            });
+
+            modalBlock.addEventListener('change', async function () {
+                await loadVillages('');
+                pageState.availableInstitutions = [];
+                renderAvailableInstitutions();
+            });
+
+            modalVillage.addEventListener('change', loadInstitutions);
+            modalInstitutionType.addEventListener('change', loadInstitutions);
+            modalInstitutionSearch.addEventListener('input', renderAvailableInstitutions);
+
+            saveModalInstitutions.addEventListener('click', function () {
+                const checkedIds = Array.from(document.querySelectorAll('.modal-institution-checkbox:checked')).map(function (checkbox) {
+                    return Number(checkbox.value);
+                });
+
+                checkedIds.forEach(function (institutionId) {
+                    if (!pageState.selectedInstitutionIds.includes(institutionId)) {
+                        pageState.selectedInstitutionIds.push(institutionId);
+                    }
+                });
+
+                pageState.assignedInstitutions = pageState.assignedInstitutions.filter(function (institution) {
+                    return pageState.selectedInstitutionIds.includes(institution.id);
+                });
+
+                checkedIds.forEach(function (institutionId) {
+                    const institution = pageState.availableInstitutions.find(function (item) {
+                        return Number(item.value) === institutionId;
+                    });
+
+                    if (institution && !pageState.assignedInstitutions.some(function (item) { return item.id === institutionId; })) {
+                        const districtText = modalDistrict.options[modalDistrict.selectedIndex]?.text || '';
+                        const blockText = modalBlock.options[modalBlock.selectedIndex]?.text || '';
+                        const villageText = modalVillage.options[modalVillage.selectedIndex]?.text || '';
+
+                        pageState.assignedInstitutions.push({
+                            id: institutionId,
+                            divisionName: '@Model.DivisionName',
+                            stateName: '@Model.StateName',
+                            districtName: districtText,
+                            blockName: blockText,
+                            villageName: villageText,
+                            institutionName: institution.text
+                        });
+                    }
+                });
+
+                renderAssignedTable();
+                bootstrap.Modal.getInstance(document.getElementById('addInstitutionModal')).hide();
+            });
+
+            assignedInstitutionTableBody.addEventListener('click', function (event) {
+                const button = event.target.closest('.remove-assigned-institution');
+                if (!button) {
+                    return;
+                }
+
+                const institutionId = Number(button.dataset.id);
+                pageState.selectedInstitutionIds = pageState.selectedInstitutionIds.filter(function (id) {
+                    return id !== institutionId;
+                });
+                pageState.assignedInstitutions = pageState.assignedInstitutions.filter(function (institution) {
+                    return institution.id !== institutionId;
+                });
+                renderAssignedTable();
+            });
+
+            document.getElementById('addInstitutionModal').addEventListener('show.bs.modal', function () {
+                modalInstitutionSearch.value = '';
+                initializeModal();
+            });
+
+            renderAssignedTable();
+        })();
+    </script>
+    <style>
+        .modal-institution-list {
+            max-height: 280px;
+            overflow-y: auto;
+        }
+    </style>
+}

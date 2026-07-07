@@ -2,19 +2,32 @@ ALTER   Procedure [dbo].[usp_GetInstitutionByUserId] --usp_GetInstitutionByUserI
 @UserId Int
 As
 Begin
+    SET NOCOUNT ON;
 
-    Declare @InstitutionIds VarChar(2000)
+    ;WITH UserInstitutions AS (
+        SELECT DISTINCT TRY_CAST(LTRIM(RTRIM(s.Item)) AS INT) AS InstitutionId
+        FROM PeopleInstitutions pi
+        CROSS APPLY dbo.SplitString(pi.InstitutionIds, ',') s
+        WHERE pi.UserId = @UserId
+          AND LTRIM(RTRIM(ISNULL(pi.InstitutionIds, ''))) <> ''
+          AND TRY_CAST(LTRIM(RTRIM(s.Item)) AS INT) IS NOT NULL
+    )
+    SELECT i.Id, i.InstitutionName
+    FROM Institutions i
+    INNER JOIN UserInstitutions ui ON ui.InstitutionId = i.Id
+    WHERE i.IsDeleted = 0;
 
-    Select @InstitutionIds = InstitutionIds From PeopleInstitutions Where UserId = @UserId
-
-    Select Id , InstitutionName 
-	From Institutions 
-	Where IsDeleted = 0 
-	And Id In (Select Item From SplitString(@InstitutionIds, ','))
-
-	Select igs.InstitutionId, igs.GradeId As Id, g.GradeName, igs.Sections
-	From InstitutionGradeSections igs
-	Inner Join Grades g on g.Id = igs.GradeId
-	Where igs.InstitutionId In (Select Item From SplitString(@InstitutionIds, ','))
-	Order By G.Id 
+    ;WITH UserInstitutions AS (
+        SELECT DISTINCT TRY_CAST(LTRIM(RTRIM(s.Item)) AS INT) AS InstitutionId
+        FROM PeopleInstitutions pi
+        CROSS APPLY dbo.SplitString(pi.InstitutionIds, ',') s
+        WHERE pi.UserId = @UserId
+          AND LTRIM(RTRIM(ISNULL(pi.InstitutionIds, ''))) <> ''
+          AND TRY_CAST(LTRIM(RTRIM(s.Item)) AS INT) IS NOT NULL
+    )
+    SELECT igs.InstitutionId, igs.GradeId As Id, g.GradeName, igs.Sections
+    FROM InstitutionGradeSections igs
+    Inner Join Grades g on g.Id = igs.GradeId
+    Inner Join UserInstitutions ui on ui.InstitutionId = igs.InstitutionId
+    Order By G.Id
 End

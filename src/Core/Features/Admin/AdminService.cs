@@ -198,9 +198,14 @@ namespace Core.Features.Admin
             bool isSaved = await _adminRepository.SavePeopleInstitution(peopleInstitution);
             return new ServiceResponseDTO(isSaved, isSaved ? AppStatusCodes.Success : AppStatusCodes.Unauthorized, isSaved, isSaved ? MessageSuccess.Saved : MessageError.CodeIssue);
         }
-        public async Task<PeopleInstitution> GetPeopleInstitution(int userId)
+        public async Task<PeopleInstitution?> GetPeopleInstitution(int userId)
         {
             return await _adminRepository.GetPeopleInstitution(userId);
+        }
+
+        public async Task<IEnumerable<DropdownDTO>> GetInstitutionsByIds(IEnumerable<int> institutionIds)
+        {
+            return await _adminRepository.GetInstitutionsByIds(institutionIds);
         }
         #endregion
 
