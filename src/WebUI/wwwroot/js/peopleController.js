@@ -249,6 +249,10 @@
 
         // Submit Form
         vm.submitForm = function(form) {
+            if (vm.isSaving) {
+                return;
+            }
+
             vm.isSubmit = true;
             if (form.$invalid) {
                 var firstError = angular.element("[name='" + form.$name + "']").find('.ng-invalid:visible:first');

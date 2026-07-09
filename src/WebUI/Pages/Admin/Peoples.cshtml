@@ -290,8 +290,9 @@
                         </div>
                     </div>
                     <div class="modal-footer">
-                        <button class="btn btn-sm btn-primary" type="submit">
-                            Save
+                        <button class="btn btn-sm btn-primary" type="submit" ng-disabled="vm.isSaving">
+                            <span ng-if="!vm.isSaving">Save</span>
+                            <span ng-if="vm.isSaving">Saving...</span>
                         </button>
                     </div>
                 </form>

@@ -112,11 +112,37 @@
                 <div class="row g-3 mb-3">
                     <div class="col-md-6">
                         <label class="form-label">Division</label>
-                        <div class="form-control bg-light" id="modalDivisionName">@Model.DivisionName</div>
+                        <select id="modalDivision" class="form-select">
+                            <option value="">Select Division</option>
+                            @foreach (var division in Model.Divisions)
+                            {
+                                if (division.Value == Model.CurrentDivisionId)
+                                {
+                                    <option value="@division.Value" selected>@division.Text</option>
+                                }
+                                else
+                                {
+                                    <option value="@division.Value">@division.Text</option>
+                                }
+                            }
+                        </select>
                     </div>
                     <div class="col-md-6">
                         <label class="form-label">State</label>
-                        <div class="form-control bg-light" id="modalStateName">@Model.StateName</div>
+                        <select id="modalState" class="form-select">
+                            <option value="">Select State</option>
+                            @foreach (var state in Model.States)
+                            {
+                                if (state.Value == Model.CurrentStateId)
+                                {
+                                    <option value="@state.Value" selected>@state.Text</option>
+                                }
+                                else
+                                {
+                                    <option value="@state.Value">@state.Text</option>
+                                }
+                            }
+                        </select>
                     </div>
                     <div class="col-md-6">
                         <label class="form-label">District<span class="text-danger">*</span></label>
@@ -166,6 +192,8 @@
             const assignedInstitutionTableBody = document.getElementById('assignedInstitutionTableBody');
             const noAssignedInstitutions = document.getElementById('noAssignedInstitutions');
             const selectedInstitutionInputs = document.getElementById('selectedInstitutionInputs');
+            const modalDivision = document.getElementById('modalDivision');
+            const modalState = document.getElementById('modalState');
             const modalDistrict = document.getElementById('modalDistrict');
             const modalBlock = document.getElementById('modalBlock');
             const modalVillage = document.getElementById('modalVillage');
@@ -257,8 +285,24 @@
             }
 
             async function loadDistricts(selectedDistrictId) {
+                if (!pageState.divisionId || !pageState.stateId) {
+                    populateSelect(modalDistrict, [], '', 'Select District');
+                    return;
+                }
                 const data = await fetchJson(`?handler=DistrictListByDivision&divisionId=${pageState.divisionId}&stateId=${pageState.stateId}`);
                 populateSelect(modalDistrict, data, selectedDistrictId, 'Select District');
+            }
+
+            async function loadStates(selectedStateId) {
+                if (!pageState.divisionId) {
+                    populateSelect(modalState, [], '', 'Select State');
+                    pageState.stateId = 0;
+                    return;
+                }
+
+                const data = await fetchJson(`?handler=StateListByDivision&divisionId=${pageState.divisionId}`);
+                populateSelect(modalState, data, selectedStateId, 'Select State');
+                pageState.stateId = Number(modalState.value || 0);
             }
 
             async function loadBlocks(selectedBlockId) {
@@ -314,6 +358,8 @@
             }
 
             async function initializeModal() {
+                modalDivision.value = String(pageState.divisionId || '');
+                await loadStates(pageState.stateId);
                 await loadDistricts(pageState.districtId);
                 await loadBlocks(pageState.blockId);
                 await loadVillages(pageState.villageId);
@@ -321,7 +367,36 @@
                 await loadInstitutions();
             }
 
+            modalDivision.addEventListener('change', async function () {
+                pageState.divisionId = Number(modalDivision.value || 0);
+                pageState.stateId = 0;
+                pageState.districtId = 0;
+                pageState.blockId = 0;
+                pageState.villageId = 0;
+
+                await loadStates('');
+                populateSelect(modalDistrict, [], '', 'Select District');
+                populateSelect(modalBlock, [], '', 'Select Block');
+                populateSelect(modalVillage, [], '', 'Select Village');
+                pageState.availableInstitutions = [];
+                renderAvailableInstitutions();
+            });
+
+            modalState.addEventListener('change', async function () {
+                pageState.stateId = Number(modalState.value || 0);
+                pageState.districtId = 0;
+                pageState.blockId = 0;
+                pageState.villageId = 0;
+
+                await loadDistricts('');
+                populateSelect(modalBlock, [], '', 'Select Block');
+                populateSelect(modalVillage, [], '', 'Select Village');
+                pageState.availableInstitutions = [];
+                renderAvailableInstitutions();
+            });
+
             modalDistrict.addEventListener('change', async function () {
+                pageState.districtId = Number(modalDistrict.value || 0);
                 await loadBlocks('');
                 populateSelect(modalVillage, [], '', 'Select Village');
                 pageState.availableInstitutions = [];
@@ -329,12 +404,16 @@
             });
 
             modalBlock.addEventListener('change', async function () {
+                pageState.blockId = Number(modalBlock.value || 0);
                 await loadVillages('');
                 pageState.availableInstitutions = [];
                 renderAvailableInstitutions();
             });
 
-            modalVillage.addEventListener('change', loadInstitutions);
+            modalVillage.addEventListener('change', function () {
+                pageState.villageId = Number(modalVillage.value || 0);
+                loadInstitutions();
+            });
             modalInstitutionType.addEventListener('change', loadInstitutions);
             modalInstitutionSearch.addEventListener('input', renderAvailableInstitutions);
 
@@ -359,14 +438,16 @@
                     });
 
                     if (institution && !pageState.assignedInstitutions.some(function (item) { return item.id === institutionId; })) {
+                        const divisionText = modalDivision.options[modalDivision.selectedIndex]?.text || '';
+                        const stateText = modalState.options[modalState.selectedIndex]?.text || '';
                         const districtText = modalDistrict.options[modalDistrict.selectedIndex]?.text || '';
                         const blockText = modalBlock.options[modalBlock.selectedIndex]?.text || '';
                         const villageText = modalVillage.options[modalVillage.selectedIndex]?.text || '';
 
                         pageState.assignedInstitutions.push({
                             id: institutionId,
-                            divisionName: '@Model.DivisionName',
-                            stateName: '@Model.StateName',
+                            divisionName: divisionText,
+                            stateName: stateText,
                             districtName: districtText,
                             blockName: blockText,
                             villageName: villageText,

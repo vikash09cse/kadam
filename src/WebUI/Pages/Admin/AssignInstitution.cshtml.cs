@@ -39,6 +39,8 @@ namespace WebUI.Pages.Admin
         public int CurrentInstitutionTypeId { get; private set; }
         public string DivisionName { get; private set; } = string.Empty;
         public string StateName { get; private set; } = string.Empty;
+        public IEnumerable<DropdownDTO> Divisions { get; private set; } = [];
+        public IEnumerable<DropdownDTO> States { get; private set; } = [];
         public IEnumerable<DropdownDTO> InstitutionTypes { get; private set; } = [];
         public List<InstitutionAssignmentRow> AssignedInstitutions { get; private set; } = [];
 
@@ -102,6 +104,11 @@ namespace WebUI.Pages.Admin
             return new JsonResult(await _adminService.GetDistrictsByDivisionId(divisionId, stateId));
         }
 
+        public async Task<IActionResult> OnGetStateListByDivision(int divisionId)
+        {
+            return new JsonResult(await _adminService.GetStatesByDivisionId(divisionId));
+        }
+
         public async Task<IActionResult> OnGetBlockListByDivision(int divisionId, int districtId)
         {
             return new JsonResult(await _adminService.GetBlocksByDivisionId(divisionId, districtId));
@@ -133,10 +140,21 @@ namespace WebUI.Pages.Admin
             }
 
             UserFullName = $"{user.FirstName} {user.LastName}".Trim();
+            Divisions = await _adminService.GetDivisionsByStatus(Enums.Status.Active);
             InstitutionTypes = EnumHelper<Enums.InstitutionType>.GetEnumDropdownList();
 
             var roles = await _adminService.GetRolesDropDown();
             RoleName = roles.FirstOrDefault(x => x.Value == user.RoleId)?.Text ?? string.Empty;
+
+            CurrentDivisionId = user.DivisionId ?? 0;
+            if (CurrentDivisionId > 0)
+            {
+                States = await _adminService.GetStatesByDivisionId(CurrentDivisionId);
+                CurrentStateId = States.Select(x => x.Value).FirstOrDefault();
+            }
+
+            DivisionName = Divisions.FirstOrDefault(x => x.Value == CurrentDivisionId)?.Text ?? string.Empty;
+            StateName = States.FirstOrDefault(x => x.Value == CurrentStateId)?.Text ?? string.Empty;
 
             var assignedInstitutionIds = new HashSet<int>();
             var peopleInstitution = await _adminService.GetPeopleInstitution(Id);
@@ -173,11 +191,13 @@ namespace WebUI.Pages.Admin
             CurrentVillageId = peopleInstitution.VillageId;
             CurrentInstitutionTypeId = peopleInstitution.InstitutionTypeId;
 
-            DivisionName = (await _adminService.GetDivisionsByStatus(Enums.Status.Active))
-                .FirstOrDefault(x => x.Value == peopleInstitution.DivisionId)?.Text ?? string.Empty;
+            if (CurrentDivisionId > 0)
+            {
+                States = await _adminService.GetStatesByDivisionId(CurrentDivisionId);
+            }
 
-            StateName = (await _adminService.GetStatesByDivisionId(peopleInstitution.DivisionId))
-                .FirstOrDefault(x => x.Value == peopleInstitution.StateId)?.Text ?? string.Empty;
+            DivisionName = Divisions.FirstOrDefault(x => x.Value == CurrentDivisionId)?.Text ?? string.Empty;
+            StateName = States.FirstOrDefault(x => x.Value == CurrentStateId)?.Text ?? string.Empty;
         }
 
         private async Task LoadAssignedInstitutionsAsync(IEnumerable<int> institutionIds)

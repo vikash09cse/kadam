@@ -258,6 +258,28 @@ namespace WebUI.Pages.Admin
             return new JsonResult(result);
         }
 
+        public async Task<IActionResult> OnPostDeleteUser(int id)
+        {
+            if (id <= 0)
+            {
+                return new JsonResult(new { success = false, message = MessageError.InvalidData });
+            }
+
+            var currentUserId = _authenticationService.GetCurrentUserId();
+            if (currentUserId <= 0)
+            {
+                return RedirectToPage("/Login");
+            }
+
+            if (currentUserId == id)
+            {
+                return new JsonResult(new { success = false, message = "You cannot delete your own account." });
+            }
+
+            var result = await _adminService.DeleteUser(id);
+            return new JsonResult(result);
+        }
+
         public IActionResult OnGetGeneratePasswordPreview()
         {
             return new JsonResult(new { password = PasswordManagement.GenerateSecurePassword() });
