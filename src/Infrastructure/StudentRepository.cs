@@ -234,7 +234,7 @@ namespace Infrastructure
             var parameters = new DynamicParameters();
             parameters.Add("@UserId", userId);
             parameters.Add("@StateId", filter?.StateId);
-            parameters.Add("@DivisionId", filter?.DivisionId);
+            parameters.Add("@DivisionIds", GetDivisionIdsParam(filter));
             parameters.Add("@FromDate", filter?.FromDate);
             parameters.Add("@ToDate", filter?.ToDate);
             parameters.Add("@IncludeAll", filter?.IncludeAll ?? true);
@@ -320,7 +320,7 @@ namespace Infrastructure
             var parameters = new DynamicParameters();
             parameters.Add("@UserId", userId);
             parameters.Add("@StateId", filter?.StateId);
-            parameters.Add("@DivisionId", filter?.DivisionId);
+            parameters.Add("@DivisionIds", GetDivisionIdsParam(filter));
             parameters.Add("@FromDate", filter?.FromDate);
             parameters.Add("@ToDate", filter?.ToDate);
             parameters.Add("@IncludeAll", filter?.IncludeAll ?? true);
@@ -331,6 +331,21 @@ namespace Infrastructure
                 parameters,
                 commandType: CommandType.StoredProcedure);
             return result;
+        }
+
+        private static string? GetDivisionIdsParam(KadamProgrammeReportFilterDTO? filter)
+        {
+            if (filter?.DivisionIds?.Count > 0)
+            {
+                return string.Join(",", filter.DivisionIds);
+            }
+
+            if (filter?.DivisionId > 0)
+            {
+                return filter.DivisionId.ToString();
+            }
+
+            return null;
         }
 
         public async Task<IEnumerable<StudentAdminListDTO>> GetStudents(int pageNumber, int pageSize, string? studentName, string? studentId, int userId)

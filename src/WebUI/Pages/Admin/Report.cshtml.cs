@@ -16,7 +16,10 @@ namespace WebUI.Pages.Admin
         public int? StateId { get; set; }
 
         [BindProperty]
-        public int? DivisionId { get; set; }
+        public bool IncludeAllDivisions { get; set; } = true;
+
+        [BindProperty]
+        public List<int> SelectedDivisionIds { get; set; } = [];
 
         [BindProperty]
         public DateTime? FromDate { get; set; }
@@ -55,13 +58,14 @@ namespace WebUI.Pages.Admin
             }
 
             var includeAll = IncludeAll || (!IncludeKadam && !IncludeKadamPlus);
+            var includeAllDivisions = IncludeAllDivisions || SelectedDivisionIds.Count == 0;
 
             try
             {
                 var filter = new KadamProgrammeReportFilterDTO
                 {
                     StateId = StateId > 0 ? StateId : null,
-                    DivisionId = DivisionId > 0 ? DivisionId : null,
+                    DivisionIds = includeAllDivisions ? null : SelectedDivisionIds,
                     FromDate = FromDate,
                     ToDate = ToDate,
                     IncludeAll = includeAll,
@@ -122,7 +126,7 @@ namespace WebUI.Pages.Admin
             [
                 ("Sr. No.", x => x.SrNo.ToString()),
                 ("Created By", x => x.CreatedBy),
-                ("Email Id", x => x.EmailId),
+                // ("Email Id", x => x.EmailId),
                 ("User ID", x => x.UserId),
                 ("State", x => x.State),
                 ("Division", x => x.Division),

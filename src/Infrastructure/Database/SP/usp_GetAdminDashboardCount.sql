@@ -1,7 +1,7 @@
 CREATE OR ALTER PROCEDURE dbo.usp_GetAdminDashboardCount
     @UserId INT,
     @StateId INT = NULL,
-    @DivisionId INT = NULL,
+    @DivisionIds VARCHAR(2000) = NULL,
     @FromDate DATE = NULL,
     @ToDate DATE = NULL,
     @IncludeAll BIT = 1,
@@ -48,7 +48,15 @@ BEGIN
           )
       )
       AND (@StateId IS NULL OR @StateId = 0 OR i.StateId = @StateId)
-      AND (@DivisionId IS NULL OR @DivisionId = 0 OR i.DivisionId = @DivisionId)
+      AND (
+          @DivisionIds IS NULL
+          OR LTRIM(RTRIM(@DivisionIds)) = ''
+          OR i.DivisionId IN (
+              SELECT TRY_CAST(LTRIM(RTRIM(Item)) AS INT)
+              FROM dbo.SplitString(@DivisionIds, ',')
+              WHERE TRY_CAST(LTRIM(RTRIM(Item)) AS INT) IS NOT NULL
+          )
+      )
       AND (@FromDate IS NULL OR s.EnrollmentDate >= @FromDate)
       AND (@ToDate IS NULL OR s.EnrollmentDate <= @ToDate)
       AND (

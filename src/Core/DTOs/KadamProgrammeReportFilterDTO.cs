@@ -4,6 +4,7 @@ namespace Core.DTOs
     {
         public int? StateId { get; set; }
         public int? DivisionId { get; set; }
+        public List<int>? DivisionIds { get; set; }
         public DateTime? FromDate { get; set; }
         public DateTime? ToDate { get; set; }
         public bool IncludeAll { get; set; } = true;
