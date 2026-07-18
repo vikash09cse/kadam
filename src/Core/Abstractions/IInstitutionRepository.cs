@@ -18,6 +18,7 @@ namespace Core.Abstractions
         Task<bool> AssignPartnerToInstitution(IEnumerable<InstitutionPartner> partners);
         Task<bool> AssignProjectToInstitution(IEnumerable<InstitutionProject> projects);
         Task<IEnumerable<DropdownDTO>> GetInstitutionsByVillageId(int villageId, int institutionTypeId);
+        Task<IEnumerable<InstitutionWithGradeSectionsDTO>> GetInstitutionsWithGradeSectionsByVillageId(int villageId, int institutionTypeId);
         Task<InstitutionImportResultDTO> BulkImportInstitutions(IEnumerable<InstitutionImportRowDTO> rows, int createdBy);
     }
 }

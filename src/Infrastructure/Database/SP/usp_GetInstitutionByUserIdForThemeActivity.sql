@@ -1,4 +1,4 @@
-ALTER   Procedure [dbo].[usp_GetInstitutionByUserIdForThemeActivity] --usp_GetInstitutionByUserIdForThemeActivity 1
+CREATE OR ALTER PROCEDURE [dbo].[usp_GetInstitutionByUserIdForThemeActivity] --usp_GetInstitutionByUserIdForThemeActivity 1
 @UserId Int
 As
 Begin
@@ -17,29 +17,65 @@ Begin
     INNER JOIN UserInstitutions ui ON ui.InstitutionId = i.Id
     WHERE i.IsDeleted = 0;
 
-    ;WITH UserInstitutions AS (
-        SELECT DISTINCT TRY_CAST(LTRIM(RTRIM(s.Item)) AS INT) AS InstitutionId
+    ;WITH AssignedRows AS (
+        SELECT
+            TRY_CAST(LTRIM(RTRIM(pi.InstitutionIds)) AS INT) AS InstitutionId,
+            pi.GradeAndSection
         FROM PeopleInstitutions pi
-        CROSS APPLY dbo.SplitString(pi.InstitutionIds, ',') s
         WHERE pi.UserId = @UserId
-          AND LTRIM(RTRIM(ISNULL(pi.InstitutionIds, ''))) <> ''
-          AND TRY_CAST(LTRIM(RTRIM(s.Item)) AS INT) IS NOT NULL
+          AND TRY_CAST(LTRIM(RTRIM(pi.InstitutionIds)) AS INT) IS NOT NULL
+    ),
+    FromJson AS (
+        SELECT
+            ar.InstitutionId,
+            CAST(j.GradeId AS INT) AS GradeId,
+            CAST(j.Sections AS VARCHAR(55)) AS Sections
+        FROM AssignedRows ar
+        CROSS APPLY OPENJSON(ar.GradeAndSection)
+        WITH (
+            GradeId INT '$.GradeId',
+            Sections VARCHAR(55) '$.Sections'
+        ) j
+        WHERE ar.GradeAndSection IS NOT NULL
+          AND LTRIM(RTRIM(ar.GradeAndSection)) <> ''
+          AND ISJSON(ar.GradeAndSection) = 1
+    ),
+    FromInstitution AS (
+        SELECT
+            igs.InstitutionId,
+            igs.GradeId,
+            igs.Sections
+        FROM InstitutionGradeSections igs
+        INNER JOIN AssignedRows ar ON ar.InstitutionId = igs.InstitutionId
+        WHERE ar.GradeAndSection IS NULL
+           OR LTRIM(RTRIM(ar.GradeAndSection)) = ''
+           OR ISJSON(ar.GradeAndSection) = 0
+    ),
+    Combined AS (
+        SELECT InstitutionId, GradeId, Sections FROM FromJson
+        UNION ALL
+        SELECT InstitutionId, GradeId, Sections FROM FromInstitution
     )
-    SELECT igs.InstitutionId, igs.GradeId As Id, g.GradeName, igs.Sections,
-        Coalesce(
-            Stuff((
-                Select ', ' + LTrim(RTrim(s.Section)) + ':' + Cast(Count(*) As Varchar(10))
-                From Students s
-                Where s.InstitutionId = igs.InstitutionId 
-                    And s.GradeId = igs.GradeId
-                    And (s.IsDeleted = 0 Or s.IsDeleted Is Null)
-                Group By LTrim(RTrim(s.Section))
-                Order By LTrim(RTrim(s.Section))
-                For Xml Path('')
+    SELECT
+        c.InstitutionId,
+        c.GradeId AS Id,
+        g.GradeName,
+        c.Sections,
+        COALESCE(
+            STUFF((
+                SELECT ', ' + LTRIM(RTRIM(s.Section)) + ':' + CAST(COUNT(*) AS VARCHAR(10))
+                FROM Students s
+                WHERE s.InstitutionId = c.InstitutionId
+                    AND s.GradeId = c.GradeId
+                    AND (s.IsDeleted = 0 OR s.IsDeleted IS NULL)
+                GROUP BY LTRIM(RTRIM(s.Section))
+                ORDER BY LTRIM(RTRIM(s.Section))
+                FOR XML PATH('')
             ), 1, 2, '')
-        , '') As StudentCount
-    From InstitutionGradeSections igs
-    Inner Join Grades g on g.Id = igs.GradeId
-    Inner Join UserInstitutions ui on ui.InstitutionId = igs.InstitutionId
-    Order by g.Id
+        , '') AS StudentCount
+    FROM Combined c
+    INNER JOIN Grades g ON g.Id = c.GradeId
+    WHERE g.IsDeleted = 0
+    ORDER BY g.Id;
 End
+GO

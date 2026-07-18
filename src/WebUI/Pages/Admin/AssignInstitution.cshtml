@@ -53,9 +53,10 @@
                             </div>
                         </div>
 
-                        <form method="post" asp-page-handler="Save">
+                        <form method="post" asp-page-handler="Save" id="assignInstitutionForm">
                             @Html.AntiForgeryToken()
                             <input type="hidden" asp-for="Id" />
+                            <input type="hidden" asp-for="AssignmentsJson" id="assignmentsJson" />
                             <div id="selectedInstitutionInputs"></div>
 
                             <div class="d-flex justify-content-between align-items-center mb-3">
@@ -78,7 +79,8 @@
                                             <th>Block</th>
                                             <th>Village</th>
                                             <th>Institution Name</th>
-                                            <th style="width: 80px;">Action</th>
+                                            <th>Grade &amp; Section</th>
+                                            <th style="width: 110px;">Action</th>
                                         </tr>
                                     </thead>
                                     <tbody id="assignedInstitutionTableBody"></tbody>
@@ -102,7 +104,7 @@
 </div>
 
 <div id="addInstitutionModal" class="modal fade" tabindex="-1" aria-labelledby="addInstitutionModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-lg modal-dialog-centered">
+    <div class="modal-dialog modal-xl modal-dialog-centered">
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title" id="addInstitutionModalLabel">Assign Institution</h5>
@@ -192,6 +194,8 @@
             const assignedInstitutionTableBody = document.getElementById('assignedInstitutionTableBody');
             const noAssignedInstitutions = document.getElementById('noAssignedInstitutions');
             const selectedInstitutionInputs = document.getElementById('selectedInstitutionInputs');
+            const assignmentsJsonInput = document.getElementById('assignmentsJson');
+            const assignInstitutionForm = document.getElementById('assignInstitutionForm');
             const modalDivision = document.getElementById('modalDivision');
             const modalState = document.getElementById('modalState');
             const modalDistrict = document.getElementById('modalDistrict');
@@ -213,14 +217,27 @@
                 institutionTypeId: @Model.CurrentInstitutionTypeId,
                 assignedInstitutions: @Html.Raw(assignedInstitutionsJson),
                 selectedInstitutionIds: @Html.Raw(selectedInstitutionIdsJson),
-                availableInstitutions: []
+                availableInstitutions: [],
+                editingInstitutionId: 0
             };
 
-            function normalizeOption(item) {
-                return {
-                    value: Number(item.value ?? item.Value ?? 0),
-                    text: item.text ?? item.Text ?? ''
-                };
+            function normalizeInstitution(item) {
+                const value = Number(item.value ?? item.Value ?? 0);
+                const text = item.text ?? item.Text ?? '';
+                const gradeSections = (item.gradeSections || item.GradeSections || []).map(function (gs) {
+                    return {
+                        gradeId: Number(gs.gradeId ?? gs.GradeId ?? 0),
+                        gradeName: gs.gradeName ?? gs.GradeName ?? '',
+                        sections: gs.sections ?? gs.Sections ?? '',
+                        availableSections: String(gs.sections ?? gs.Sections ?? '')
+                            .split(',')
+                            .map(function (s) { return s.trim(); })
+                            .filter(Boolean),
+                        selectedSections: []
+                    };
+                });
+
+                return { value: value, text: text, gradeSections: gradeSections };
             }
 
             function createOption(select, value, text, selectedValue) {
@@ -231,8 +248,39 @@
                 return option;
             }
 
-            function renderSelectedInputs() {
+            function formatGradeSectionSummary(gradeSections) {
+                return (gradeSections || [])
+                    .filter(function (gs) { return gs.gradeId && (gs.sections || (gs.selectedSections && gs.selectedSections.length)); })
+                    .map(function (gs) {
+                        const sections = gs.sections || (gs.selectedSections || []).join(',');
+                        const name = gs.gradeName || ('Grade ' + gs.gradeId);
+                        return name + ' (' + sections + ')';
+                    })
+                    .join(', ');
+            }
+
+            function syncAssignmentsJson() {
+                const payload = pageState.assignedInstitutions.map(function (institution) {
+                    return {
+                        institutionId: institution.id,
+                        gradeSections: (institution.gradeSections || [])
+                            .filter(function (gs) {
+                                const sections = gs.sections || (gs.selectedSections || []).join(',');
+                                return gs.gradeId && sections;
+                            })
+                            .map(function (gs) {
+                                return {
+                                    gradeId: gs.gradeId,
+                                    sections: gs.sections || (gs.selectedSections || []).join(','),
+                                    gradeName: gs.gradeName || ''
+                                };
+                            })
+                    };
+                });
+
+                assignmentsJsonInput.value = JSON.stringify(payload);
                 selectedInstitutionInputs.innerHTML = '';
+                pageState.selectedInstitutionIds = pageState.assignedInstitutions.map(function (x) { return x.id; });
                 pageState.selectedInstitutionIds.forEach(function (id) {
                     const input = document.createElement('input');
                     input.type = 'hidden';
@@ -246,6 +294,7 @@
                 assignedInstitutionTableBody.innerHTML = '';
 
                 pageState.assignedInstitutions.forEach(function (institution) {
+                    const summary = institution.gradeSectionSummary || formatGradeSectionSummary(institution.gradeSections);
                     const row = document.createElement('tr');
                     row.innerHTML = `
                         <td>${institution.divisionName || ''}</td>
@@ -254,25 +303,32 @@
                         <td>${institution.blockName || ''}</td>
                         <td>${institution.villageName || ''}</td>
                         <td>${institution.institutionName || ''}</td>
+                        <td>${summary || '<span class="text-muted">Not set</span>'}</td>
                         <td>
-                            <button type="button" class="btn btn-sm btn-outline-danger remove-assigned-institution" data-id="${institution.id}">
-                                <i class="mdi mdi-delete"></i>
-                            </button>
+                            <div class="btn-group">
+                                <button type="button" class="btn btn-sm btn-outline-primary edit-assigned-institution" data-id="${institution.id}" title="Edit">
+                                    <i class="mdi mdi-pencil"></i>
+                                </button>
+                                <button type="button" class="btn btn-sm btn-outline-danger remove-assigned-institution" data-id="${institution.id}" title="Remove">
+                                    <i class="mdi mdi-delete"></i>
+                                </button>
+                            </div>
                         </td>
                     `;
                     assignedInstitutionTableBody.appendChild(row);
                 });
 
                 noAssignedInstitutions.classList.toggle('d-none', pageState.assignedInstitutions.length > 0);
-                renderSelectedInputs();
+                syncAssignmentsJson();
             }
 
             function populateSelect(select, items, selectedValue, placeholder) {
                 select.innerHTML = '';
                 select.appendChild(createOption(select, '', placeholder, ''));
                 (items || []).forEach(function (item) {
-                    const option = normalizeOption(item);
-                    select.appendChild(createOption(select, option.value, option.text, selectedValue));
+                    const value = Number(item.value ?? item.Value ?? 0);
+                    const text = item.text ?? item.Text ?? '';
+                    select.appendChild(createOption(select, value, text, selectedValue));
                 });
             }
 
@@ -323,6 +379,73 @@
                 populateSelect(modalVillage, data, selectedVillageId, 'Select Village');
             }
 
+            function getExistingSelectionMap(institutionId) {
+                const existing = pageState.assignedInstitutions.find(function (item) { return Number(item.id) === Number(institutionId); });
+                const map = {};
+                if (!existing || !existing.gradeSections) {
+                    return map;
+                }
+
+                (existing.gradeSections || []).forEach(function (gs) {
+                    const gradeId = Number(gs.gradeId ?? gs.GradeId ?? 0);
+                    const sections = String(gs.sections ?? gs.Sections ?? '')
+                        .split(',')
+                        .map(function (s) { return s.trim(); })
+                        .filter(Boolean);
+                    map[gradeId] = sections;
+                });
+                return map;
+            }
+
+            function buildGradeSectionHtml(institution) {
+                if (!institution.gradeSections || institution.gradeSections.length === 0) {
+                    return '<div class="text-muted small mt-2 ms-4">No grades/sections configured for this institution.</div>';
+                }
+
+                const existingMap = getExistingSelectionMap(institution.value);
+                const isChecked = pageState.selectedInstitutionIds.includes(institution.value)
+                    || !!document.getElementById('modalInstitution_' + institution.value)?.checked;
+
+                let html = `<div class="grade-section-panel mt-2 ms-4 ${isChecked ? '' : 'd-none'}" data-institution-id="${institution.value}">`;
+                html += '<div class="row g-2"><div class="col-md-4 fw-semibold small">Grades</div><div class="col-md-8 fw-semibold small">Sections</div></div>';
+
+                institution.gradeSections.forEach(function (grade) {
+                    const selectedForGrade = existingMap[grade.gradeId] || [];
+                    const gradeChecked = selectedForGrade.length > 0;
+                    html += `
+                        <div class="row g-2 align-items-center border-bottom py-2 grade-row" data-grade-id="${grade.gradeId}">
+                            <div class="col-md-4">
+                                <div class="form-check">
+                                    <input class="form-check-input modal-grade-checkbox" type="checkbox"
+                                           data-institution-id="${institution.value}" data-grade-id="${grade.gradeId}"
+                                           id="grade_${institution.value}_${grade.gradeId}" ${gradeChecked ? 'checked' : ''}>
+                                    <label class="form-check-label" for="grade_${institution.value}_${grade.gradeId}">${grade.gradeName}</label>
+                                </div>
+                            </div>
+                            <div class="col-md-8">
+                                <div class="d-flex flex-wrap gap-3">
+                                    ${(grade.availableSections || []).map(function (section) {
+                                        const sectionChecked = selectedForGrade.indexOf(section) >= 0;
+                                        return `
+                                            <div class="form-check">
+                                                <input class="form-check-input modal-section-checkbox" type="checkbox"
+                                                       data-institution-id="${institution.value}" data-grade-id="${grade.gradeId}"
+                                                       value="${section}" id="section_${institution.value}_${grade.gradeId}_${section}"
+                                                       ${sectionChecked ? 'checked' : ''} ${gradeChecked ? '' : 'disabled'}>
+                                                <label class="form-check-label" for="section_${institution.value}_${grade.gradeId}_${section}">${section}</label>
+                                            </div>
+                                        `;
+                                    }).join('')}
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                });
+
+                html += '</div>';
+                return html;
+            }
+
             function renderAvailableInstitutions() {
                 const searchTerm = (modalInstitutionSearch.value || '').trim().toLowerCase();
                 modalInstitutionList.innerHTML = '';
@@ -333,16 +456,59 @@
 
                 filtered.forEach(function (institution) {
                     const wrapper = document.createElement('div');
-                    wrapper.className = 'form-check mb-2';
-
+                    wrapper.className = 'mb-3 pb-2 border-bottom';
+                    const isChecked = pageState.selectedInstitutionIds.includes(institution.value);
                     wrapper.innerHTML = `
-                        <input class="form-check-input modal-institution-checkbox" type="checkbox" value="${institution.value}" id="modalInstitution_${institution.value}">
-                        <label class="form-check-label" for="modalInstitution_${institution.value}">${institution.text}</label>
+                        <div class="form-check">
+                            <input class="form-check-input modal-institution-checkbox" type="checkbox"
+                                   value="${institution.value}" id="modalInstitution_${institution.value}" ${isChecked ? 'checked' : ''}>
+                            <label class="form-check-label fw-semibold" for="modalInstitution_${institution.value}">${institution.text}</label>
+                        </div>
+                        ${buildGradeSectionHtml(institution)}
                     `;
                     modalInstitutionList.appendChild(wrapper);
                 });
 
                 modalInstitutionEmpty.classList.toggle('d-none', filtered.length > 0);
+            }
+
+            function collectModalSelections() {
+                const selected = [];
+                document.querySelectorAll('.modal-institution-checkbox:checked').forEach(function (checkbox) {
+                    const institutionId = Number(checkbox.value);
+                    const institution = pageState.availableInstitutions.find(function (item) {
+                        return Number(item.value) === institutionId;
+                    });
+                    if (!institution) {
+                        return;
+                    }
+
+                    const gradeSections = [];
+                    (institution.gradeSections || []).forEach(function (grade) {
+                        const gradeCheckbox = document.getElementById(`grade_${institutionId}_${grade.gradeId}`);
+                        if (!gradeCheckbox || !gradeCheckbox.checked) {
+                            return;
+                        }
+
+                        const sections = Array.from(document.querySelectorAll(
+                            `.modal-section-checkbox[data-institution-id="${institutionId}"][data-grade-id="${grade.gradeId}"]:checked`
+                        )).map(function (input) { return input.value; });
+
+                        if (sections.length > 0) {
+                            gradeSections.push({
+                                gradeId: grade.gradeId,
+                                gradeName: grade.gradeName,
+                                sections: sections.join(',')
+                            });
+                        }
+                    });
+
+                    selected.push({
+                        institution: institution,
+                        gradeSections: gradeSections
+                    });
+                });
+                return selected;
             }
 
             async function loadInstitutions() {
@@ -352,12 +518,16 @@
                     return;
                 }
 
-                pageState.availableInstitutions = await fetchJson(`?handler=InstitutionsByVillageId&villageId=${modalVillage.value}&institutionTypeId=${modalInstitutionType.value}`);
-                pageState.availableInstitutions = pageState.availableInstitutions.map(normalizeOption);
+                const data = await fetchJson(`?handler=InstitutionsByVillageId&villageId=${modalVillage.value}&institutionTypeId=${modalInstitutionType.value}`);
+                pageState.availableInstitutions = (data || []).map(normalizeInstitution);
                 renderAvailableInstitutions();
             }
 
             async function initializeModal() {
+                const isEdit = pageState.editingInstitutionId > 0;
+                document.getElementById('addInstitutionModalLabel').textContent =
+                    isEdit ? 'Edit Institution Assignment' : 'Assign Institution';
+
                 modalDivision.value = String(pageState.divisionId || '');
                 await loadStates(pageState.stateId);
                 await loadDistricts(pageState.districtId);
@@ -365,6 +535,15 @@
                 await loadVillages(pageState.villageId);
                 modalInstitutionType.value = String(pageState.institutionTypeId || '');
                 await loadInstitutions();
+
+                if (isEdit) {
+                    const checkbox = document.getElementById('modalInstitution_' + pageState.editingInstitutionId);
+                    if (checkbox) {
+                        checkbox.checked = true;
+                        checkbox.dispatchEvent(new Event('change', { bubbles: true }));
+                        checkbox.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+                    }
+                }
             }
 
             modalDivision.addEventListener('change', async function () {
@@ -417,50 +596,142 @@
             modalInstitutionType.addEventListener('change', loadInstitutions);
             modalInstitutionSearch.addEventListener('input', renderAvailableInstitutions);
 
-            saveModalInstitutions.addEventListener('click', function () {
-                const checkedIds = Array.from(document.querySelectorAll('.modal-institution-checkbox:checked')).map(function (checkbox) {
-                    return Number(checkbox.value);
-                });
-
-                checkedIds.forEach(function (institutionId) {
-                    if (!pageState.selectedInstitutionIds.includes(institutionId)) {
-                        pageState.selectedInstitutionIds.push(institutionId);
+            modalInstitutionList.addEventListener('change', function (event) {
+                const target = event.target;
+                if (target.classList.contains('modal-institution-checkbox')) {
+                    const panel = modalInstitutionList.querySelector(`.grade-section-panel[data-institution-id="${target.value}"]`);
+                    if (panel) {
+                        panel.classList.toggle('d-none', !target.checked);
                     }
-                });
-
-                pageState.assignedInstitutions = pageState.assignedInstitutions.filter(function (institution) {
-                    return pageState.selectedInstitutionIds.includes(institution.id);
-                });
-
-                checkedIds.forEach(function (institutionId) {
-                    const institution = pageState.availableInstitutions.find(function (item) {
-                        return Number(item.value) === institutionId;
-                    });
-
-                    if (institution && !pageState.assignedInstitutions.some(function (item) { return item.id === institutionId; })) {
-                        const divisionText = modalDivision.options[modalDivision.selectedIndex]?.text || '';
-                        const stateText = modalState.options[modalState.selectedIndex]?.text || '';
-                        const districtText = modalDistrict.options[modalDistrict.selectedIndex]?.text || '';
-                        const blockText = modalBlock.options[modalBlock.selectedIndex]?.text || '';
-                        const villageText = modalVillage.options[modalVillage.selectedIndex]?.text || '';
-
-                        pageState.assignedInstitutions.push({
-                            id: institutionId,
-                            divisionName: divisionText,
-                            stateName: stateText,
-                            districtName: districtText,
-                            blockName: blockText,
-                            villageName: villageText,
-                            institutionName: institution.text
+                    if (!target.checked) {
+                        panel?.querySelectorAll('input[type="checkbox"]').forEach(function (input) {
+                            input.checked = false;
+                            if (input.classList.contains('modal-section-checkbox')) {
+                                input.disabled = true;
+                            }
                         });
                     }
+                }
+
+                if (target.classList.contains('modal-grade-checkbox')) {
+                    const institutionId = target.dataset.institutionId;
+                    const gradeId = target.dataset.gradeId;
+                    const sectionInputs = modalInstitutionList.querySelectorAll(
+                        `.modal-section-checkbox[data-institution-id="${institutionId}"][data-grade-id="${gradeId}"]`
+                    );
+                    sectionInputs.forEach(function (input) {
+                        input.disabled = !target.checked;
+                        if (!target.checked) {
+                            input.checked = false;
+                        }
+                    });
+                }
+
+                if (target.classList.contains('modal-section-checkbox') && target.checked) {
+                    const gradeCheckbox = document.getElementById(`grade_${target.dataset.institutionId}_${target.dataset.gradeId}`);
+                    if (gradeCheckbox) {
+                        gradeCheckbox.checked = true;
+                        modalInstitutionList.querySelectorAll(
+                            `.modal-section-checkbox[data-institution-id="${target.dataset.institutionId}"][data-grade-id="${target.dataset.gradeId}"]`
+                        ).forEach(function (input) { input.disabled = false; });
+                    }
+                }
+            });
+
+            saveModalInstitutions.addEventListener('click', function () {
+                const selections = collectModalSelections();
+                if (selections.length === 0 && pageState.editingInstitutionId <= 0) {
+                    alert('Please select at least one institution.');
+                    return;
+                }
+
+                for (let i = 0; i < selections.length; i++) {
+                    if (!selections[i].gradeSections.length) {
+                        alert('Please select at least one grade and section for each selected institution.');
+                        return;
+                    }
+                }
+
+                const divisionText = modalDivision.options[modalDivision.selectedIndex]?.text || '';
+                const stateText = modalState.options[modalState.selectedIndex]?.text || '';
+                const districtText = modalDistrict.options[modalDistrict.selectedIndex]?.text || '';
+                const blockText = modalBlock.options[modalBlock.selectedIndex]?.text || '';
+                const villageText = modalVillage.options[modalVillage.selectedIndex]?.text || '';
+
+                const visibleIds = pageState.availableInstitutions.map(function (item) { return Number(item.value); });
+                const selectedIdsInModal = selections.map(function (item) { return Number(item.institution.value); });
+
+                // Remove any visible institutions that were unchecked in this modal session.
+                pageState.assignedInstitutions = pageState.assignedInstitutions.filter(function (item) {
+                    const id = Number(item.id);
+                    if (visibleIds.indexOf(id) < 0) {
+                        return true;
+                    }
+                    return selectedIdsInModal.indexOf(id) >= 0;
                 });
 
+                selections.forEach(function (selection) {
+                    const institutionId = selection.institution.value;
+                    const existingIndex = pageState.assignedInstitutions.findIndex(function (item) {
+                        return Number(item.id) === institutionId;
+                    });
+
+                    const row = {
+                        id: institutionId,
+                        divisionId: pageState.divisionId,
+                        stateId: pageState.stateId,
+                        districtId: Number(modalDistrict.value || 0),
+                        blockId: Number(modalBlock.value || 0),
+                        villageId: Number(modalVillage.value || 0),
+                        institutionTypeId: Number(modalInstitutionType.value || 0),
+                        divisionName: divisionText,
+                        stateName: stateText,
+                        districtName: districtText,
+                        blockName: blockText,
+                        villageName: villageText,
+                        institutionName: selection.institution.text,
+                        gradeSections: selection.gradeSections,
+                        gradeSectionSummary: formatGradeSectionSummary(selection.gradeSections)
+                    };
+
+                    if (existingIndex >= 0) {
+                        pageState.assignedInstitutions[existingIndex] = row;
+                    } else {
+                        pageState.assignedInstitutions.push(row);
+                    }
+                });
+
+                pageState.selectedInstitutionIds = pageState.assignedInstitutions.map(function (x) { return x.id; });
+                pageState.editingInstitutionId = 0;
                 renderAssignedTable();
                 bootstrap.Modal.getInstance(document.getElementById('addInstitutionModal')).hide();
             });
 
             assignedInstitutionTableBody.addEventListener('click', function (event) {
+                const editButton = event.target.closest('.edit-assigned-institution');
+                if (editButton) {
+                    const institutionId = Number(editButton.dataset.id);
+                    const institution = pageState.assignedInstitutions.find(function (item) {
+                        return Number(item.id) === institutionId;
+                    });
+                    if (!institution) {
+                        return;
+                    }
+
+                    pageState.editingInstitutionId = institutionId;
+                    pageState.divisionId = Number(institution.divisionId || pageState.divisionId || 0);
+                    pageState.stateId = Number(institution.stateId || pageState.stateId || 0);
+                    pageState.districtId = Number(institution.districtId || 0);
+                    pageState.blockId = Number(institution.blockId || 0);
+                    pageState.villageId = Number(institution.villageId || 0);
+                    pageState.institutionTypeId = Number(institution.institutionTypeId || 0);
+
+                    const modalElement = document.getElementById('addInstitutionModal');
+                    const modal = bootstrap.Modal.getOrCreateInstance(modalElement);
+                    modal.show();
+                    return;
+                }
+
                 const button = event.target.closest('.remove-assigned-institution');
                 if (!button) {
                     return;
@@ -476,9 +747,22 @@
                 renderAssignedTable();
             });
 
+            document.querySelector('[data-bs-target="#addInstitutionModal"]')?.addEventListener('click', function () {
+                pageState.editingInstitutionId = 0;
+            });
+
             document.getElementById('addInstitutionModal').addEventListener('show.bs.modal', function () {
                 modalInstitutionSearch.value = '';
                 initializeModal();
+            });
+
+            document.getElementById('addInstitutionModal').addEventListener('hidden.bs.modal', function () {
+                pageState.editingInstitutionId = 0;
+                document.getElementById('addInstitutionModalLabel').textContent = 'Assign Institution';
+            });
+
+            assignInstitutionForm.addEventListener('submit', function () {
+                syncAssignmentsJson();
             });
 
             renderAssignedTable();
@@ -486,8 +770,14 @@
     </script>
     <style>
         .modal-institution-list {
-            max-height: 280px;
+            max-height: 420px;
             overflow-y: auto;
+        }
+        .grade-section-panel {
+            background: #f8f9fa;
+            border-radius: 0.25rem;
+            padding: 0.75rem;
         }
     </style>
 }
+

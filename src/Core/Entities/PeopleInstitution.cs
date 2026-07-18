@@ -11,5 +11,7 @@ namespace Core.Entities
         public int VillageId { get; set; }
         public int InstitutionTypeId { get; set; }
         public string InstitutionIds { get; set; } = string.Empty;
+        /// <summary>JSON array: [{"GradeId":1,"Sections":"A,NA"}, ...]. Null for legacy rows until backfill/re-save.</summary>
+        public string? GradeAndSection { get; set; }
     }
 }

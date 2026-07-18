@@ -4,6 +4,7 @@ using Core.Features.Admin;
 using Core.Utilities;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
+using System.Text.Json;
 
 namespace WebUI.Pages.Admin
 {
@@ -12,6 +13,11 @@ namespace WebUI.Pages.Admin
         private readonly AdminService _adminService;
         private readonly AuthenticationService _authenticationService;
         private readonly InstitutionService _institutionService;
+
+        private static readonly JsonSerializerOptions JsonOptions = new()
+        {
+            PropertyNameCaseInsensitive = true
+        };
 
         public AssignInstitutionModel(
             AdminService adminService,
@@ -28,6 +34,9 @@ namespace WebUI.Pages.Admin
 
         [BindProperty]
         public List<int> SelectedInstitutionIds { get; set; } = [];
+
+        [BindProperty]
+        public string AssignmentsJson { get; set; } = "[]";
 
         public string UserFullName { get; private set; } = string.Empty;
         public string RoleName { get; private set; } = string.Empty;
@@ -74,20 +83,49 @@ namespace WebUI.Pages.Admin
                 return RedirectToPage("/Admin/Peoples");
             }
 
-            if (SelectedInstitutionIds.Count == 0)
+            var assignments = DeserializeAssignments(AssignmentsJson);
+            if (assignments.Count == 0 && SelectedInstitutionIds.Count > 0)
+            {
+                assignments = SelectedInstitutionIds.Distinct()
+                    .Select(institutionId => new PeopleInstitutionAssignmentDTO { InstitutionId = institutionId })
+                    .ToList();
+            }
+
+            if (assignments.Count == 0)
             {
                 TempData["ErrorMessage"] = "Please select at least one institution.";
                 await LoadPageDataAsync();
                 return Page();
             }
 
+            foreach (var assignment in assignments)
+            {
+                if (assignment.GradeSections == null
+                    || assignment.GradeSections.Count == 0
+                    || assignment.GradeSections.All(x => string.IsNullOrWhiteSpace(x.Sections)))
+                {
+                    TempData["ErrorMessage"] = "Please select at least one grade and section for each assigned institution.";
+                    SelectedInstitutionIds = assignments.Select(x => x.InstitutionId).ToList();
+                    await LoadPageDataAsync();
+                    return Page();
+                }
+            }
+
+            var gradeAndSectionByInstitutionId = assignments.ToDictionary(
+                x => x.InstitutionId,
+                x => JsonSerializer.Serialize(x.GradeSections.Select(gs => new
+                {
+                    gs.GradeId,
+                    gs.Sections
+                })));
+
             var request = new PeopleInstitution
             {
                 UserId = Id,
-                InstitutionIds = string.Join(",", SelectedInstitutionIds.Distinct())
+                InstitutionIds = string.Join(",", assignments.Select(x => x.InstitutionId).Distinct())
             };
 
-            var result = await _adminService.SavePeopleInstitution(request);
+            var result = await _adminService.SavePeopleInstitution(request, gradeAndSectionByInstitutionId);
             if (result.Success)
             {
                 TempData["SuccessMessage"] = "Institutions assigned successfully.";
@@ -95,6 +133,7 @@ namespace WebUI.Pages.Admin
             }
 
             TempData["ErrorMessage"] = result.Message;
+            SelectedInstitutionIds = assignments.Select(x => x.InstitutionId).ToList();
             await LoadPageDataAsync();
             return Page();
         }
@@ -121,7 +160,7 @@ namespace WebUI.Pages.Admin
 
         public async Task<IActionResult> OnGetInstitutionsByVillageId(int villageId, int institutionTypeId)
         {
-            return new JsonResult(await _institutionService.GetInstitutionsByVillageId(villageId, institutionTypeId));
+            return new JsonResult(await _institutionService.GetInstitutionsWithGradeSectionsByVillageId(villageId, institutionTypeId));
         }
 
         private IActionResult? EnsureAuthenticated()
@@ -156,30 +195,29 @@ namespace WebUI.Pages.Admin
             DivisionName = Divisions.FirstOrDefault(x => x.Value == CurrentDivisionId)?.Text ?? string.Empty;
             StateName = States.FirstOrDefault(x => x.Value == CurrentStateId)?.Text ?? string.Empty;
 
-            var assignedInstitutionIds = new HashSet<int>();
-            var peopleInstitution = await _adminService.GetPeopleInstitution(Id);
-            if (peopleInstitution == null)
+            var assignmentRows = (await _adminService.GetPeopleInstitutionAssignments(Id)).ToList();
+            if (assignmentRows.Count == 0)
             {
                 AssignedInstitutions = [];
                 return;
             }
 
-            if (!string.IsNullOrWhiteSpace(peopleInstitution.InstitutionIds))
+            var peopleInstitution = await _adminService.GetPeopleInstitution(Id);
+            if (peopleInstitution != null)
             {
-                assignedInstitutionIds = peopleInstitution.InstitutionIds
-                    .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
-                    .Select(value => int.TryParse(value, out var institutionId) ? institutionId : 0)
-                    .Where(value => value > 0)
-                    .ToHashSet();
+                await LoadLocationNamesAsync(peopleInstitution);
             }
 
             if (SelectedInstitutionIds.Count == 0)
             {
-                SelectedInstitutionIds = assignedInstitutionIds.ToList();
+                SelectedInstitutionIds = assignmentRows
+                    .Select(row => int.TryParse(row.InstitutionIds, out var institutionId) ? institutionId : 0)
+                    .Where(id => id > 0)
+                    .Distinct()
+                    .ToList();
             }
 
-            await LoadLocationNamesAsync(peopleInstitution);
-            await LoadAssignedInstitutionsAsync(SelectedInstitutionIds);
+            await LoadAssignedInstitutionsAsync(assignmentRows);
         }
 
         private async Task LoadLocationNamesAsync(PeopleInstitution peopleInstitution)
@@ -200,41 +238,124 @@ namespace WebUI.Pages.Admin
             StateName = States.FirstOrDefault(x => x.Value == CurrentStateId)?.Text ?? string.Empty;
         }
 
-        private async Task LoadAssignedInstitutionsAsync(IEnumerable<int> institutionIds)
+        private async Task LoadAssignedInstitutionsAsync(List<PeopleInstitution> assignmentRows)
         {
-            var ids = institutionIds.Distinct().ToList();
             AssignedInstitutions = [];
+            var gradeCatalog = (await _adminService.GetGradesAndSections())
+                .ToDictionary(x => x.Id, x => x.GradeName);
 
-            foreach (var institutionId in ids)
+            foreach (var row in assignmentRows)
             {
+                if (!int.TryParse(row.InstitutionIds, out var institutionId) || institutionId <= 0)
+                {
+                    continue;
+                }
+
                 var institution = await _institutionService.GetInstitutionById(institutionId);
                 if (institution == null)
                 {
                     continue;
                 }
 
+                var gradeSections = ParseGradeSections(row.GradeAndSection);
+                foreach (var item in gradeSections)
+                {
+                    if (gradeCatalog.TryGetValue(item.GradeId, out var gradeName))
+                    {
+                        item.GradeName = gradeName;
+                    }
+                    else if (string.IsNullOrWhiteSpace(item.GradeName))
+                    {
+                        item.GradeName = $"Grade {item.GradeId}";
+                    }
+                }
+
                 AssignedInstitutions.Add(new InstitutionAssignmentRow
                 {
                     Id = institution.Id,
-                    DivisionName = DivisionName,
+                    DivisionId = institution.DivisionId,
+                    StateId = institution.StateId,
+                    DistrictId = institution.DistrictId,
+                    BlockId = institution.BlockId,
+                    VillageId = institution.VillageId,
+                    InstitutionTypeId = institution.InstitutionType,
+                    DivisionName = Divisions.FirstOrDefault(x => x.Value == institution.DivisionId)?.Text ?? DivisionName,
                     StateName = institution.StateName,
                     DistrictName = institution.DistrictName,
                     BlockName = institution.BlockName,
                     VillageName = institution.VillageName,
-                    InstitutionName = institution.InstitutionName
+                    InstitutionName = institution.InstitutionName,
+                    GradeSectionSummary = FormatGradeSectionSummary(gradeSections),
+                    GradeSections = gradeSections
                 });
+            }
+        }
+
+        private static List<PeopleGradeSectionDTO> ParseGradeSections(string? json)
+        {
+            if (string.IsNullOrWhiteSpace(json))
+            {
+                return [];
+            }
+
+            try
+            {
+                return JsonSerializer.Deserialize<List<PeopleGradeSectionDTO>>(json, JsonOptions) ?? [];
+            }
+            catch
+            {
+                return [];
+            }
+        }
+
+        private static string FormatGradeSectionSummary(IEnumerable<PeopleGradeSectionDTO> gradeSections)
+        {
+            var parts = gradeSections
+                .Where(x => x.GradeId > 0 && !string.IsNullOrWhiteSpace(x.Sections))
+                .Select(x =>
+                {
+                    var gradeLabel = string.IsNullOrWhiteSpace(x.GradeName) ? $"Grade {x.GradeId}" : x.GradeName;
+                    return $"{gradeLabel} ({x.Sections})";
+                })
+                .ToList();
+
+            return parts.Count == 0 ? string.Empty : string.Join(", ", parts);
+        }
+
+        private static List<PeopleInstitutionAssignmentDTO> DeserializeAssignments(string? json)
+        {
+            if (string.IsNullOrWhiteSpace(json))
+            {
+                return [];
+            }
+
+            try
+            {
+                return JsonSerializer.Deserialize<List<PeopleInstitutionAssignmentDTO>>(json, JsonOptions) ?? [];
+            }
+            catch
+            {
+                return [];
             }
         }
 
         public class InstitutionAssignmentRow
         {
             public int Id { get; set; }
+            public int DivisionId { get; set; }
+            public int StateId { get; set; }
+            public int DistrictId { get; set; }
+            public int BlockId { get; set; }
+            public int VillageId { get; set; }
+            public int InstitutionTypeId { get; set; }
             public string DivisionName { get; set; } = string.Empty;
             public string StateName { get; set; } = string.Empty;
             public string DistrictName { get; set; } = string.Empty;
             public string BlockName { get; set; } = string.Empty;
             public string VillageName { get; set; } = string.Empty;
             public string InstitutionName { get; set; } = string.Empty;
+            public string GradeSectionSummary { get; set; } = string.Empty;
+            public List<PeopleGradeSectionDTO> GradeSections { get; set; } = [];
         }
     }
 }

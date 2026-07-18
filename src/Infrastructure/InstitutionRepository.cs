@@ -271,6 +271,55 @@ namespace Infrastructure
             return institutions;
         }
 
+        public async Task<IEnumerable<InstitutionWithGradeSectionsDTO>> GetInstitutionsWithGradeSectionsByVillageId(int villageId, int institutionTypeId)
+        {
+            var institutions = (await GetInstitutionsByVillageId(villageId, institutionTypeId)).ToList();
+            if (institutions.Count == 0)
+            {
+                return [];
+            }
+
+            var institutionIds = institutions.Select(x => x.Value).ToList();
+            var gradeSections = await _context.InstitutionGradeSections
+                .Where(x => institutionIds.Contains(x.InstitutionId))
+                .ToListAsync();
+
+            var gradeIds = gradeSections.Select(x => x.GradeId).Distinct().ToList();
+            var gradeNames = new Dictionary<int, string>();
+            if (gradeIds.Count > 0)
+            {
+                var grades = await _db.Connection.QueryAsync<(int Id, string GradeName)>(
+                    @"SELECT Id, GradeName
+                      FROM dbo.Grades
+                      WHERE IsDeleted = 0 AND Id IN @GradeIds",
+                    new { GradeIds = gradeIds },
+                    _db.Transaction);
+                gradeNames = grades.ToDictionary(x => x.Id, x => x.GradeName);
+            }
+
+            var gradesByInstitution = gradeSections
+                .GroupBy(x => x.InstitutionId)
+                .ToDictionary(
+                    g => g.Key,
+                    g => g
+                        .OrderBy(item => item.GradeId)
+                        .Select(item => new PeopleGradeSectionDTO
+                        {
+                            GradeId = item.GradeId,
+                            GradeName = gradeNames.TryGetValue(item.GradeId, out var name) ? name : $"Grade {item.GradeId}",
+                            Sections = item.Sections
+                        }).ToList());
+
+            return institutions.Select(institution => new InstitutionWithGradeSectionsDTO
+            {
+                Value = institution.Value,
+                Text = institution.Text,
+                GradeSections = gradesByInstitution.TryGetValue(institution.Value, out var grades)
+                    ? grades
+                    : []
+            }).ToList();
+        }
+
         public async Task<InstitutionImportResultDTO> BulkImportInstitutions(IEnumerable<InstitutionImportRowDTO> rows, int createdBy)
         {
             var importId = Guid.NewGuid();

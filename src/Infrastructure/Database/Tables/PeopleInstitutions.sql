@@ -8,5 +8,6 @@ Create Table PeopleInstitutions
     BlockId Int Not Null,
     VillageId Int Not Null,
     InstitutionTypeId Int Not Null,
-    InstitutionIds VarChar(2000) Null
+    InstitutionIds VarChar(2000) Null,
+    GradeAndSection Nvarchar(Max) Null
 )

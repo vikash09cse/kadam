@@ -108,6 +108,11 @@ namespace Core.Features.Admin
             return await _institutionRepository.GetInstitutionsByVillageId(villageId, institutionTypeId);
         }
 
+        public async Task<IEnumerable<InstitutionWithGradeSectionsDTO>> GetInstitutionsWithGradeSectionsByVillageId(int villageId, int institutionTypeId)
+        {
+            return await _institutionRepository.GetInstitutionsWithGradeSectionsByVillageId(villageId, institutionTypeId);
+        }
+
         public async Task<ServiceResponseDTO> BulkImportInstitutions(IEnumerable<InstitutionImportRowDTO> rows, int currentUserId)
         {
             var result = await _institutionRepository.BulkImportInstitutions(rows, currentUserId);

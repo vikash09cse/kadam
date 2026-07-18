@@ -172,7 +172,7 @@ namespace Infrastructure
             }
         }
 
-        public async Task<bool> SavePeopleInstitution(PeopleInstitution peopleInstitution)
+        public async Task<bool> SavePeopleInstitution(PeopleInstitution peopleInstitution, IReadOnlyDictionary<int, string>? gradeAndSectionByInstitutionId = null)
         {
             try
             {
@@ -197,12 +197,26 @@ namespace Infrastructure
                     return false;
                 }
 
+                var institutionGradeMap = await _context.InstitutionGradeSections
+                    .Where(x => institutionIds.Contains(x.InstitutionId))
+                    .ToListAsync();
+
                 var existingAssignments = _context.PeopleInstitutions
                     .Where(x => x.UserId == peopleInstitution.UserId);
                 _context.PeopleInstitutions.RemoveRange(existingAssignments);
 
                 foreach (var institution in selectedInstitutions)
                 {
+                    string? gradeAndSectionJson = null;
+                    if (gradeAndSectionByInstitutionId != null
+                        && gradeAndSectionByInstitutionId.TryGetValue(institution.Id, out var providedJson)
+                        && !string.IsNullOrWhiteSpace(providedJson))
+                    {
+                        gradeAndSectionJson = NormalizeAndValidateGradeAndSection(
+                            providedJson,
+                            institutionGradeMap.Where(x => x.InstitutionId == institution.Id).ToList());
+                    }
+
                     _context.PeopleInstitutions.Add(new PeopleInstitution
                     {
                         UserId = peopleInstitution.UserId,
@@ -212,7 +226,8 @@ namespace Infrastructure
                         BlockId = institution.BlockId,
                         VillageId = institution.VillageId,
                         InstitutionTypeId = institution.InstitutionType,
-                        InstitutionIds = institution.Id.ToString()
+                        InstitutionIds = institution.Id.ToString(),
+                        GradeAndSection = gradeAndSectionJson
                     });
                 }
 
@@ -222,6 +237,72 @@ namespace Infrastructure
             {
                 return false;
             }
+        }
+
+        private static string? NormalizeAndValidateGradeAndSection(
+            string providedJson,
+            List<InstitutionGradeSection> allowedGradeSections)
+        {
+            if (allowedGradeSections.Count == 0)
+            {
+                return null;
+            }
+
+            List<PeopleGradeSectionDTO>? requested;
+            try
+            {
+                requested = JsonConvert.DeserializeObject<List<PeopleGradeSectionDTO>>(providedJson);
+            }
+            catch
+            {
+                return null;
+            }
+
+            if (requested == null || requested.Count == 0)
+            {
+                return null;
+            }
+
+            var allowedByGrade = allowedGradeSections
+                .GroupBy(x => x.GradeId)
+                .ToDictionary(
+                    g => g.Key,
+                    g => g.First().Sections
+                        .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                        .ToHashSet(StringComparer.OrdinalIgnoreCase));
+
+            var normalized = new List<PeopleGradeSectionDTO>();
+            foreach (var item in requested)
+            {
+                if (item.GradeId <= 0 || string.IsNullOrWhiteSpace(item.Sections))
+                {
+                    continue;
+                }
+
+                if (!allowedByGrade.TryGetValue(item.GradeId, out var allowedSections))
+                {
+                    continue;
+                }
+
+                var selectedSections = item.Sections
+                    .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                    .Where(section => allowedSections.Contains(section))
+                    .Distinct(StringComparer.OrdinalIgnoreCase)
+                    .ToList();
+
+                if (selectedSections.Count == 0)
+                {
+                    continue;
+                }
+
+                normalized.Add(new PeopleGradeSectionDTO
+                {
+                    GradeId = item.GradeId,
+                    Sections = string.Join(",", selectedSections)
+                });
+            }
+
+            return normalized.Count == 0 ? null : JsonConvert.SerializeObject(normalized);
         }
 
         public async Task<PeopleInstitution?> GetPeopleInstitution(int userId)
@@ -255,6 +336,13 @@ namespace Infrastructure
                 InstitutionTypeId = locationAssignment.InstitutionTypeId,
                 InstitutionIds = string.Join(",", assignedInstitutionIds)
             };
+        }
+
+        public async Task<IEnumerable<PeopleInstitution>> GetPeopleInstitutionAssignments(int userId)
+        {
+            return await _context.PeopleInstitutions
+                .Where(x => x.UserId == userId)
+                .ToListAsync();
         }
 
         public async Task<IEnumerable<DropdownDTO>> GetInstitutionsByIds(IEnumerable<int> institutionIds)

@@ -19,8 +19,9 @@ namespace Core.Abstractions
         Task<UserLoginValidateDTO> ValidateUser(string email);
         Task<IEnumerable<UserProgramDTO>> GetUserPrograms(int userId);
         Task<bool> SaveUserPrograms(IEnumerable<UserProgram> userPrograms);
-        Task<bool> SavePeopleInstitution(PeopleInstitution peopleInstitution);
+        Task<bool> SavePeopleInstitution(PeopleInstitution peopleInstitution, IReadOnlyDictionary<int, string>? gradeAndSectionByInstitutionId = null);
         Task<PeopleInstitution?> GetPeopleInstitution(int userId);
+        Task<IEnumerable<PeopleInstitution>> GetPeopleInstitutionAssignments(int userId);
         Task<IEnumerable<DropdownDTO>> GetInstitutionsByIds(IEnumerable<int> institutionIds);
         #endregion
 
