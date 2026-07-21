@@ -2,11 +2,14 @@
 # This .gitignore file was automatically created by Microsoft(R) Visual Studio.
 ################################################################################
 
-/src/Core/obj
-/src/Infrastructure/bin
-/src/Infrastructure/obj
-/src/WebAPI/bin/Debug/net9.0
-/src/WebAPI/obj
-/src/WebUI/bin
-/src/WebUI/obj
-/.vs
+# Build output
+**/bin/
+**/obj/
+**/artifacts/
+
+# Project / user-specific
+**/Properties/
+*.csproj.user
+
+# Visual Studio
+.vs/
