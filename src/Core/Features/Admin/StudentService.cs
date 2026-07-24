@@ -18,7 +18,6 @@ namespace Core.Features.Admin
 
         public async Task<ServiceResponseDTO> SaveStudent(Student student)
         {
-            int _Id = student.Id;
             //if (await _studentRepository.CheckDuplicateStudent(student.FirstName, student.LastName, student.Age, student.InstitutionId, student.Id))
             //{
             //    return new ServiceResponseDTO(false, AppStatusCodes.BadRequest, true, MessageError.DuplicateStudent);
@@ -39,8 +38,9 @@ namespace Core.Features.Admin
             }
 
             bool isSaved = await _studentRepository.SaveStudent(student);
-            if (isSaved && _Id == 0)
+            if (isSaved && string.IsNullOrWhiteSpace(student.StudentId))
             {
+                // New students, or edits where StudentId was never generated / was wiped earlier
                 await _studentRepository.GenerateStudentId(student.Id);
             }
             return new ServiceResponseDTO(isSaved, isSaved ? AppStatusCodes.Success : AppStatusCodes.Unauthorized, result: student.Id, isSaved ? MessageSuccess.Saved : MessageError.CodeIssue);
@@ -237,6 +237,18 @@ namespace Core.Features.Admin
         public async Task<IEnumerable<KadamProgrammeReportDTO>> GetKadamProgrammeReport(int? userId, KadamProgrammeReportFilterDTO? filter = null)
         {
             return await _studentRepository.GetKadamProgrammeReport(userId, filter);
+        }
+
+        public async Task<IEnumerable<StudentAttendanceSummaryReportDTO>> GetStudentAttendanceSummaryReport(
+            int userId,
+            StudentAttendanceSummaryReportFilterDTO filter)
+        {
+            return await _studentRepository.GetStudentAttendanceSummaryReport(userId, filter);
+        }
+
+        public async Task<IEnumerable<AppGradeSectionDTO>> GetGradeSectionsByInstitutionId(int institutionId)
+        {
+            return await _studentRepository.GetGradeSectionsByInstitutionId(institutionId);
         }
     }
 }

@@ -59,14 +59,14 @@ namespace Infrastructure
 
         public async Task<StudentDeleteResultDTO> DeleteStudentWithLog(int studentRecordId, int deletedBy)
         {
-            using var connection = _context.Database.GetDbConnection();
             var parameters = new DynamicParameters();
             parameters.Add("@StudentRecordId", studentRecordId);
             parameters.Add("@DeletedBy", deletedBy);
 
-            return await connection.QueryFirstOrDefaultAsync<StudentDeleteResultDTO>(
+            return await _db.Connection.QueryFirstOrDefaultAsync<StudentDeleteResultDTO>(
                 "dbo.usp_DeleteStudent",
                 parameters,
+                _db.Transaction,
                 commandType: CommandType.StoredProcedure) ?? new StudentDeleteResultDTO
                 {
                     Success = false,
@@ -88,6 +88,21 @@ namespace Infrastructure
         {
             if (student.Id > 0)
             {
+                // Mobile edit often posts StudentId as empty; do not wipe an existing KP ID.
+                if (string.IsNullOrWhiteSpace(student.StudentId))
+                {
+                    var existingStudentId = await _context.Students
+                        .AsNoTracking()
+                        .Where(x => x.Id == student.Id)
+                        .Select(x => x.StudentId)
+                        .FirstOrDefaultAsync();
+
+                    if (!string.IsNullOrWhiteSpace(existingStudentId))
+                    {
+                        student.StudentId = existingStudentId;
+                    }
+                }
+
                 _context.Students.Update(student);
             }
             else
@@ -99,122 +114,114 @@ namespace Infrastructure
 
         public async Task<IEnumerable<AppInstitutionDTO>> GetInstitutionsByUserId(int userId)
         {
-            using (var connection = _context.Database.GetDbConnection())
+            var parameters = new DynamicParameters();
+            parameters.Add("@UserId", userId);
+
+            using var multi = await _db.Connection.QueryMultipleAsync(
+                "usp_GetInstitutionByUserId",
+                parameters,
+                _db.Transaction,
+                commandType: CommandType.StoredProcedure);
+
+            var institutions = await multi.ReadAsync<AppInstitutionDTO>();
+            var grades = await multi.ReadAsync<AppGradeSectionDTO>();
+
+            var result = institutions.ToList();
+            foreach (var institution in result)
             {
-                var parameters = new DynamicParameters();
-                parameters.Add("@UserId", userId);
-
-                using var multi = await connection.QueryMultipleAsync("usp_GetInstitutionByUserId", parameters, commandType: CommandType.StoredProcedure);
-
-                var institutions = await multi.ReadAsync<AppInstitutionDTO>();
-                var grades = await multi.ReadAsync<AppGradeSectionDTO>();
-
-                var result = institutions.ToList();
-                foreach (var institution in result)
-                {
-                    institution.GradeSections = grades.Where(x => x.InstitutionId == institution.Id).ToList();
-                }
-
-                return result;
+                institution.GradeSections = grades.Where(x => x.InstitutionId == institution.Id).ToList();
             }
+
+            return result;
         }
 
         public async Task<IEnumerable<StudentListDTO>> GetStudentListMobile(int createdBy)
         {
-            using (var connection = _context.Database.GetDbConnection())
-            {
-                var parameters = new DynamicParameters();
-                parameters.Add("@CreatedBy", createdBy);
+            var parameters = new DynamicParameters();
+            parameters.Add("@CreatedBy", createdBy);
 
-                var result = await connection.QueryAsync<StudentListDTO>("usp_StudentList_Mobile", parameters, commandType: CommandType.StoredProcedure);
-
-                return result;
-            }
+            return await _db.Connection.QueryAsync<StudentListDTO>(
+                "usp_StudentList_Mobile",
+                parameters,
+                _db.Transaction,
+                commandType: CommandType.StoredProcedure);
         }
 
         public async Task<IEnumerable<StudentListInstitutionMobileDTO>> GetStudentListMyInstitutionMobile(int? institutionId, int? gradeId, string section, DateTime? fromDate, DateTime? toDate, int? currentStatus, int createdBy)
         {
-            using (var connection = _context.Database.GetDbConnection())
-            {
-                var parameters = new DynamicParameters();
-                parameters.Add("@InstitutionId", institutionId);
-                parameters.Add("@GradeId", gradeId);
-                parameters.Add("@Section", section);
-                parameters.Add("@FromDate", fromDate);
-                parameters.Add("@ToDate", toDate);
-                parameters.Add("@CurrentStatus", currentStatus);
-                parameters.Add("@CreatedBy", createdBy);
+            var parameters = new DynamicParameters();
+            parameters.Add("@InstitutionId", institutionId);
+            parameters.Add("@GradeId", gradeId);
+            parameters.Add("@Section", section);
+            parameters.Add("@FromDate", fromDate);
+            parameters.Add("@ToDate", toDate);
+            parameters.Add("@CurrentStatus", currentStatus);
+            parameters.Add("@CreatedBy", createdBy);
 
-                var result = await connection.QueryAsync<StudentListInstitutionMobileDTO>(
-                    "usp_StudentList_MyInstitution_Mobile",
-                    parameters,
-                    commandType: CommandType.StoredProcedure);
-
-                return result;
-            }
+            return await _db.Connection.QueryAsync<StudentListInstitutionMobileDTO>(
+                "usp_StudentList_MyInstitution_Mobile",
+                parameters,
+                _db.Transaction,
+                commandType: CommandType.StoredProcedure);
         }
 
         public async Task<IEnumerable<AppGradeSectionDTO>> GetInstitutionGradeByStudentId(int studentId)
         {
-            using (var connection = _context.Database.GetDbConnection())
-            {
-                var parameters = new DynamicParameters();
-                parameters.Add("@StudentId", studentId);
+            var parameters = new DynamicParameters();
+            parameters.Add("@StudentId", studentId);
 
-                var result = await connection.QueryAsync<AppGradeSectionDTO>(
-                    "usp_GetInstitutionGradeByStudentId",
-                    parameters,
-                    commandType: CommandType.StoredProcedure);
-
-                return result;
-            }
+            return await _db.Connection.QueryAsync<AppGradeSectionDTO>(
+                "usp_GetInstitutionGradeByStudentId",
+                parameters,
+                _db.Transaction,
+                commandType: CommandType.StoredProcedure);
         }
 
         public async Task<bool> SaveStudentProfilePicture(int id, string profilePicturePath)
         {
-            using (var connection = _context.Database.GetDbConnection())
-            {
-                var parameters = new DynamicParameters();
-                parameters.Add("@Id", id);
-                parameters.Add("@ProfilePicturePath", profilePicturePath);
+            var parameters = new DynamicParameters();
+            parameters.Add("@Id", id);
+            parameters.Add("@ProfilePicturePath", profilePicturePath);
 
-                var result = await connection.ExecuteAsync("usp_StudentProfilePictureSave", parameters, commandType: CommandType.StoredProcedure);
+            var result = await _db.Connection.ExecuteAsync(
+                "usp_StudentProfilePictureSave",
+                parameters,
+                _db.Transaction,
+                commandType: CommandType.StoredProcedure);
 
-                return result > 0;
-            }
+            return result > 0;
         }
 
         public async Task<bool> UpdateStudentPromotion(StudentPromotionUpdateDTO studentPromotionUpdateDTO)
         {
-            using (var connection = _context.Database.GetDbConnection())
-            {
-                var parameters = new DynamicParameters();
-                parameters.Add("@StudentId", studentPromotionUpdateDTO.StudentId);
-                parameters.Add("@PromotionDate", studentPromotionUpdateDTO.PromotionDate);
-                parameters.Add("@GradeId", studentPromotionUpdateDTO.GradeId);
-                parameters.Add("@Section", studentPromotionUpdateDTO.Section);
-                parameters.Add("@ModifyBy", studentPromotionUpdateDTO.ModifyBy);
+            var parameters = new DynamicParameters();
+            parameters.Add("@StudentId", studentPromotionUpdateDTO.StudentId);
+            parameters.Add("@PromotionDate", studentPromotionUpdateDTO.PromotionDate);
+            parameters.Add("@GradeId", studentPromotionUpdateDTO.GradeId);
+            parameters.Add("@Section", studentPromotionUpdateDTO.Section);
+            parameters.Add("@ModifyBy", studentPromotionUpdateDTO.ModifyBy);
 
-                var result = await connection.ExecuteAsync("usp_Student_Promotion_Update", parameters, commandType: CommandType.StoredProcedure);
+            var result = await _db.Connection.ExecuteAsync(
+                "usp_Student_Promotion_Update",
+                parameters,
+                _db.Transaction,
+                commandType: CommandType.StoredProcedure);
 
-                return result > 0;
-            }
+            return result > 0;
         }
 
         public async Task<bool> GenerateStudentId(int studentId)
         {
-            using (var connection = _context.Database.GetDbConnection())
-            {
-                var parameters = new DynamicParameters();
-                parameters.Add("@Id", studentId);
+            var parameters = new DynamicParameters();
+            parameters.Add("@Id", studentId);
 
-                var result = await connection.ExecuteAsync(
-                    "usp_GenerateStudentId",
-                    parameters,
-                    commandType: CommandType.StoredProcedure);
+            var result = await _db.Connection.ExecuteAsync(
+                "usp_GenerateStudentId",
+                parameters,
+                _db.Transaction,
+                commandType: CommandType.StoredProcedure);
 
-                return result > 0;
-            }
+            return result > 0;
         }
         public async Task<DashboardDTO> GetDashboardCount(int createdBy)
         {
@@ -251,36 +258,35 @@ namespace Infrastructure
 
         public async Task<bool> UpdateStudentStatus(StudentStatusUpdateDTO model)
         {
-            using (var connection = _context.Database.GetDbConnection())
-            {
-                var parameters = new DynamicParameters();
-                parameters.Add("@StudentId", model.StudentId);
-                parameters.Add("@Status", model.Status);
-                parameters.Add("@InActiveReason", model.InActiveReason);
-                parameters.Add("@InActiveDate", model.InActiveDate);
-                parameters.Add("@Remarks", model.Remarks);
-                parameters.Add("@UpdatedBy", model.UpdatedBy);
+            var parameters = new DynamicParameters();
+            parameters.Add("@StudentId", model.StudentId);
+            parameters.Add("@Status", model.Status);
+            parameters.Add("@InActiveReason", model.InActiveReason);
+            parameters.Add("@InActiveDate", model.InActiveDate);
+            parameters.Add("@Remarks", model.Remarks);
+            parameters.Add("@UpdatedBy", model.UpdatedBy);
 
-                var result = await connection.ExecuteAsync("usp_Student_Status_Update", parameters, commandType: CommandType.StoredProcedure);
+            var result = await _db.Connection.ExecuteAsync(
+                "usp_Student_Status_Update",
+                parameters,
+                _db.Transaction,
+                commandType: CommandType.StoredProcedure);
 
-                return result > 0;
-            }
+            return result > 0;
         }
 
         public async Task<StudentMainstreamDetailDTO> GetStudentDetailForMainstream(int id)
         {
-            using (var connection = _context.Database.GetDbConnection())
-            {
-                var parameters = new DynamicParameters();
-                parameters.Add("@Id", id);
+            var parameters = new DynamicParameters();
+            parameters.Add("@Id", id);
 
-                var result = await connection.QuerySingleOrDefaultAsync<StudentMainstreamDetailDTO>(
-                    "usp_GetStudentDetailForMainstream",
-                    parameters,
-                    commandType: CommandType.StoredProcedure);
+            var result = await _db.Connection.QuerySingleOrDefaultAsync<StudentMainstreamDetailDTO>(
+                "usp_GetStudentDetailForMainstream",
+                parameters,
+                _db.Transaction,
+                commandType: CommandType.StoredProcedure);
 
-                return result ?? new StudentMainstreamDetailDTO();
-            }
+            return result ?? new StudentMainstreamDetailDTO();
         }
 
         public async Task<bool> SaveStudentMainstream(StudentMainstream studentMainstream)
@@ -316,7 +322,6 @@ namespace Infrastructure
 
         public async Task<IEnumerable<KadamProgrammeReportDTO>> GetKadamProgrammeReport(int? userId, KadamProgrammeReportFilterDTO? filter = null)
         {
-            using var connection = _context.Database.GetDbConnection();
             var parameters = new DynamicParameters();
             parameters.Add("@UserId", userId);
             parameters.Add("@StateId", filter?.StateId);
@@ -326,11 +331,12 @@ namespace Infrastructure
             parameters.Add("@IncludeAll", filter?.IncludeAll ?? true);
             parameters.Add("@IncludeKadam", filter?.IncludeKadam ?? false);
             parameters.Add("@IncludeKadamPlus", filter?.IncludeKadamPlus ?? false);
-            var result = await connection.QueryAsync<KadamProgrammeReportDTO>(
+
+            return await _db.Connection.QueryAsync<KadamProgrammeReportDTO>(
                 "usp_KadamProgrammeReport",
                 parameters,
+                _db.Transaction,
                 commandType: CommandType.StoredProcedure);
-            return result;
         }
 
         private static string? GetDivisionIdsParam(KadamProgrammeReportFilterDTO? filter)
@@ -350,7 +356,6 @@ namespace Infrastructure
 
         public async Task<IEnumerable<StudentAdminListDTO>> GetStudents(int pageNumber, int pageSize, string? studentName, string? studentId, int userId)
         {
-            using var connection = _context.Database.GetDbConnection();
             var parameters = new DynamicParameters();
             parameters.Add("@PageNumber", pageNumber);
             parameters.Add("@PageSize", pageSize);
@@ -358,9 +363,41 @@ namespace Infrastructure
             parameters.Add("@StudentId", string.IsNullOrWhiteSpace(studentId) ? null : studentId.Trim());
             parameters.Add("@UserId", userId);
 
-            return await connection.QueryAsync<StudentAdminListDTO>(
+            return await _db.Connection.QueryAsync<StudentAdminListDTO>(
                 "dbo.usp_GetStudents",
                 parameters,
+                _db.Transaction,
+                commandType: CommandType.StoredProcedure);
+        }
+
+        public async Task<IEnumerable<StudentAttendanceSummaryReportDTO>> GetStudentAttendanceSummaryReport(
+            int userId,
+            StudentAttendanceSummaryReportFilterDTO filter)
+        {
+            var parameters = new DynamicParameters();
+            parameters.Add("@UserId", userId);
+            parameters.Add("@InstitutionId", filter.InstitutionId);
+            parameters.Add("@GradeId", filter.GradeId);
+            parameters.Add("@Section", string.IsNullOrWhiteSpace(filter.Section) ? null : filter.Section.Trim());
+            parameters.Add("@FromDate", filter.FromDate.Date);
+            parameters.Add("@ToDate", filter.ToDate.Date);
+
+            return await _db.Connection.QueryAsync<StudentAttendanceSummaryReportDTO>(
+                "dbo.usp_StudentAttendanceSummaryReport",
+                parameters,
+                _db.Transaction,
+                commandType: CommandType.StoredProcedure);
+        }
+
+        public async Task<IEnumerable<AppGradeSectionDTO>> GetGradeSectionsByInstitutionId(int institutionId)
+        {
+            var parameters = new DynamicParameters();
+            parameters.Add("@InstitutionId", institutionId);
+
+            return await _db.Connection.QueryAsync<AppGradeSectionDTO>(
+                "dbo.usp_GetGradeSectionsByInstitutionId",
+                parameters,
+                _db.Transaction,
                 commandType: CommandType.StoredProcedure);
         }
     }

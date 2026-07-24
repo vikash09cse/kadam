@@ -30,5 +30,7 @@ namespace Core.Abstractions
         Task<bool> HasBaselineDetails(int studentId);
         Task<IEnumerable<KadamProgrammeReportDTO>> GetKadamProgrammeReport(int? userId, KadamProgrammeReportFilterDTO? filter = null);
         Task<IEnumerable<StudentAdminListDTO>> GetStudents(int pageNumber, int pageSize, string? studentName, string? studentId, int userId);
+        Task<IEnumerable<StudentAttendanceSummaryReportDTO>> GetStudentAttendanceSummaryReport(int userId, StudentAttendanceSummaryReportFilterDTO filter);
+        Task<IEnumerable<AppGradeSectionDTO>> GetGradeSectionsByInstitutionId(int institutionId);
     }
 }

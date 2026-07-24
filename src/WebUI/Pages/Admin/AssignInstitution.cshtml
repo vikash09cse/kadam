@@ -406,8 +406,40 @@
                 const isChecked = pageState.selectedInstitutionIds.includes(institution.value)
                     || !!document.getElementById('modalInstitution_' + institution.value)?.checked;
 
+                const allGradesSelected = institution.gradeSections.every(function (grade) {
+                    return (existingMap[grade.gradeId] || []).length > 0;
+                });
+                const allSectionsSelected = institution.gradeSections.every(function (grade) {
+                    const available = grade.availableSections || [];
+                    if (available.length === 0) {
+                        return true;
+                    }
+                    const selected = existingMap[grade.gradeId] || [];
+                    return available.every(function (section) { return selected.indexOf(section) >= 0; });
+                });
+
                 let html = `<div class="grade-section-panel mt-2 ms-4 ${isChecked ? '' : 'd-none'}" data-institution-id="${institution.value}">`;
-                html += '<div class="row g-2"><div class="col-md-4 fw-semibold small">Grades</div><div class="col-md-8 fw-semibold small">Sections</div></div>';
+                html += `
+                    <div class="row g-2 align-items-center mb-1">
+                        <div class="col-md-4">
+                            <div class="form-check">
+                                <input class="form-check-input modal-check-all-grades" type="checkbox"
+                                       data-institution-id="${institution.value}"
+                                       id="checkAllGrades_${institution.value}" ${allGradesSelected ? 'checked' : ''}>
+                                <label class="form-check-label fw-semibold small" for="checkAllGrades_${institution.value}">Check all grades</label>
+                            </div>
+                        </div>
+                        <div class="col-md-8">
+                            <div class="form-check">
+                                <input class="form-check-input modal-check-all-sections" type="checkbox"
+                                       data-institution-id="${institution.value}"
+                                       id="checkAllSections_${institution.value}" ${allSectionsSelected && allGradesSelected ? 'checked' : ''}>
+                                <label class="form-check-label fw-semibold small" for="checkAllSections_${institution.value}">Check all sections</label>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row g-2"><div class="col-md-4 fw-semibold small text-muted">Grades</div><div class="col-md-8 fw-semibold small text-muted">Sections</div></div>
+                `;
 
                 institution.gradeSections.forEach(function (grade) {
                     const selectedForGrade = existingMap[grade.gradeId] || [];
@@ -444,6 +476,69 @@
 
                 html += '</div>';
                 return html;
+            }
+
+            function syncCheckAllState(institutionId) {
+                const gradeCheckboxes = modalInstitutionList.querySelectorAll(
+                    `.modal-grade-checkbox[data-institution-id="${institutionId}"]`
+                );
+                const sectionCheckboxes = modalInstitutionList.querySelectorAll(
+                    `.modal-section-checkbox[data-institution-id="${institutionId}"]`
+                );
+                const checkAllGrades = document.getElementById('checkAllGrades_' + institutionId);
+                const checkAllSections = document.getElementById('checkAllSections_' + institutionId);
+
+                if (checkAllGrades && gradeCheckboxes.length > 0) {
+                    const checkedGrades = Array.from(gradeCheckboxes).filter(function (cb) { return cb.checked; }).length;
+                    checkAllGrades.checked = checkedGrades === gradeCheckboxes.length;
+                    checkAllGrades.indeterminate = checkedGrades > 0 && checkedGrades < gradeCheckboxes.length;
+                }
+
+                if (checkAllSections && sectionCheckboxes.length > 0) {
+                    const checkedSections = Array.from(sectionCheckboxes).filter(function (cb) { return cb.checked; }).length;
+                    checkAllSections.checked = checkedSections === sectionCheckboxes.length;
+                    checkAllSections.indeterminate = checkedSections > 0 && checkedSections < sectionCheckboxes.length;
+                }
+            }
+
+            function setAllGrades(institutionId, checked) {
+                modalInstitutionList.querySelectorAll(
+                    `.modal-grade-checkbox[data-institution-id="${institutionId}"]`
+                ).forEach(function (gradeCheckbox) {
+                    gradeCheckbox.checked = checked;
+                    const gradeId = gradeCheckbox.dataset.gradeId;
+                    modalInstitutionList.querySelectorAll(
+                        `.modal-section-checkbox[data-institution-id="${institutionId}"][data-grade-id="${gradeId}"]`
+                    ).forEach(function (sectionCheckbox) {
+                        sectionCheckbox.disabled = !checked;
+                        sectionCheckbox.checked = checked;
+                    });
+                });
+                syncCheckAllState(institutionId);
+            }
+
+            function setAllSections(institutionId, checked) {
+                if (checked) {
+                    // Enable all grades first so sections can be selected
+                    modalInstitutionList.querySelectorAll(
+                        `.modal-grade-checkbox[data-institution-id="${institutionId}"]`
+                    ).forEach(function (gradeCheckbox) {
+                        gradeCheckbox.checked = true;
+                    });
+                }
+
+                modalInstitutionList.querySelectorAll(
+                    `.modal-section-checkbox[data-institution-id="${institutionId}"]`
+                ).forEach(function (sectionCheckbox) {
+                    sectionCheckbox.disabled = false;
+                    sectionCheckbox.checked = checked;
+                });
+
+                if (!checked) {
+                    // Keep grades as-is; only clear sections
+                }
+
+                syncCheckAllState(institutionId);
             }
 
             function renderAvailableInstitutions() {
@@ -606,11 +701,22 @@
                     if (!target.checked) {
                         panel?.querySelectorAll('input[type="checkbox"]').forEach(function (input) {
                             input.checked = false;
+                            input.indeterminate = false;
                             if (input.classList.contains('modal-section-checkbox')) {
                                 input.disabled = true;
                             }
                         });
                     }
+                }
+
+                if (target.classList.contains('modal-check-all-grades')) {
+                    setAllGrades(target.dataset.institutionId, target.checked);
+                    return;
+                }
+
+                if (target.classList.contains('modal-check-all-sections')) {
+                    setAllSections(target.dataset.institutionId, target.checked);
+                    return;
                 }
 
                 if (target.classList.contains('modal-grade-checkbox')) {
@@ -625,16 +731,22 @@
                             input.checked = false;
                         }
                     });
+                    syncCheckAllState(institutionId);
                 }
 
-                if (target.classList.contains('modal-section-checkbox') && target.checked) {
-                    const gradeCheckbox = document.getElementById(`grade_${target.dataset.institutionId}_${target.dataset.gradeId}`);
-                    if (gradeCheckbox) {
-                        gradeCheckbox.checked = true;
-                        modalInstitutionList.querySelectorAll(
-                            `.modal-section-checkbox[data-institution-id="${target.dataset.institutionId}"][data-grade-id="${target.dataset.gradeId}"]`
-                        ).forEach(function (input) { input.disabled = false; });
+                if (target.classList.contains('modal-section-checkbox')) {
+                    const institutionId = target.dataset.institutionId;
+                    const gradeId = target.dataset.gradeId;
+                    if (target.checked) {
+                        const gradeCheckbox = document.getElementById(`grade_${institutionId}_${gradeId}`);
+                        if (gradeCheckbox) {
+                            gradeCheckbox.checked = true;
+                            modalInstitutionList.querySelectorAll(
+                                `.modal-section-checkbox[data-institution-id="${institutionId}"][data-grade-id="${gradeId}"]`
+                            ).forEach(function (input) { input.disabled = false; });
+                        }
                     }
+                    syncCheckAllState(institutionId);
                 }
             });
 

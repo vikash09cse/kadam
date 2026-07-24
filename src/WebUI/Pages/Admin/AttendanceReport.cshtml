@@ -1,0 +1,258 @@
+@page
+@model WebUI.Pages.Admin.AttendanceReportModel
+@{
+    ViewData["Title"] = "Student Attendance Report";
+}
+
+<div class="page-content">
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-12">
+                <div class="page-title-box d-sm-flex align-items-center justify-content-between">
+                    <h4 class="mb-sm-0">Student Attendance Report</h4>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-body">
+                        <p class="text-muted mb-4">
+                            View attendance summary by student for a date range (Present, Absent, Holiday counts and attendance %).
+                            Non-admin users only see institutions and grade/sections assigned to them. Default period is the current month.
+                        </p>
+
+                        <form method="post" id="attendanceReportForm">
+                            @Html.AntiForgeryToken()
+                            <div asp-validation-summary="All" class="text-danger mb-3"></div>
+
+                            <div class="row g-3">
+                                <div class="col-md-4">
+                                    <label asp-for="InstitutionId" class="form-label">Institution <span class="text-danger">*</span></label>
+                                    <select asp-for="InstitutionId" id="InstitutionId" class="form-select institution-select2">
+                                        <option value="">Select Institution</option>
+                                        @foreach (var institution in Model.Institutions)
+                                        {
+                                            <option value="@institution.Value">@institution.Text</option>
+                                        }
+                                    </select>
+                                </div>
+
+                                <div class="col-md-4">
+                                    <label asp-for="GradeId" class="form-label">Grade</label>
+                                    <select asp-for="GradeId" id="GradeId" class="form-select">
+                                        <option value="0">All Grades</option>
+                                        @foreach (var grade in Model.Grades)
+                                        {
+                                            <option value="@grade.Value">@grade.Text</option>
+                                        }
+                                    </select>
+                                </div>
+
+                                <div class="col-md-4">
+                                    <label asp-for="Section" class="form-label">Section</label>
+                                    <select asp-for="Section" id="Section" class="form-select">
+                                        <option value="">All Sections</option>
+                                        @foreach (var sectionName in Model.SectionOptions)
+                                        {
+                                            <option value="@sectionName">@sectionName</option>
+                                        }
+                                    </select>
+                                </div>
+
+                                <div class="col-md-3">
+                                    <label asp-for="FromDate" class="form-label">From Date <span class="text-danger">*</span></label>
+                                    <input asp-for="FromDate" type="date" class="form-control" />
+                                </div>
+
+                                <div class="col-md-3">
+                                    <label asp-for="ToDate" class="form-label">To Date <span class="text-danger">*</span></label>
+                                    <input asp-for="ToDate" type="date" class="form-control" />
+                                </div>
+
+                                <div class="col-md-6 d-flex align-items-end gap-2">
+                                    <button type="submit" asp-page-handler="Search" class="btn btn-primary">
+                                        <i class="mdi mdi-magnify"></i> Search
+                                    </button>
+                                    <button type="submit" asp-page-handler="DownloadExcel" class="btn btn-success">
+                                        <i class="mdi mdi-file-excel"></i> Download Excel
+                                    </button>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        @if (Model.HasSearched)
+        {
+            <div class="row mt-3">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <h5 class="mb-0">Results (@Model.ReportRows.Count)</h5>
+                            </div>
+                            <div class="table-responsive table-card">
+                                <table class="table table-nowrap table-striped align-middle mb-0" aria-label="Attendance summary">
+                                    <thead class="table-primary">
+                                        <tr>
+                                            <th>Sr.No.</th>
+                                            <th>Student Id</th>
+                                            <th>Student Name</th>
+                                            <th>Institution</th>
+                                            <th>Grade</th>
+                                            <th>Section</th>
+                                            <th class="text-end">Present</th>
+                                            <th class="text-end">Absent</th>
+                                            <th class="text-end">Holiday</th>
+                                            <th class="text-end">Working Days</th>
+                                            <th class="text-end">Attendance %</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @if (Model.ReportRows.Count == 0)
+                                        {
+                                            <tr>
+                                                <td colspan="11" class="text-center text-muted py-4">No students found for the selected filters.</td>
+                                            </tr>
+                                        }
+                                        else
+                                        {
+                                            var sr = 1;
+                                            foreach (var row in Model.ReportRows)
+                                            {
+                                                <tr>
+                                                    <td>@sr</td>
+                                                    <td>@row.StudentId</td>
+                                                    <td>@row.StudentName</td>
+                                                    <td>@row.InstitutionName</td>
+                                                    <td>@row.GradeName</td>
+                                                    <td>@row.Section</td>
+                                                    <td class="text-end">@row.PresentCount</td>
+                                                    <td class="text-end">@row.AbsentCount</td>
+                                                    <td class="text-end">@row.HolidayCount</td>
+                                                    <td class="text-end">@row.WorkingDays</td>
+                                                    <td class="text-end">@row.AttendancePercent.ToString("0.##")</td>
+                                                </tr>
+                                                sr++;
+                                            }
+                                        }
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+</div>
+
+@section Scripts {
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+    <link href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css" rel="stylesheet" />
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+    <style>
+        .select2-container {
+            width: 100% !important;
+        }
+        .select2-container--bootstrap-5 .select2-selection {
+            min-height: 38px;
+        }
+    </style>
+    <script>
+        (function () {
+            const institutionSelect = document.getElementById('InstitutionId');
+            const gradeSelect = document.getElementById('GradeId');
+            const sectionSelect = document.getElementById('Section');
+            const selectedSection = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.Section ?? string.Empty));
+
+            function clearOptions(select, keepFirst) {
+                while (select.options.length > (keepFirst ? 1 : 0)) {
+                    select.remove(keepFirst ? 1 : 0);
+                }
+            }
+
+            function setSections(sections) {
+                clearOptions(sectionSelect, true);
+                (sections || []).forEach(function (name) {
+                    const opt = document.createElement('option');
+                    opt.value = name;
+                    opt.textContent = name;
+                    if (selectedSection && selectedSection === name) {
+                        opt.selected = true;
+                    }
+                    sectionSelect.appendChild(opt);
+                });
+            }
+
+            function setGrades(grades) {
+                clearOptions(gradeSelect, true);
+                (grades || []).forEach(function (g) {
+                    const opt = document.createElement('option');
+                    opt.value = g.id;
+                    opt.textContent = g.gradeName;
+                    gradeSelect.appendChild(opt);
+                });
+                setSections([]);
+            }
+
+            $('#InstitutionId').select2({
+                theme: 'bootstrap-5',
+                width: '100%',
+                placeholder: 'Search institution...',
+                allowClear: true,
+                minimumResultsForSearch: 0
+            });
+
+            $('#InstitutionId').on('change', function () {
+                const value = $(this).val() || '0';
+                loadGradeSections(value);
+            });
+
+            async function loadGradeSections(institutionId) {
+                if (!institutionId || institutionId === '0') {
+                    setGrades([]);
+                    return;
+                }
+
+                try {
+                    const response = await fetch('?handler=GradeSections&institutionId=' + encodeURIComponent(institutionId));
+                    if (!response.ok) {
+                        setGrades([]);
+                        return;
+                    }
+                    const data = await response.json();
+                    setGrades(data);
+                } catch (e) {
+                    setGrades([]);
+                }
+            }
+
+            gradeSelect.addEventListener('change', async function () {
+                const institutionId = institutionSelect.value;
+                if (!institutionId || institutionId === '0') {
+                    setSections([]);
+                    return;
+                }
+
+                try {
+                    const response = await fetch('?handler=GradeSections&institutionId=' + encodeURIComponent(institutionId));
+                    if (!response.ok) {
+                        setSections([]);
+                        return;
+                    }
+                    const data = await response.json();
+                    const gradeId = parseInt(gradeSelect.value || '0', 10);
+                    const match = (data || []).find(function (g) { return g.id === gradeId; });
+                    setSections(match ? match.sections : []);
+                } catch (e) {
+                    setSections([]);
+                }
+            });
+        })();
+    </script>
+}
