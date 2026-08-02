@@ -106,11 +106,16 @@ BEGIN
         CAST(sge.ExitStepId AS VARCHAR) AS ExitLevelStep,
         CAST(ongoing.LastStepId AS VARCHAR) AS OngoingStep,
         CAST(ongoing.StepCount AS VARCHAR) AS NoOfStepsCompleted,
-        '' AS GradeTest1,
-        '' AS GradeTest2,
-        '' AS GradeTest3,
-        '' AS GradeTest4,
-        '' AS GradeTest5,
+        CAST(gt.GradeTest1 AS VARCHAR) AS GradeTest1,
+        CONVERT(VARCHAR(10), gt.GradeTest1Date, 120) AS GradeTest1Date,
+        CAST(gt.GradeTest2 AS VARCHAR) AS GradeTest2,
+        CONVERT(VARCHAR(10), gt.GradeTest2Date, 120) AS GradeTest2Date,
+        CAST(gt.GradeTest3 AS VARCHAR) AS GradeTest3,
+        CONVERT(VARCHAR(10), gt.GradeTest3Date, 120) AS GradeTest3Date,
+        CAST(gt.GradeTest4 AS VARCHAR) AS GradeTest4,
+        CONVERT(VARCHAR(10), gt.GradeTest4Date, 120) AS GradeTest4Date,
+        CAST(gt.GradeTest5 AS VARCHAR) AS GradeTest5,
+        CONVERT(VARCHAR(10), gt.GradeTest5Date, 120) AS GradeTest5Date,
         '' AS ProgressSpeed,
         '' AS ProgressColor,
         '' AS MonthsRequiredToReachAgeAppropriateLevel,
@@ -169,6 +174,35 @@ BEGIN
         FROM StudentProgressSteps
         GROUP BY StudentId
     ) ongoing ON s.Id = ongoing.StudentId
+    LEFT JOIN (
+        SELECT
+            StudentId,
+            MAX(CASE WHEN GradeLevelId = 1 THEN Pct END) AS GradeTest1,
+            MAX(CASE WHEN GradeLevelId = 1 THEN CompletedDate END) AS GradeTest1Date,
+            MAX(CASE WHEN GradeLevelId = 2 THEN Pct END) AS GradeTest2,
+            MAX(CASE WHEN GradeLevelId = 2 THEN CompletedDate END) AS GradeTest2Date,
+            MAX(CASE WHEN GradeLevelId = 3 THEN Pct END) AS GradeTest3,
+            MAX(CASE WHEN GradeLevelId = 3 THEN CompletedDate END) AS GradeTest3Date,
+            MAX(CASE WHEN GradeLevelId = 4 THEN Pct END) AS GradeTest4,
+            MAX(CASE WHEN GradeLevelId = 4 THEN CompletedDate END) AS GradeTest4Date,
+            MAX(CASE WHEN GradeLevelId = 5 THEN Pct END) AS GradeTest5,
+            MAX(CASE WHEN GradeLevelId = 5 THEN CompletedDate END) AS GradeTest5Date
+        FROM (
+            SELECT
+                StudentId,
+                GradeLevelId,
+                CASE
+                    WHEN SUM(TotalMarks) > 0
+                    THEN ROUND((SUM(ObtainedMarks) / SUM(TotalMarks)) * 100, 0)
+                    ELSE NULL
+                END AS Pct,
+                MAX(CompletedDate) AS CompletedDate
+            FROM StudentGradeTestDetails
+            WHERE IsDeleted = 0
+            GROUP BY StudentId, GradeLevelId
+        ) gradeTests
+        GROUP BY StudentId
+    ) gt ON s.Id = gt.StudentId
     LEFT JOIN (
         SELECT StudentId, SubjectId, ObtainedMarks
         FROM StudentBaselineDetails
