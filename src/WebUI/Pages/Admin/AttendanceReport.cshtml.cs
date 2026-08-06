@@ -65,7 +65,7 @@ namespace WebUI.Pages.Admin
                 return RedirectToPage("/Login");
             }
 
-            if (!ValidateFilters())
+            if (!await ValidateFiltersAsync(userId))
             {
                 await LoadFiltersAsync(userId);
                 return Page();
@@ -84,7 +84,7 @@ namespace WebUI.Pages.Admin
                 return RedirectToPage("/Login");
             }
 
-            if (!ValidateFilters())
+            if (!await ValidateFiltersAsync(userId))
             {
                 await LoadFiltersAsync(userId);
                 return Page();
@@ -155,6 +155,11 @@ namespace WebUI.Pages.Admin
             else
             {
                 var institutions = await studentService.GetInstitutionsByUserId(userId);
+                if (!institutions.Any(x => x.Id == institutionId))
+                {
+                    return new JsonResult(Array.Empty<object>());
+                }
+
                 gradeSections = institutions
                     .FirstOrDefault(x => x.Id == institutionId)?
                     .GradeSections
@@ -187,11 +192,24 @@ namespace WebUI.Pages.Admin
             ToDate = ToDate.Date
         };
 
-        private bool ValidateFilters()
+        private async Task<bool> ValidateFiltersAsync(int userId)
         {
             if (InstitutionId <= 0)
             {
                 ModelState.AddModelError(string.Empty, "Please select an institution.");
+            }
+            else
+            {
+                IsAdmin = await studentService.IsAdminUser(userId);
+                if (!IsAdmin)
+                {
+                    var allowedInstitutions = await studentService.GetInstitutionsByUserId(userId);
+                    if (!allowedInstitutions.Any(x => x.Id == InstitutionId))
+                    {
+                        ModelState.AddModelError(string.Empty, "You do not have access to the selected institution.");
+                        InstitutionId = 0;
+                    }
+                }
             }
 
             if (FromDate == default || ToDate == default)

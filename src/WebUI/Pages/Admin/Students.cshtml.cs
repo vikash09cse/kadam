@@ -31,9 +31,13 @@ namespace WebUI.Pages.Admin
 
                 return new JsonResult(result);
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                return new JsonResult(new { success = false, message = "An error occurred while fetching the student list." });
+                return new JsonResult(new
+                {
+                    success = false,
+                    message = $"An error occurred while fetching the student list. {ex.Message}"
+                });
             }
         }
 

@@ -88,10 +88,15 @@ namespace Infrastructure
                 P.Add(DBConstant.Param.ModifyDate, user.ModifyDate);
                 P.Add(DBConstant.Param.ModifyBy, user.ModifyBy);
                 P.Add(DBConstant.Param.LastGeneratedPassword, user.LastGeneratedPassword);
-                var rowEffected = await _db.Connection.ExecuteAsync(SP, P, _db.Transaction, null, CommandType.StoredProcedure);
-                return rowEffected > 0;
+                var savedId = await _db.Connection.QuerySingleOrDefaultAsync<int>(SP, P, _db.Transaction, null, CommandType.StoredProcedure);
+                if (savedId > 0)
+                {
+                    user.Id = savedId;
+                    return true;
+                }
+                return false;
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 return false;
             }
@@ -362,6 +367,84 @@ namespace Infrastructure
                     Text = i.InstitutionName
                 })
                 .ToListAsync();
+        }
+
+        public async Task<IEnumerable<int>> GetPeopleDivisionIds(int userId)
+        {
+            return await _context.PeopleDivisions
+                .Where(x => x.UserId == userId)
+                .Select(x => x.DivisionId)
+                .Distinct()
+                .ToListAsync();
+        }
+
+        public async Task<bool> SavePeopleDivisions(int userId, IEnumerable<int> divisionIds)
+        {
+            try
+            {
+                var ids = (divisionIds ?? [])
+                    .Where(id => id > 0)
+                    .Distinct()
+                    .ToList();
+
+                if (userId <= 0 || ids.Count == 0)
+                {
+                    return false;
+                }
+
+                var validDivisionIds = await _context.Divisions
+                    .Where(d => ids.Contains(d.Id) && !d.IsDeleted)
+                    .Select(d => d.Id)
+                    .ToListAsync();
+
+                if (validDivisionIds.Count == 0)
+                {
+                    return false;
+                }
+
+                var existing = _context.PeopleDivisions.Where(x => x.UserId == userId);
+                _context.PeopleDivisions.RemoveRange(existing);
+
+                foreach (var divisionId in validDivisionIds)
+                {
+                    _context.PeopleDivisions.Add(new PeopleDivision
+                    {
+                        UserId = userId,
+                        DivisionId = divisionId
+                    });
+                }
+
+                await _context.SaveChangesAsync();
+                return true;
+            }
+            catch (Exception)
+            {
+                return false;
+            }
+        }
+
+        public async Task ClearPeopleInstitutions(int userId)
+        {
+            var existing = _context.PeopleInstitutions.Where(x => x.UserId == userId).ToList();
+            if (existing.Count == 0)
+            {
+                return;
+            }
+
+            _context.PeopleInstitutions.RemoveRange(existing);
+            await _context.SaveChangesAsync();
+        }
+
+        public async Task ClearPeopleDivisions(int userId)
+        {
+            var existing = _context.PeopleDivisions.Where(x => x.UserId == userId).ToList();
+            if (existing.Count == 0)
+            {
+                return;
+            }
+
+            _context.PeopleDivisions.RemoveRange(existing);
+            await _context.SaveChangesAsync();
         }
 
         #endregion

@@ -40,7 +40,7 @@
                 .catch(error => $q.reject(error));
         }
 
-        function saveUser(userInfo, autoGeneratePassword) {
+        function saveUser(userInfo, autoGeneratePassword, divisionIds) {
             var payload = angular.copy(userInfo);
             var pwd = payload.password;
             delete payload.password;
@@ -49,7 +49,8 @@
             var requestData = {
                 user: payload,
                 password: autoGeneratePassword ? null : (pwd || null),
-                autoGeneratePassword: !!autoGeneratePassword
+                autoGeneratePassword: !!autoGeneratePassword,
+                divisionIds: divisionIds || []
             };
 
             return $http.post('?handler=SaveUser', requestData, {

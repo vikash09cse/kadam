@@ -20,7 +20,11 @@ BEGIN
         r.RoleName,
         rr.RoleName AS ReporteeRoleName,
         u.LastGeneratedPassword,
-        ISNULL(inst.AssignedInstitutions, '') AS AssignedInstitutions
+        CASE
+            WHEN ISNULL(r.AllowMultipleDivision, 0) = 1
+                THEN ISNULL(divs.AssignedDivisions, '')
+            ELSE ISNULL(inst.AssignedInstitutions, '')
+        END AS AssignedInstitutions
     FROM Users u
     LEFT JOIN Roles r ON u.RoleId = r.Id
     LEFT JOIN Roles rr ON u.ReporteeRoleId = rr.Id
@@ -37,6 +41,15 @@ BEGIN
               AND LTRIM(RTRIM(ISNULL(pi.InstitutionIds, ''))) <> ''
         ) x
     ) inst
+    OUTER APPLY (
+        SELECT STRING_AGG(x.DivisionName, ', ') WITHIN GROUP (ORDER BY x.DivisionName) AS AssignedDivisions
+        FROM (
+            SELECT DISTINCT d.DivisionName
+            FROM dbo.PeopleDivisions pd
+            INNER JOIN dbo.Divisions d ON d.Id = pd.DivisionId AND d.IsDeleted = 0
+            WHERE pd.UserId = u.Id
+        ) x
+    ) divs
     WHERE u.IsDeleted = 0
     ORDER BY u.Id;
 END

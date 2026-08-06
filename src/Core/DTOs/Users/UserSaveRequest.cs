@@ -6,5 +6,7 @@ namespace Core.DTOs.Users
         public string? Password { get; set; }
         /// <summary>When true, a new secure password is generated (manual password ignored).</summary>
         public bool AutoGeneratePassword { get; set; }
+        /// <summary>Division assignments for DO/SPM roles.</summary>
+        public List<int> DivisionIds { get; set; } = [];
     }
 }

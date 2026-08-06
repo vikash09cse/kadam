@@ -1,0 +1,83 @@
+@page
+@model WebUI.Pages.Admin.AssignDivisionModel
+@{
+    ViewData["Title"] = "Assign Division";
+}
+
+<div class="page-content">
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-12">
+                <div class="page-title-box d-sm-flex align-items-center justify-content-between">
+                    <div>
+                        <h4 class="mb-sm-0">Assign Division</h4>
+                        <p class="text-muted mb-0">Select one or more divisions for this user.</p>
+                    </div>
+                    <div class="text-end">
+                        <a href="/Admin/Peoples" class="btn btn-outline-secondary">
+                            <i class="mdi mdi-arrow-left"></i> Back to Peoples
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        @if (TempData["SuccessMessage"] != null)
+        {
+            <div class="alert alert-success">@TempData["SuccessMessage"]</div>
+        }
+
+        @if (TempData["ErrorMessage"] != null)
+        {
+            <div class="alert alert-danger">@TempData["ErrorMessage"]</div>
+        }
+
+        <div class="row">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-body">
+                        <div class="row g-3 mb-4">
+                            <div class="col-md-6">
+                                <label class="form-label">Person Name</label>
+                                <div class="form-control bg-light">@Model.UserFullName</div>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Assigned Role</label>
+                                <div class="form-control bg-light">@Model.RoleName</div>
+                            </div>
+                        </div>
+
+                        <form method="post" asp-page-handler="Save">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" asp-for="Id" />
+
+                            <div class="mb-3">
+                                <label class="form-label d-block">Divisions <span class="text-danger">*</span></label>
+                                <div class="d-flex flex-wrap gap-3 border rounded p-3" style="max-height: 320px; overflow-y: auto;">
+                                    @foreach (var division in Model.Divisions)
+                                    {
+                                        var isChecked = Model.SelectedDivisionIds.Contains(division.Value);
+                                        <div class="form-check">
+                                            <input type="checkbox"
+                                                   class="form-check-input"
+                                                   name="SelectedDivisionIds"
+                                                   value="@division.Value"
+                                                   id="division_@division.Value"
+                                                   @(isChecked ? "checked" : null) />
+                                            <label class="form-check-label" for="division_@division.Value">@division.Text</label>
+                                        </div>
+                                    }
+                                </div>
+                            </div>
+
+                            <div class="mt-4 text-end">
+                                <a href="/Admin/Peoples" class="btn btn-light me-2">Cancel</a>
+                                <button type="submit" class="btn btn-primary">Save Assignment</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

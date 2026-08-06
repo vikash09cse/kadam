@@ -265,6 +265,7 @@
                                     <select class="form-select" id="roleId" name="roleId"
                                             ng-model="vm.userInfo.roleId"
                                             ng-options="role.value as role.text for role in vm.roles"
+                                            ng-change="vm.onRoleChange()"
                                             required>
                                         <option value="">Select Role</option>
                                     </select>
@@ -284,6 +285,26 @@
                                     </select>
                                     <div class="error-messages">
                                         <small class="text-danger" ng-if="vm.isSubmit && vm.peopleForm.reporteeRoleId.$error.required">Required.</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row" ng-if="vm.isDivisionScopedRole()">
+                            <div class="col-12">
+                                <div class="form-group mb-3">
+                                    <label class="form-label d-block">Divisions<span class="text-danger">*</span></label>
+                                    <div class="d-flex flex-wrap gap-3 border rounded p-2" style="max-height: 150px; overflow-y: auto;">
+                                        <div class="form-check" ng-repeat="division in vm.divisions">
+                                            <input type="checkbox"
+                                                   class="form-check-input"
+                                                   id="peopleDivision_{{division.value}}"
+                                                   ng-checked="vm.isDivisionSelected(division.value)"
+                                                   ng-click="vm.toggleDivision(division.value)">
+                                            <label class="form-check-label" for="peopleDivision_{{division.value}}">{{division.text}}</label>
+                                        </div>
+                                    </div>
+                                    <div class="error-messages">
+                                        <small class="text-danger" ng-if="vm.isSubmit && (!vm.selectedDivisionIds || vm.selectedDivisionIds.length === 0)">Please select at least one division.</small>
                                     </div>
                                 </div>
                             </div>

@@ -69,12 +69,25 @@
                 
                 <form name="roleForm" ng-submit="vm.submitRoleForm(roleForm)" novalidate>
                     <div class="modal-body py-2">
-                        <div class="form-group row">
+                        <div class="form-group row mb-3">
                             <div class="col">
                                 <label for="roleName">Role Name<span class="text-danger">*</span></label>
                                 <input type="text" class="form-control" id="roleName" name="roleName" 
                                        ng-model="vm.roleInfo.roleName" required>
                                 <span class="text-danger" ng-show="vm.isSubmit && roleForm.roleName.$error.required">Required.</span>
+                            </div>
+                        </div>
+                        <div class="form-group row">
+                            <div class="col">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="allowMultipleDivision" name="allowMultipleDivision"
+                                           ng-model="vm.roleInfo.allowMultipleDivision"
+                                           ng-true-value="true" ng-false-value="false">
+                                    <label class="form-check-label" for="allowMultipleDivision">
+                                        Allow multiple division
+                                    </label>
+                                </div>
+                                <small class="text-muted">When enabled, people with this role are assigned divisions instead of institutions.</small>
                             </div>
                         </div>
                     </div>
@@ -300,7 +313,8 @@
                 vm.resetForm = function() {
                     vm.roleInfo = {
                         id: 0,
-                        roleName: ''
+                        roleName: '',
+                        allowMultipleDivision: false
                     };
                 };
 

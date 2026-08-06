@@ -23,7 +23,11 @@ namespace Core.Features.Admin
         {
             return await _adminRepository.GetUser(id);
         }
-        public async Task<ServiceResponseDTO> SaveUser(Users user, string? password = null, bool autoGeneratePassword = false)
+        public async Task<ServiceResponseDTO> SaveUser(
+            Users user,
+            string? password = null,
+            bool autoGeneratePassword = false,
+            IEnumerable<int>? divisionIds = null)
         {
             if (await _adminRepository.CheckUserExist(user.Email, user.Id))
             {
@@ -34,6 +38,18 @@ namespace Core.Features.Admin
             user.Grade = "";
             user.Section = "";
             user.GradeSection = "";
+
+            var role = user.RoleId > 0 ? await _adminRepository.GetRole(user.RoleId) : null;
+            var isDivisionScoped = RoleNames.IsDivisionScopedRole(role);
+            var selectedDivisionIds = (divisionIds ?? [])
+                .Where(id => id > 0)
+                .Distinct()
+                .ToList();
+
+            if (isDivisionScoped && selectedDivisionIds.Count == 0)
+            {
+                return new ServiceResponseDTO(false, AppStatusCodes.BadRequest, false, "Please select at least one division for this role.");
+            }
 
             string? plainPasswordForReturn = null;
             Users? existing = null;
@@ -105,10 +121,103 @@ namespace Core.Features.Admin
             user.UserStatus = 1;
 
             bool isSaved = await _adminRepository.SaveUser(user);
+            if (isSaved && user.Id > 0)
+            {
+                if (isDivisionScoped)
+                {
+                    var divisionsSaved = await _adminRepository.SavePeopleDivisions(user.Id, selectedDivisionIds);
+                    if (!divisionsSaved)
+                    {
+                        return new ServiceResponseDTO(false, AppStatusCodes.BadRequest, false, "User saved, but division assignment failed. Please assign divisions again.");
+                    }
+                    await _adminRepository.ClearPeopleInstitutions(user.Id);
+                }
+                else
+                {
+                    await _adminRepository.ClearPeopleDivisions(user.Id);
+                }
+            }
+
             object resultPayload = isSaved
                 ? new { generatedPassword = plainPasswordForReturn }
                 : false;
             return new ServiceResponseDTO(isSaved, isSaved ? AppStatusCodes.Success : AppStatusCodes.Unauthorized, resultPayload, isSaved ? MessageSuccess.Saved : MessageError.CodeIssue);
+        }
+
+        public async Task<IEnumerable<int>> GetPeopleDivisionIds(int userId)
+        {
+            return await _adminRepository.GetPeopleDivisionIds(userId);
+        }
+
+        public async Task<bool> IsDivisionScopedUser(int userId)
+        {
+            if (userId <= 0)
+            {
+                return false;
+            }
+
+            var user = await _adminRepository.GetUser(userId);
+            if (user == null || user.Id == 0 || user.RoleId <= 0)
+            {
+                return false;
+            }
+
+            var role = await _adminRepository.GetRole(user.RoleId);
+            return RoleNames.IsDivisionScopedRole(role);
+        }
+
+        /// <summary>
+        /// Active divisions available for filter UIs.
+        /// Division-scoped roles (DO/SPM / AllowMultipleDivision) only see PeopleDivisions assignments.
+        /// </summary>
+        public async Task<IEnumerable<DropdownDTO>> GetDivisionsForUser(int userId)
+        {
+            var allActive = (await _adminRepository.GetDivisionsByStatus(Enums.Status.Active)).ToList();
+            if (!await IsDivisionScopedUser(userId))
+            {
+                return allActive;
+            }
+
+            var assignedIds = (await _adminRepository.GetPeopleDivisionIds(userId)).ToHashSet();
+            if (assignedIds.Count == 0)
+            {
+                return [];
+            }
+
+            return allActive.Where(d => assignedIds.Contains(d.Value)).ToList();
+        }
+
+        public async Task<ServiceResponseDTO> SavePeopleDivisions(int userId, IEnumerable<int> divisionIds)
+        {
+            var ids = (divisionIds ?? [])
+                .Where(id => id > 0)
+                .Distinct()
+                .ToList();
+
+            if (userId <= 0 || ids.Count == 0)
+            {
+                return new ServiceResponseDTO(false, AppStatusCodes.BadRequest, false, "Please select at least one division.");
+            }
+
+            var user = await _adminRepository.GetUser(userId);
+            if (user == null || user.Id == 0)
+            {
+                return new ServiceResponseDTO(false, AppStatusCodes.BadRequest, false, MessageError.InvalidData);
+            }
+
+            var role = await _adminRepository.GetRole(user.RoleId);
+            if (!RoleNames.IsDivisionScopedRole(role))
+            {
+                return new ServiceResponseDTO(false, AppStatusCodes.BadRequest, false, "Division assignment is only allowed for roles with Allow Multiple Division enabled.");
+            }
+
+            bool isSaved = await _adminRepository.SavePeopleDivisions(userId, ids);
+            if (isSaved)
+            {
+                await _adminRepository.ClearPeopleInstitutions(userId);
+            }
+
+            return new ServiceResponseDTO(isSaved, isSaved ? AppStatusCodes.Success : AppStatusCodes.Unauthorized, isSaved, isSaved ? MessageSuccess.Saved : MessageError.CodeIssue);
         }
 
         public async Task<ServiceResponseDTO> ResetUserPassword(int userId)

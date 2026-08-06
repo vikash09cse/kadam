@@ -52,7 +52,7 @@ namespace WebUI.Pages.Admin
                     "Email",
                     "Role",
                     "Reportee Role",
-                    "Assigned Institutions",
+                    "Assigned Institutions / Divisions",
                     "Password (last set)"
                 };
 
@@ -106,12 +106,14 @@ namespace WebUI.Pages.Admin
                 Genders = EnumHelper<Gender>.GetEnumDropdownList(),
                 Roles = roles,
                 ReportRoles = roles,
+                Divisions = await _adminService.GetDivisionsByStatus(Enums.Status.Active),
                 UserInfo = new Core.Entities.Users()
             };
             if (id > 0)
             {
                 response.UserInfo = await _adminService.GetUser(id);
                 response.UserInfo.LastGeneratedPassword = null;
+                response.SelectedDivisionIds = (await _adminService.GetPeopleDivisionIds(id)).ToList();
             }
             return new JsonResult(response);
         }
@@ -154,7 +156,11 @@ namespace WebUI.Pages.Admin
                     user.ModifyBy = _authenticationService.GetCurrentUserId();
                 }
 
-                var result = await _adminService.SaveUser(user, userRequest.Password, userRequest.AutoGeneratePassword);
+                var result = await _adminService.SaveUser(
+                    user,
+                    userRequest.Password,
+                    userRequest.AutoGeneratePassword,
+                    userRequest.DivisionIds);
                 return new JsonResult(result);
             }
             catch (Exception ex)

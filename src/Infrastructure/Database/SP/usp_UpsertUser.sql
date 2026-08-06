@@ -26,7 +26,7 @@ Create Or Alter Procedure [dbo].[usp_UpsertUser]
 )
 AS
 BEGIN
-    IF @Id = 0
+    IF @Id = 0 OR @Id IS NULL
     BEGIN
         -- Insert new user
         INSERT INTO Users (
@@ -40,7 +40,9 @@ BEGIN
             @Phone, @AlternatePhone, @Gender, @Grade, @Section, @GradeSection, 
             @DivisionId, @RoleId, @ReporteeRoleId, @UserStatus, @ActivityType, 
             0, GETDATE(), @CreatedBy, @LastGeneratedPassword
-        )
+        );
+
+        SET @Id = SCOPE_IDENTITY();
     END
     ELSE
     BEGIN
@@ -69,4 +71,7 @@ BEGIN
             ModifyBy = @ModifyBy
         WHERE Id = @Id
     END
-END 
+
+    SELECT @Id AS Id;
+END
+ 

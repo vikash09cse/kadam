@@ -13,6 +13,7 @@ BEGIN
          u.Id, Email, UserName, FirstName, LastName, 
         Phone, AlternatePhone, Gender, 
         r.RoleName AS RoleName, rr.RoleName AS ReporteeRoleName,
+        ISNULL(r.AllowMultipleDivision, 0) AS AllowMultipleDivision,
         u.LastGeneratedPassword,
         COUNT(*) OVER() AS TotalCount
     FROM Users u 

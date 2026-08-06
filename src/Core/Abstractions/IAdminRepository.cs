@@ -23,6 +23,10 @@ namespace Core.Abstractions
         Task<PeopleInstitution?> GetPeopleInstitution(int userId);
         Task<IEnumerable<PeopleInstitution>> GetPeopleInstitutionAssignments(int userId);
         Task<IEnumerable<DropdownDTO>> GetInstitutionsByIds(IEnumerable<int> institutionIds);
+        Task<IEnumerable<int>> GetPeopleDivisionIds(int userId);
+        Task<bool> SavePeopleDivisions(int userId, IEnumerable<int> divisionIds);
+        Task ClearPeopleInstitutions(int userId);
+        Task ClearPeopleDivisions(int userId);
         #endregion
 
         #region "Division"

@@ -38,7 +38,13 @@ namespace WebUI.Pages.Admin
 
         public async Task<IActionResult> OnGetAsync()
         {
-            await LoadDropdownsAsync();
+            var userId = authenticationService.GetCurrentUserId();
+            if (userId <= 0)
+            {
+                return RedirectToPage("/Login");
+            }
+
+            await LoadDropdownsAsync(userId);
             return Page();
         }
 
@@ -50,9 +56,11 @@ namespace WebUI.Pages.Admin
                 return RedirectToPage("/Login");
             }
 
+            await LoadDropdownsAsync(userId);
+            ClampSelectedDivisionIds();
+
             if (FromDate.HasValue && ToDate.HasValue && FromDate > ToDate)
             {
-                await LoadDropdownsAsync();
                 ModelState.AddModelError(string.Empty, "From Date cannot be later than To Date.");
                 return Page();
             }
@@ -108,16 +116,24 @@ namespace WebUI.Pages.Admin
             }
             catch (Exception ex)
             {
-                await LoadDropdownsAsync();
                 ModelState.AddModelError(string.Empty, $"Unable to generate report. {ex.Message}");
                 return Page();
             }
         }
 
-        private async Task LoadDropdownsAsync()
+        private async Task LoadDropdownsAsync(int userId)
         {
             States = await adminService.GetStatesByStatus(Enums.Status.Active);
-            Divisions = await adminService.GetDivisionsByStatus(Enums.Status.Active);
+            Divisions = await adminService.GetDivisionsForUser(userId);
+        }
+
+        private void ClampSelectedDivisionIds()
+        {
+            var allowedIds = Divisions.Select(d => d.Value).ToHashSet();
+            SelectedDivisionIds = (SelectedDivisionIds ?? [])
+                .Where(id => id > 0 && allowedIds.Contains(id))
+                .Distinct()
+                .ToList();
         }
 
         private static List<(string Header, Func<KadamProgrammeReportDTO, string?> Getter)> GetReportColumns()

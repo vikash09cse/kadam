@@ -11,8 +11,9 @@ AS
 BEGIN
     SET NOCOUNT ON;
 
-    DECLARE @InstitutionIds VARCHAR(2000) = NULL;
+    DECLARE @InstitutionIds VARCHAR(MAX) = NULL;
     DECLARE @FilterByInstitution BIT = 0;
+    DECLARE @FilterByDivision BIT = 0;
 
     IF @UserId IS NOT NULL AND @UserId > 0
     BEGIN
@@ -24,11 +25,23 @@ BEGIN
               AND u.IsDeleted = 0
               AND LOWER(LTRIM(RTRIM(r.RoleName))) = 'admin'
         )
+        BEGIN
             SET @FilterByInstitution = 0;
+            SET @FilterByDivision = 0;
+        END
+        ELSE IF EXISTS (SELECT 1 FROM dbo.PeopleDivisions WHERE UserId = @UserId)
+        BEGIN
+            SET @FilterByDivision = 1;
+        END
         ELSE
         BEGIN
             SET @FilterByInstitution = 1;
-            SELECT @InstitutionIds = InstitutionIds FROM dbo.PeopleInstitutions WHERE UserId = @UserId;
+            SELECT @InstitutionIds = STRING_AGG(CAST(LTRIM(RTRIM(s.Item)) AS VARCHAR(20)), ',')
+            FROM dbo.PeopleInstitutions pi
+            CROSS APPLY dbo.SplitString(pi.InstitutionIds, ',') s
+            WHERE pi.UserId = @UserId
+              AND LTRIM(RTRIM(ISNULL(pi.InstitutionIds, ''))) <> ''
+              AND TRY_CAST(LTRIM(RTRIM(s.Item)) AS INT) IS NOT NULL;
         END
     END
 
@@ -40,11 +53,20 @@ BEGIN
     INNER JOIN dbo.Institutions i ON s.InstitutionId = i.Id AND i.IsDeleted = 0
     WHERE s.IsDeleted = 0
       AND (
-          @FilterByInstitution = 0
+          (@FilterByInstitution = 0 AND @FilterByDivision = 0)
           OR (
-              @InstitutionIds IS NOT NULL
+              @FilterByDivision = 1
+              AND i.DivisionId IN (
+                  SELECT pd.DivisionId
+                  FROM dbo.PeopleDivisions pd
+                  WHERE pd.UserId = @UserId
+              )
+          )
+          OR (
+              @FilterByInstitution = 1
+              AND @InstitutionIds IS NOT NULL
               AND LTRIM(RTRIM(@InstitutionIds)) <> ''
-              AND i.Id IN (SELECT Item FROM dbo.SplitString(@InstitutionIds, ','))
+              AND i.Id IN (SELECT TRY_CAST(Item AS INT) FROM dbo.SplitString(@InstitutionIds, ',') WHERE TRY_CAST(Item AS INT) IS NOT NULL)
           )
       )
       AND (@StateId IS NULL OR @StateId = 0 OR i.StateId = @StateId)
@@ -67,3 +89,4 @@ BEGIN
           )
       );
 END
+GO

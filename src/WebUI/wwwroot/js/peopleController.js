@@ -23,6 +23,8 @@
         vm.genders = [];
         vm.roles = [];
         vm.reportRoles = [];
+        vm.divisions = [];
+        vm.selectedDivisionIds = [];
         vm.userInfo = {};
         vm.autoGeneratePassword = true;
         vm.passwordPreview = '';
@@ -31,6 +33,51 @@
         vm.programs = {
             neTT: false,
             kadam: false
+        };
+
+        function isDivisionScopedRole(role) {
+            if (!role) return false;
+            if (role.allowMultipleDivision || role.AllowMultipleDivision) return true;
+            var name = (role.text || role.Text || role.roleName || role.RoleName || '').toString().trim().toLowerCase();
+            return name === 'do' || name === 'spm';
+        }
+
+        function isDivisionScopedUserRow(row) {
+            if (!row) return false;
+            if (row.allowMultipleDivision || row.AllowMultipleDivision) return true;
+            var name = (row.roleName || row.RoleName || '').toString().trim().toLowerCase();
+            return name === 'do' || name === 'spm';
+        }
+
+        vm.getSelectedRole = function() {
+            if (!vm.userInfo || !vm.userInfo.roleId || !vm.roles) return null;
+            return vm.roles.find(function(r) { return r.value === vm.userInfo.roleId || r.Value === vm.userInfo.roleId; }) || null;
+        };
+
+        vm.isDivisionScopedRole = function() {
+            return isDivisionScopedRole(vm.getSelectedRole());
+        };
+
+        vm.onRoleChange = function() {
+            if (!vm.isDivisionScopedRole()) {
+                vm.selectedDivisionIds = [];
+            }
+        };
+
+        vm.isDivisionSelected = function(divisionId) {
+            return (vm.selectedDivisionIds || []).indexOf(divisionId) >= 0;
+        };
+
+        vm.toggleDivision = function(divisionId) {
+            if (!vm.selectedDivisionIds) {
+                vm.selectedDivisionIds = [];
+            }
+            var index = vm.selectedDivisionIds.indexOf(divisionId);
+            if (index >= 0) {
+                vm.selectedDivisionIds.splice(index, 1);
+            } else {
+                vm.selectedDivisionIds.push(divisionId);
+            }
         };
 
         // Initialize DataTable
@@ -84,6 +131,13 @@
                         data: null,
                         orderable: false,
                         render: function(data, type, row) {
+                            var assignAction = isDivisionScopedUserRow(row)
+                                ? `<a href="/Admin/AssignDivision?id=${row.id}" class="btn btn-sm btn-success" title="Assign Division">
+                                        <i class="mdi mdi-map-marker-multiple"></i> Assign Division
+                                   </a>`
+                                : `<a href="/Admin/AssignInstitution?id=${row.id}" class="btn btn-sm btn-success" title="Assign Institution">
+                                        <i class="mdi mdi-building"></i> Assign Institution
+                                   </a>`;
                             return `
                                 <div class="btn-group">
                                     <button class="btn btn-sm btn-warning" title="Edit" ng-click="vm.editPerson(${row.id})">
@@ -98,9 +152,7 @@
                                     <button class="btn btn-sm btn-primary" title="Assign Program" ng-click="vm.assignProgram(${row.id})">
                                         <i class="mdi mdi-plus"></i> Assign Program
                                     </button>
-                                    <a href="/Admin/AssignInstitution?id=${row.id}" class="btn btn-sm btn-success" title="Assign Institution">
-                                        <i class="mdi mdi-building"></i> Assign Institution
-                                    </a>
+                                    ${assignAction}
                                     <a href="/Admin/UserMenuPermissions/${row.id}" class="btn btn-sm btn-secondary" title="Menu Permission">
                                         <i class="mdi mdi-menu"></i> Menu Permission
                                     </a>
@@ -206,6 +258,8 @@
                     vm.genders = response.genders;
                     vm.roles = response.roles;
                     vm.reportRoles = response.reportRoles;
+                    vm.divisions = response.divisions || [];
+                    vm.selectedDivisionIds = response.selectedDivisionIds || [];
                     vm.userInfo = response.userInfo;
                     vm.autoGeneratePassword = false;
                     vm.passwordPreview = '';
@@ -262,6 +316,10 @@
                 return;
             }
 
+            if (vm.isDivisionScopedRole() && (!vm.selectedDivisionIds || vm.selectedDivisionIds.length === 0)) {
+                return;
+            }
+
             var userData = angular.copy(vm.userInfo);
             if (userData.id > 0 && (!vm.autoGeneratePassword) && (!userData.password || userData.password.trim() === '')) {
                 delete userData.password;
@@ -269,7 +327,7 @@
             }
 
             vm.isSaving = true;
-            PeopleService.saveUser(userData, vm.autoGeneratePassword)
+            PeopleService.saveUser(userData, vm.autoGeneratePassword, vm.isDivisionScopedRole() ? vm.selectedDivisionIds : [])
                 .then(function(response) {
                     vm.isSubmit = false;
                     vm.isSaving = false;
@@ -319,6 +377,8 @@
                     vm.genders = response.genders;
                     vm.roles = response.roles;
                     vm.reportRoles = response.reportRoles;
+                    vm.divisions = response.divisions || [];
+                    vm.selectedDivisionIds = [];
 
                     // Reset user info
                     vm.userInfo = {

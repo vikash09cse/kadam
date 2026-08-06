@@ -35,7 +35,18 @@ BEGIN
         SET @HasAccess = 1;
     ELSE
     BEGIN
-        IF EXISTS (
+        IF EXISTS (SELECT 1 FROM dbo.PeopleDivisions WHERE UserId = @UserId)
+        BEGIN
+            IF EXISTS (
+                SELECT 1
+                FROM dbo.PeopleDivisions pd
+                INNER JOIN dbo.Institutions i ON i.DivisionId = pd.DivisionId AND i.IsDeleted = 0
+                WHERE pd.UserId = @UserId
+                  AND i.Id = @InstitutionId
+            )
+                SET @HasAccess = 1;
+        END
+        ELSE IF EXISTS (
             SELECT 1
             FROM PeopleInstitutions pi
             CROSS APPLY dbo.SplitString(pi.InstitutionIds, ',') s

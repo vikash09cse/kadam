@@ -45,7 +45,8 @@ namespace WebUI.Pages.Admin
                 return RedirectToPage("/Login");
             }
 
-            await LoadDropdownsAsync();
+            await LoadDropdownsAsync(userId);
+            ClampDivisionId();
 
             if (FromDate.HasValue && ToDate.HasValue && FromDate > ToDate)
             {
@@ -80,10 +81,25 @@ namespace WebUI.Pages.Admin
             };
         }
 
-        private async Task LoadDropdownsAsync()
+        private async Task LoadDropdownsAsync(int userId)
         {
             States = await adminService.GetStatesByStatus(Enums.Status.Active);
-            Divisions = await adminService.GetDivisionsByStatus(Enums.Status.Active);
+            Divisions = await adminService.GetDivisionsForUser(userId);
+        }
+
+        private void ClampDivisionId()
+        {
+            if (!DivisionId.HasValue || DivisionId.Value <= 0)
+            {
+                DivisionId = null;
+                return;
+            }
+
+            var allowedIds = Divisions.Select(d => d.Value).ToHashSet();
+            if (!allowedIds.Contains(DivisionId.Value))
+            {
+                DivisionId = null;
+            }
         }
     }
 }
