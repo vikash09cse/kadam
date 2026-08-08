@@ -16,6 +16,7 @@ CREATE TABLE StudentFollowups (
     TodayStudentPresentCount INT,
     TotalStudentCount INT,
     TotalStudentPercentage FLOAT,
+    DateEntryPoint TINYINT NOT NULL DEFAULT 1,
     CurrentStatus INT NOT NULL,
     CreatedBy INT,
     DateCreated DATETIME DEFAULT GETDATE(),

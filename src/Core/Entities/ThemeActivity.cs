@@ -9,5 +9,6 @@ namespace Core.Entities
         public bool DidChildrenDayHappen { get; set; } = false;
         public int? TotalParentsAttended { get; set; }
         public DateTime? ThemeActivityDate { get; set; }
+        public byte DateEntryPoint { get; set; } = 1;
     }
 }

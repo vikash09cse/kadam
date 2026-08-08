@@ -13,6 +13,7 @@ namespace Infrastructure
 
         public async Task<bool> SaveStudentFollowup(StudentFollowup studentFollowup)
         {
+            studentFollowup.DateEntryPoint = 1;
             if (studentFollowup.Id > 0)
             {
                 _context.StudentFollowups.Update(studentFollowup);
@@ -59,6 +60,7 @@ namespace Infrastructure
                 studentFollowup.IsDeleted = true;
                 studentFollowup.DeletedBy = deletedBy;
                 studentFollowup.DeletedDate = DateTime.UtcNow;
+                studentFollowup.DateEntryPoint = 1;
                 return await _context.SaveChangesAsync() > 0;
             }
             return false;

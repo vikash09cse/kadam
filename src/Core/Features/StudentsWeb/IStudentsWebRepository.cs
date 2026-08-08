@@ -12,6 +12,29 @@ public interface IStudentsWebRepository
     Task<StudentsWebEditDTO?> GetStudent(int id, int userId);
     Task<IReadOnlyList<StudentsWebLookupDTO>> GetInstitutions(int userId);
     Task<IReadOnlyList<StudentsWebLookupDTO>> GetGradeSections(int institutionId);
+    Task<IReadOnlyList<StudentsWebAttendanceRowDTO>> GetAttendanceRoster(
+        int userId, int institutionId, int gradeId, string section, DateTime attendanceDate);
+    Task<StudentsWebAttendanceSaveStatus> SaveAttendance(
+        StudentsWebAttendanceSaveDTO model, int userId);
+    Task<IReadOnlyList<StudentsWebFollowupListItemDTO>> GetFollowups(
+        int userId, int pageNumber, int pageSize, int? institutionId,
+        int? gradeId, string? section, DateTime? fromDate, DateTime? toDate);
+    Task<StudentsWebFollowupDTO?> GetFollowup(int id, int userId);
+    Task<StudentsWebFollowupSaveStatus> SaveFollowup(
+        StudentsWebFollowupSaveDTO model, int userId, int totalStudentCount,
+        double todayPercentage, double? lastMonthPercentage);
+    Task<bool> DeleteFollowup(int id, int userId);
+    Task<IReadOnlyList<StudentsWebThemeActivityListItemDTO>> GetThemeActivities(
+        int userId, int pageNumber, int pageSize, int? institutionId, int? themeId,
+        int? gradeId, string? section, DateTime? fromDate, DateTime? toDate);
+    Task<StudentsWebThemeActivityDTO?> GetThemeActivity(int id, int userId);
+    Task<IReadOnlyList<StudentsWebLookupDTO>> GetActiveThemes();
+    Task<IReadOnlyList<StudentsWebLookupDTO>> GetThemeActivityGradeSections(int userId, int institutionId);
+    Task<int> GetThemeActivityEligibleCount(
+        int userId, int institutionId, IReadOnlyList<StudentsWebThemeActivityGradeSectionDTO> gradeSections);
+    Task<StudentsWebThemeActivitySaveStatus> SaveThemeActivity(
+        StudentsWebThemeActivitySaveDTO model, int userId);
+    Task<bool> DeleteThemeActivity(int id, int userId);
     Task<StudentsWebAssessmentDTO?> GetAssessment(
         int studentId, StudentsWebAssessmentKind kind, int userId);
     Task<StudentsWebAssessmentSaveStatus> SaveBaseline(

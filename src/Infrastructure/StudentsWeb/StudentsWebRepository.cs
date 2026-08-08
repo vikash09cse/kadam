@@ -4,6 +4,7 @@ using Core.Features.StudentsWeb;
 using Dapper;
 using Microsoft.EntityFrameworkCore;
 using System.Data;
+using System.Text.Json;
 
 namespace Infrastructure.StudentsWeb;
 
@@ -94,6 +95,437 @@ public sealed class StudentsWebRepository(IDbSession db, DatabaseContext context
             "dbo.usp_WebStudents_GetGradeSections", parameters, db.Transaction,
             commandType: CommandType.StoredProcedure);
         return result.AsList();
+    }
+
+    public async Task<IReadOnlyList<StudentsWebAttendanceRowDTO>> GetAttendanceRoster(
+        int userId, int institutionId, int gradeId, string section, DateTime attendanceDate)
+    {
+        var parameters = new DynamicParameters();
+        parameters.Add("@UserId", userId);
+        parameters.Add("@InstitutionId", institutionId);
+        parameters.Add("@GradeId", gradeId);
+        parameters.Add("@Section", NullIfWhiteSpace(section));
+        parameters.Add("@AttendanceDate", attendanceDate.Date);
+        var result = await db.Connection.QueryAsync<StudentsWebAttendanceRowDTO>(
+            "dbo.usp_WebStudents_GetAttendanceRoster", parameters, db.Transaction,
+            commandType: CommandType.StoredProcedure);
+        return result.AsList();
+    }
+
+    public async Task<StudentsWebAttendanceSaveStatus> SaveAttendance(
+        StudentsWebAttendanceSaveDTO model, int userId)
+    {
+        if (!await CanAccessInstitution(model.InstitutionId, userId))
+            return StudentsWebAttendanceSaveStatus.InvalidScope;
+
+        await using var transaction = await context.Database.BeginTransactionAsync(IsolationLevel.Serializable);
+        try
+        {
+            var institutionIsActive = await context.Institutions.AnyAsync(x =>
+                x.Id == model.InstitutionId && !x.IsDeleted &&
+                x.CurrentStatus == Core.Utilities.Enums.Status.Active);
+            var configuredSections = await context.InstitutionGradeSections
+                .Where(x => x.InstitutionId == model.InstitutionId && x.GradeId == model.GradeId)
+                .Select(x => x.Sections)
+                .ToListAsync();
+            var sectionIsConfigured = configuredSections
+                .SelectMany(x => (x ?? string.Empty).Split(
+                    ',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+                .Any(x => x.Equals(model.Section, StringComparison.OrdinalIgnoreCase));
+            if (!institutionIsActive || !sectionIsConfigured)
+                return StudentsWebAttendanceSaveStatus.InvalidScope;
+
+            var submittedIds = model.Entries.Select(x => x.StudentId).ToArray();
+            var eligibleIds = await context.Students
+                .Where(x => submittedIds.Contains(x.Id) &&
+                            x.InstitutionId == model.InstitutionId &&
+                            x.GradeId == model.GradeId &&
+                            x.Section == model.Section &&
+                            x.EnrollmentDate.Date <= model.AttendanceDate.Date &&
+                            !x.IsDeleted &&
+                            x.CurrentStatus == Core.Utilities.Enums.Status.Active)
+                .Select(x => x.Id)
+                .ToListAsync();
+            if (eligibleIds.Count != submittedIds.Length)
+                return StudentsWebAttendanceSaveStatus.InvalidStudents;
+
+            var existing = await context.StudentAttendances
+                .Where(x => submittedIds.Contains(x.StudentId) &&
+                            x.AttendanceDate.Date == model.AttendanceDate.Date)
+                .ToListAsync();
+            if (existing.GroupBy(x => x.StudentId).Any(x => x.Count() > 1))
+                return StudentsWebAttendanceSaveStatus.InvalidStudents;
+
+            var existingByStudent = existing.ToDictionary(x => x.StudentId);
+            foreach (var entry in model.Entries)
+            {
+                if (!existingByStudent.TryGetValue(entry.StudentId, out var attendance))
+                {
+                    attendance = new StudentAttendance
+                    {
+                        StudentId = entry.StudentId,
+                        AttendanceDate = model.AttendanceDate.Date,
+                        CreatedBy = userId,
+                        DateCreated = DateTime.UtcNow
+                    };
+                    context.StudentAttendances.Add(attendance);
+                }
+                else
+                {
+                    attendance.ModifyBy = userId;
+                    attendance.ModifyDate = DateTime.UtcNow;
+                }
+
+                attendance.AttendanceStatus = entry.AttendanceStatus;
+                attendance.AttendanceNote =
+                    entry.AttendanceStatus == StudentsWebAttendance.Absent
+                        ? entry.AttendanceNote
+                        : null;
+                attendance.DateEntryPoint = StudentsWebEntryPoint.Web;
+            }
+
+            await context.SaveChangesAsync();
+            await transaction.CommitAsync();
+            return StudentsWebAttendanceSaveStatus.Saved;
+        }
+        catch
+        {
+            await transaction.RollbackAsync();
+            throw;
+        }
+    }
+
+    public async Task<IReadOnlyList<StudentsWebFollowupListItemDTO>> GetFollowups(
+        int userId, int pageNumber, int pageSize, int? institutionId,
+        int? gradeId, string? section, DateTime? fromDate, DateTime? toDate)
+    {
+        var parameters = new DynamicParameters();
+        parameters.Add("@UserId", userId);
+        parameters.Add("@PageNumber", pageNumber);
+        parameters.Add("@PageSize", pageSize);
+        parameters.Add("@InstitutionId", institutionId);
+        parameters.Add("@GradeId", gradeId);
+        parameters.Add("@Section", NullIfWhiteSpace(section));
+        parameters.Add("@FromDate", fromDate?.Date);
+        parameters.Add("@ToDate", toDate?.Date);
+        var result = await db.Connection.QueryAsync<StudentsWebFollowupListItemDTO>(
+            "dbo.usp_WebStudents_GetFollowups", parameters, db.Transaction,
+            commandType: CommandType.StoredProcedure);
+        return result.AsList();
+    }
+
+    public async Task<StudentsWebFollowupDTO?> GetFollowup(int id, int userId)
+    {
+        var parameters = new DynamicParameters();
+        parameters.Add("@Id", id);
+        parameters.Add("@UserId", userId);
+        return await db.Connection.QuerySingleOrDefaultAsync<StudentsWebFollowupDTO>(
+            "dbo.usp_WebStudents_GetFollowup", parameters, db.Transaction,
+            commandType: CommandType.StoredProcedure);
+    }
+
+    public async Task<StudentsWebFollowupSaveStatus> SaveFollowup(
+        StudentsWebFollowupSaveDTO model, int userId, int totalStudentCount,
+        double todayPercentage, double? lastMonthPercentage)
+    {
+        if (!await CanAccessInstitution(model.InstitutionId, userId))
+            return StudentsWebFollowupSaveStatus.InvalidScope;
+
+        var configuredSections = await context.InstitutionGradeSections
+            .AsNoTracking()
+            .Where(x => x.InstitutionId == model.InstitutionId && x.GradeId == model.GradeId)
+            .Select(x => x.Sections)
+            .ToListAsync();
+        var sectionIsConfigured = configuredSections
+            .SelectMany(x => (x ?? string.Empty).Split(
+                ',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+            .Any(x => x.Equals(model.Section, StringComparison.OrdinalIgnoreCase));
+        if (!sectionIsConfigured)
+            return StudentsWebFollowupSaveStatus.InvalidScope;
+
+        StudentFollowup followup;
+        if (model.Id > 0)
+        {
+            followup = await context.StudentFollowups
+                .FirstOrDefaultAsync(x => x.Id == model.Id && !x.IsDeleted)
+                ?? new StudentFollowup();
+            if (followup.Id == 0 || !await CanAccessInstitution(followup.InstitutionId, userId))
+                return StudentsWebFollowupSaveStatus.NotAuthorizedOrNotFound;
+            followup.ModifyBy = userId;
+            followup.ModifyDate = DateTime.UtcNow;
+        }
+        else
+        {
+            followup = new StudentFollowup
+            {
+                CreatedBy = userId,
+                DateCreated = DateTime.UtcNow
+            };
+            context.StudentFollowups.Add(followup);
+        }
+
+        followup.StudentId = null;
+        followup.FollowupDate = model.VisitDate.Date;
+        followup.InstitutionId = model.InstitutionId;
+        followup.GradeId = model.GradeId;
+        followup.Section = model.Section;
+        followup.InchargeName = model.TeacherName;
+        followup.InchargeContactNumber = model.TeacherContact;
+        followup.MaleStudentCount = model.MaleStudentCount;
+        followup.FemaleStudentCount = model.FemaleStudentCount;
+        followup.TotalStudentCount = totalStudentCount;
+        followup.TodayStudentPresentCount = model.PresentTodayCount;
+        followup.TotalStudentPercentage = todayPercentage;
+        followup.LastMonthWorkingDayCount = model.LastMonthWorkingDays;
+        followup.LastMonthAttendanceCount = model.LastMonthAttendance;
+        followup.LastMonthAttendancePercentage = lastMonthPercentage;
+        followup.IsChildSitTogether = model.ChildrenSitTogether;
+        followup.DateEntryPoint = StudentsWebEntryPoint.Web;
+
+        await context.SaveChangesAsync();
+        model.Id = followup.Id;
+        return StudentsWebFollowupSaveStatus.Saved;
+    }
+
+    public async Task<bool> DeleteFollowup(int id, int userId)
+    {
+        var followup = await context.StudentFollowups
+            .FirstOrDefaultAsync(x => x.Id == id && !x.IsDeleted);
+        if (followup is null || !await CanAccessInstitution(followup.InstitutionId, userId))
+            return false;
+
+        followup.IsDeleted = true;
+        followup.DeletedBy = userId;
+        followup.DeletedDate = DateTime.UtcNow;
+        followup.DateEntryPoint = StudentsWebEntryPoint.Web;
+        return await context.SaveChangesAsync() > 0;
+    }
+
+    public async Task<IReadOnlyList<StudentsWebThemeActivityListItemDTO>> GetThemeActivities(
+        int userId, int pageNumber, int pageSize, int? institutionId, int? themeId,
+        int? gradeId, string? section, DateTime? fromDate, DateTime? toDate)
+    {
+        var parameters = new DynamicParameters();
+        parameters.Add("@UserId", userId);
+        parameters.Add("@PageNumber", pageNumber);
+        parameters.Add("@PageSize", pageSize);
+        parameters.Add("@InstitutionId", institutionId);
+        parameters.Add("@ThemeId", themeId);
+        parameters.Add("@GradeId", gradeId);
+        parameters.Add("@Section", NullIfWhiteSpace(section));
+        parameters.Add("@FromDate", fromDate?.Date);
+        parameters.Add("@ToDate", toDate?.Date);
+        var result = await db.Connection.QueryAsync<StudentsWebThemeActivityListItemDTO>(
+            "dbo.usp_WebStudents_GetThemeActivities", parameters, db.Transaction,
+            commandType: CommandType.StoredProcedure);
+        return result.AsList();
+    }
+
+    public async Task<StudentsWebThemeActivityDTO?> GetThemeActivity(int id, int userId)
+    {
+        var parameters = new DynamicParameters();
+        parameters.Add("@Id", id);
+        parameters.Add("@UserId", userId);
+        using var result = await db.Connection.QueryMultipleAsync(
+            "dbo.usp_WebStudents_GetThemeActivity", parameters, db.Transaction,
+            commandType: CommandType.StoredProcedure);
+        var activity = await result.ReadSingleOrDefaultAsync<StudentsWebThemeActivityDTO>();
+        if (activity is null) return null;
+        activity.GradeSections =
+            (await result.ReadAsync<StudentsWebThemeActivityGradeSectionDTO>()).AsList();
+        return activity;
+    }
+
+    public async Task<IReadOnlyList<StudentsWebLookupDTO>> GetActiveThemes()
+    {
+        var result = await db.Connection.QueryAsync<StudentsWebLookupDTO>(
+            "dbo.usp_WebStudents_GetActiveThemes", transaction: db.Transaction,
+            commandType: CommandType.StoredProcedure);
+        return result.AsList();
+    }
+
+    public async Task<IReadOnlyList<StudentsWebLookupDTO>> GetThemeActivityGradeSections(
+        int userId, int institutionId)
+    {
+        var parameters = new DynamicParameters();
+        parameters.Add("@UserId", userId);
+        parameters.Add("@InstitutionId", institutionId);
+        var result = await db.Connection.QueryAsync<StudentsWebLookupDTO>(
+            "dbo.usp_WebStudents_GetThemeActivityGradeSections", parameters, db.Transaction,
+            commandType: CommandType.StoredProcedure);
+        return result.AsList();
+    }
+
+    public async Task<int> GetThemeActivityEligibleCount(
+        int userId, int institutionId,
+        IReadOnlyList<StudentsWebThemeActivityGradeSectionDTO> gradeSections)
+    {
+        var allowedRows = await GetThemeActivityGradeSections(userId, institutionId);
+        var allowed = allowedRows
+            .SelectMany(grade => (grade.Sections ?? string.Empty)
+                .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                .Select(section => $"{grade.Id}:{section}"))
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+        if (gradeSections.Count == 0 ||
+            gradeSections.Any(x => !allowed.Contains($"{x.GradeId}:{x.Section}")))
+            return 0;
+
+        var parameters = new DynamicParameters();
+        parameters.Add("@UserId", userId);
+        parameters.Add("@InstitutionId", institutionId);
+        parameters.Add("@GradeSections", JsonSerializer.Serialize(gradeSections));
+        return await db.Connection.ExecuteScalarAsync<int>(
+            "dbo.usp_WebStudents_GetThemeActivityEligibleCount", parameters, db.Transaction,
+            commandType: CommandType.StoredProcedure);
+    }
+
+    public async Task<StudentsWebThemeActivitySaveStatus> SaveThemeActivity(
+        StudentsWebThemeActivitySaveDTO model, int userId)
+    {
+        if (!await CanAccessInstitution(model.InstitutionId, userId))
+            return StudentsWebThemeActivitySaveStatus.InvalidScope;
+
+        var allowedRows = await GetThemeActivityGradeSections(userId, model.InstitutionId);
+        var allowed = allowedRows
+            .SelectMany(grade => (grade.Sections ?? string.Empty)
+                .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                .Select(section => new { grade.Id, Section = section }))
+            .ToList();
+        var normalized = new List<StudentsWebThemeActivityGradeSectionDTO>();
+        foreach (var submitted in model.GradeSections)
+        {
+            var match = allowed.FirstOrDefault(x =>
+                x.Id == submitted.GradeId &&
+                x.Section.Equals(submitted.Section, StringComparison.OrdinalIgnoreCase));
+            if (match is null)
+                return StudentsWebThemeActivitySaveStatus.InvalidScope;
+            normalized.Add(new StudentsWebThemeActivityGradeSectionDTO
+            {
+                GradeId = match.Id,
+                Section = match.Section
+            });
+        }
+        model.GradeSections = normalized
+            .GroupBy(x => $"{x.GradeId}:{x.Section}", StringComparer.OrdinalIgnoreCase)
+            .Select(x => x.First())
+            .ToList();
+        if (model.GradeSections.Count == 0)
+            return StudentsWebThemeActivitySaveStatus.InvalidScope;
+
+        await using var transaction = await context.Database.BeginTransactionAsync(IsolationLevel.Serializable);
+        try
+        {
+            var institutionIsActive = await context.Institutions.AnyAsync(x =>
+                x.Id == model.InstitutionId && !x.IsDeleted &&
+                x.CurrentStatus == Core.Utilities.Enums.Status.Active);
+            if (!institutionIsActive)
+                return StudentsWebThemeActivitySaveStatus.InvalidScope;
+
+            var themeIsActive = await context.Themes.AnyAsync(x =>
+                x.Id == model.ThemeId && !x.IsDeleted &&
+                x.CurrentStatus == Core.Utilities.Enums.Status.Active);
+            if (!themeIsActive)
+                return StudentsWebThemeActivitySaveStatus.InvalidTheme;
+
+            ThemeActivity activity;
+            if (model.Id > 0)
+            {
+                activity = await context.ThemeActivities
+                    .FirstOrDefaultAsync(x => x.Id == model.Id && !x.IsDeleted)
+                    ?? new ThemeActivity();
+                if (activity.Id == 0 || !await CanAccessInstitution(activity.InstitutionId, userId))
+                    return StudentsWebThemeActivitySaveStatus.NotAuthorizedOrNotFound;
+
+                var minimumDate = DateTime.Today.AddMonths(-1);
+                var originalDate = activity.ThemeActivityDate?.Date;
+                if (model.ActivityDate.Date < minimumDate &&
+                    originalDate != model.ActivityDate.Date)
+                    return StudentsWebThemeActivitySaveStatus.InvalidDate;
+
+                activity.ModifyBy = userId;
+                activity.ModifyDate = DateTime.UtcNow;
+            }
+            else
+            {
+                if (model.ActivityDate.Date < DateTime.Today.AddMonths(-1))
+                    return StudentsWebThemeActivitySaveStatus.InvalidDate;
+                activity = new ThemeActivity
+                {
+                    CreatedBy = userId,
+                    DateCreated = DateTime.UtcNow
+                };
+                context.ThemeActivities.Add(activity);
+            }
+
+            var selectedGradeIds = model.GradeSections.Select(x => x.GradeId).Distinct().ToArray();
+            var eligibleStudents = await context.Students
+                .Where(x => x.InstitutionId == model.InstitutionId &&
+                            selectedGradeIds.Contains(x.GradeId) &&
+                            !x.IsDeleted &&
+                            x.CurrentStatus == Core.Utilities.Enums.Status.Active)
+                .Select(x => new { x.GradeId, x.Section })
+                .ToListAsync();
+            var totalStudents = eligibleStudents.Count(student =>
+                model.GradeSections.Any(selection =>
+                    selection.GradeId == student.GradeId &&
+                    selection.Section.Equals(
+                        student.Section?.Trim(), StringComparison.OrdinalIgnoreCase)));
+            if (totalStudents <= 0)
+                return StudentsWebThemeActivitySaveStatus.NoEligibleStudents;
+            if (model.StudentsAttended > totalStudents)
+                return StudentsWebThemeActivitySaveStatus.InvalidAttendance;
+
+            activity.ThemeId = model.ThemeId;
+            activity.InstitutionId = model.InstitutionId;
+            activity.TotalStudents = totalStudents;
+            activity.StudentAttended = model.StudentsAttended;
+            activity.DidChildrenDayHappen = model.DidChildrensDayHappen;
+            activity.TotalParentsAttended = model.DidChildrensDayHappen
+                ? model.ParentsAttended
+                : null;
+            activity.ThemeActivityDate = model.ActivityDate.Date;
+            activity.DateEntryPoint = StudentsWebEntryPoint.Web;
+
+            if (model.Id > 0)
+            {
+                var oldChildren = await context.ThemeActivityGradeSections
+                    .Where(x => x.ThemeActivityId == activity.Id)
+                    .ToListAsync();
+                context.ThemeActivityGradeSections.RemoveRange(oldChildren);
+            }
+
+            await context.SaveChangesAsync();
+            context.ThemeActivityGradeSections.AddRange(model.GradeSections.Select(x =>
+                new ThemeActivityGradeSection
+                {
+                    ThemeActivityId = activity.Id,
+                    GradeId = x.GradeId,
+                    Section = x.Section
+                }));
+            await context.SaveChangesAsync();
+            await transaction.CommitAsync();
+            model.Id = activity.Id;
+            return StudentsWebThemeActivitySaveStatus.Saved;
+        }
+        catch
+        {
+            await transaction.RollbackAsync();
+            throw;
+        }
+    }
+
+    public async Task<bool> DeleteThemeActivity(int id, int userId)
+    {
+        var activity = await context.ThemeActivities
+            .FirstOrDefaultAsync(x => x.Id == id && !x.IsDeleted);
+        if (activity is null || !await CanAccessInstitution(activity.InstitutionId, userId))
+            return false;
+
+        activity.IsDeleted = true;
+        activity.DeletedBy = userId;
+        activity.DeletedDate = DateTime.UtcNow;
+        activity.DateEntryPoint = StudentsWebEntryPoint.Web;
+        return await context.SaveChangesAsync() > 0;
     }
 
     public async Task<StudentsWebAssessmentDTO?> GetAssessment(

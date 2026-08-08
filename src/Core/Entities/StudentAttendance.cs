@@ -13,6 +13,6 @@ namespace Core.Entities
         public DateTime DateCreated { get; set; }
         public int ModifyBy { get; set; }
         public DateTime ModifyDate { get; set; }
-       
+        public byte DateEntryPoint { get; set; } = 1;
     }
 }

@@ -18,5 +18,6 @@ namespace Core.Entities
         public int? TodayStudentPresentCount { get; set; }
         public int? TotalStudentCount { get; set; }
         public double? TotalStudentPercentage { get; set; }
+        public byte DateEntryPoint { get; set; } = 1;
     }
 }

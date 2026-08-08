@@ -96,6 +96,7 @@ namespace Infrastructure
                 themeActivity.IsDeleted = true;
                 themeActivity.DeletedBy = deletedBy;
                 themeActivity.DeletedDate = DateTime.UtcNow;
+                themeActivity.DateEntryPoint = 1;
                 return await _context.SaveChangesAsync() > 0;
             }
             return false;

@@ -1,0 +1,194 @@
+@page
+@model FollowupModel
+@{
+    ViewData["Title"] = Model.IsView ? "View Follow-up" : (Model.Input.Id > 0 ? "Edit Follow-up" : "Add Follow-up");
+    var disabled = Model.IsView ? "disabled" : null;
+}
+
+<div class="page-content">
+    <div class="container-fluid">
+        <div class="page-title-box d-flex align-items-center justify-content-between">
+            <h4 class="mb-sm-0">@ViewData["Title"]</h4>
+            <a asp-page="/Followups" asp-area="StudentPortal" class="btn btn-secondary">Back to list</a>
+        </div>
+
+        <div class="card">
+            <div class="card-body">
+                <form method="post" asp-page-handler="Save">
+                    <input asp-for="Input.Id" type="hidden" />
+                    <div asp-validation-summary="All" class="alert alert-danger"></div>
+
+                    <div class="row g-3">
+                        <div class="col-lg-3 col-md-6">
+                            <label asp-for="Input.VisitDate" class="form-label">Visit Date <span class="text-danger">*</span></label>
+                            <input asp-for="Input.VisitDate" id="visitDate" type="date" class="form-control"
+                                   max="@Model.Today.ToString("yyyy-MM-dd")" disabled="@disabled" />
+                        </div>
+                        <div class="col-lg-3 col-md-6">
+                            <label asp-for="Input.InstitutionId" class="form-label">Institution <span class="text-danger">*</span></label>
+                            <select asp-for="Input.InstitutionId" id="institutionId" class="form-select" disabled="@disabled">
+                                <option value="">Select institution</option>
+                                @foreach (var item in Model.Institutions)
+                                {
+                                    <option value="@item.Id">@item.Text</option>
+                                }
+                            </select>
+                        </div>
+                        <div class="col-lg-3 col-md-6">
+                            <label asp-for="Input.GradeId" class="form-label">Grade <span class="text-danger">*</span></label>
+                            <select asp-for="Input.GradeId" id="gradeId" class="form-select" disabled>
+                                <option value="">Select grade</option>
+                            </select>
+                        </div>
+                        <div class="col-lg-3 col-md-6">
+                            <label asp-for="Input.Section" class="form-label">Section <span class="text-danger">*</span></label>
+                            <select asp-for="Input.Section" id="section" class="form-select" disabled>
+                                <option value="">Select section</option>
+                            </select>
+                        </div>
+                        <div class="col-lg-4 col-md-6">
+                            <label asp-for="Input.TeacherName" class="form-label">Teacher Name <span class="text-danger">*</span></label>
+                            <input asp-for="Input.TeacherName" class="form-control" maxlength="100" disabled="@disabled" />
+                        </div>
+                        <div class="col-lg-4 col-md-6">
+                            <label asp-for="Input.TeacherContact" class="form-label">Teacher Contact <span class="text-danger">*</span></label>
+                            <input asp-for="Input.TeacherContact" class="form-control" maxlength="10"
+                                   inputmode="numeric" pattern="[0-9]{10}" disabled="@disabled" />
+                        </div>
+                        <div class="col-lg-4 col-md-6">
+                            <label asp-for="Input.ChildrenSitTogether" class="form-label">Children Sit Together</label>
+                            <select asp-for="Input.ChildrenSitTogether" class="form-select" disabled="@disabled">
+                                <option value="">Not specified</option>
+                                <option value="Yes">Yes</option>
+                                <option value="No">No</option>
+                            </select>
+                        </div>
+                        <div class="col-lg-3 col-md-6">
+                            <label asp-for="Input.MaleStudentCount" class="form-label">Male Count <span class="text-danger">*</span></label>
+                            <input asp-for="Input.MaleStudentCount" id="maleCount" type="number" min="0" max="100000"
+                                   class="form-control count-input" disabled="@disabled" />
+                        </div>
+                        <div class="col-lg-3 col-md-6">
+                            <label asp-for="Input.FemaleStudentCount" class="form-label">Female Count <span class="text-danger">*</span></label>
+                            <input asp-for="Input.FemaleStudentCount" id="femaleCount" type="number" min="0" max="100000"
+                                   class="form-control count-input" disabled="@disabled" />
+                        </div>
+                        <div class="col-lg-3 col-md-6">
+                            <label for="totalCount" class="form-label">Total Students</label>
+                            <input id="totalCount" class="form-control" readonly />
+                        </div>
+                        <div class="col-lg-3 col-md-6">
+                            <label asp-for="Input.PresentTodayCount" class="form-label">Present Today <span class="text-danger">*</span></label>
+                            <input asp-for="Input.PresentTodayCount" id="presentToday" type="number" min="0"
+                                   class="form-control count-input" disabled="@disabled" />
+                        </div>
+                        <div class="col-lg-3 col-md-6">
+                            <label for="todayPercentage" class="form-label">Today Attendance %</label>
+                            <input id="todayPercentage" class="form-control" readonly />
+                        </div>
+                        <div class="col-lg-3 col-md-6">
+                            <label asp-for="Input.LastMonthWorkingDays" class="form-label">Last-month Working Days</label>
+                            <input asp-for="Input.LastMonthWorkingDays" id="lastWorkingDays" type="number"
+                                   min="1" max="31" class="form-control count-input" disabled="@disabled" />
+                        </div>
+                        <div class="col-lg-3 col-md-6">
+                            <label asp-for="Input.LastMonthAttendance" class="form-label">Last-month Attendance</label>
+                            <input asp-for="Input.LastMonthAttendance" id="lastAttendance" type="number"
+                                   min="0" class="form-control count-input" disabled="@disabled" />
+                        </div>
+                        <div class="col-lg-3 col-md-6">
+                            <label for="lastPercentage" class="form-label">Last-month Attendance %</label>
+                            <input id="lastPercentage" class="form-control" readonly />
+                        </div>
+                        @if (Model.Detail is not null)
+                        {
+                            <div class="col-lg-3 col-md-6">
+                                <label class="form-label">Latest Source</label>
+                                <input class="form-control" value="@Model.Detail.EntryPointText" readonly />
+                            </div>
+                        }
+                    </div>
+
+                    @if (!Model.IsView)
+                    {
+                        <div class="mt-4">
+                            <button type="submit" class="btn btn-success">Save Follow-up</button>
+                            <a asp-page="/Followups" asp-area="StudentPortal" class="btn btn-secondary">Cancel</a>
+                        </div>
+                    }
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .validation-summary-valid { display: none; }
+</style>
+
+@section Scripts {
+<script>
+(() => {
+    const isView = @Model.IsView.ToString().ToLowerInvariant();
+    const selectedGrade = '@Model.Input.GradeId';
+    const selectedSection = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.Input.Section));
+    const institution = document.getElementById('institutionId');
+    const grade = document.getElementById('gradeId');
+    const section = document.getElementById('section');
+    let grades = [];
+
+    const option = (value, text) => {
+        const element = document.createElement('option');
+        element.value = value;
+        element.textContent = text;
+        return element;
+    };
+    const reset = (select, label) => {
+        select.replaceChildren(option('', label));
+        select.disabled = true;
+    };
+    const loadGrades = async (gradeValue = '', sectionValue = '') => {
+        reset(grade, 'Select grade');
+        reset(section, 'Select section');
+        grades = [];
+        if (!institution.value) return;
+        const response = await fetch(`?handler=GradeSections&institutionId=${encodeURIComponent(institution.value)}`);
+        if (!response.ok) return;
+        grades = await response.json();
+        grades.forEach(item => grade.append(option(item.id, item.text)));
+        grade.value = gradeValue;
+        grade.disabled = isView;
+        loadSections(sectionValue);
+    };
+    const loadSections = (sectionValue = '') => {
+        reset(section, 'Select section');
+        const selected = grades.find(item => String(item.id) === grade.value);
+        (selected?.sections || '').split(',').map(value => value.trim()).filter(Boolean)
+            .forEach(value => section.append(option(value, value)));
+        section.value = sectionValue;
+        section.disabled = isView || !selected;
+    };
+    const calculate = () => {
+        const male = Number(document.getElementById('maleCount').value || 0);
+        const female = Number(document.getElementById('femaleCount').value || 0);
+        const total = male + female;
+        const present = Number(document.getElementById('presentToday').value || 0);
+        const daysValue = document.getElementById('lastWorkingDays').value;
+        const attendanceValue = document.getElementById('lastAttendance').value;
+        document.getElementById('totalCount').value = total;
+        document.getElementById('todayPercentage').value =
+            total > 0 ? `${(present * 100 / total).toFixed(2)}%` : '';
+        document.getElementById('lastPercentage').value =
+            total > 0 && daysValue !== '' && attendanceValue !== ''
+                ? `${(Number(attendanceValue) * 100 / (total * Number(daysValue))).toFixed(2)}%`
+                : '';
+    };
+
+    institution.addEventListener('change', () => loadGrades());
+    grade.addEventListener('change', () => loadSections());
+    document.querySelectorAll('.count-input').forEach(input => input.addEventListener('input', calculate));
+    if (institution.value) loadGrades(selectedGrade, selectedSection);
+    calculate();
+})();
+</script>
+}

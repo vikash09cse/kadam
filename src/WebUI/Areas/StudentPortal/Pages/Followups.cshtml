@@ -1,0 +1,166 @@
+@page
+@model FollowupsModel
+@{
+    ViewData["Title"] = "Student Follow-ups";
+}
+
+<div class="page-content">
+    <div class="container-fluid">
+        <div class="page-title-box d-flex align-items-center justify-content-between">
+            <h4 class="mb-sm-0">Student Follow-ups</h4>
+            <a asp-page="/Followup" asp-area="StudentPortal" class="btn btn-primary">
+                <i class="ri-add-line"></i> Add Follow-up
+            </a>
+        </div>
+
+        <form id="antiforgery-form" method="post">@Html.AntiForgeryToken()</form>
+        @if (TempData["SuccessMessage"] is string success)
+        {
+            <div class="alert alert-success">@success</div>
+        }
+        <div id="followup-message" class="alert d-none" role="alert"></div>
+
+        <div class="card">
+            <div class="card-body">
+                <div class="row g-3 align-items-end mb-3">
+                    <div class="col-lg-3 col-md-6">
+                        <label for="institutionId" class="form-label">Institution</label>
+                        <select id="institutionId" class="form-select">
+                            <option value="">All Institutions</option>
+                            @foreach (var item in Model.Institutions)
+                            {
+                                <option value="@item.Id">@item.Text</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="col-lg-2 col-md-6">
+                        <label for="gradeId" class="form-label">Grade</label>
+                        <select id="gradeId" class="form-select" disabled><option value="">All Grades</option></select>
+                    </div>
+                    <div class="col-lg-2 col-md-6">
+                        <label for="section" class="form-label">Section</label>
+                        <select id="section" class="form-select" disabled><option value="">All Sections</option></select>
+                    </div>
+                    <div class="col-lg-2 col-md-6">
+                        <label for="fromDate" class="form-label">Visit From</label>
+                        <input id="fromDate" type="date" class="form-control"
+                               value="@Model.DefaultFromDate.ToString("yyyy-MM-dd")" />
+                    </div>
+                    <div class="col-lg-2 col-md-6">
+                        <label for="toDate" class="form-label">Visit To</label>
+                        <input id="toDate" type="date" class="form-control"
+                               value="@Model.DefaultToDate.ToString("yyyy-MM-dd")" />
+                    </div>
+                    <div class="col-lg-3 col-md-6">
+                        <button id="runFilters" type="button" class="btn btn-primary">Search</button>
+                        <button id="resetFilters" type="button" class="btn btn-secondary">Reset</button>
+                    </div>
+                </div>
+
+                <div class="table-responsive">
+                    <table id="followupsTable" class="table table-nowrap w-100">
+                        <thead class="table-primary">
+                            <tr>
+                                <th>#</th><th>Visit Date</th><th>Institution</th><th>Grade/Section</th>
+                                <th>Teacher</th><th>Total</th><th>Present Today</th><th>Today %</th>
+                                <th>Last Month %</th><th>Source</th><th>Actions</th>
+                            </tr>
+                        </thead>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+(() => {
+    const defaultFrom = '@Model.DefaultFromDate.ToString("yyyy-MM-dd")';
+    const defaultTo = '@Model.DefaultToDate.ToString("yyyy-MM-dd")';
+    const token = document.querySelector('#antiforgery-form input[name="__RequestVerificationToken"]').value;
+    const escapeHtml = value => $('<div>').text(value ?? '').html();
+    const textRenderer = $.fn.dataTable.render.text();
+    const gradeSelect = document.getElementById('gradeId');
+    const sectionSelect = document.getElementById('section');
+    let grades = [];
+
+    const fill = (select, items, label) => {
+        select.innerHTML = `<option value="">${label}</option>` +
+            items.map(x => `<option value="${escapeHtml(x.id)}">${escapeHtml(x.text)}</option>`).join('');
+    };
+    const table = $('#followupsTable').DataTable({
+        serverSide: true, processing: true, searching: false, ordering: false,
+        ajax: { url: '?handler=Followups', data: d => {
+            d.institutionId = $('#institutionId').val();
+            d.gradeId = $('#gradeId').val();
+            d.section = $('#section').val();
+            d.fromDate = $('#fromDate').val();
+            d.toDate = $('#toDate').val();
+        }},
+        columns: [
+            { data: 'rowNumber' },
+            { data: 'visitDate', render: value => value ? new Date(value).toLocaleDateString() : '' },
+            { data: 'institutionName', render: textRenderer },
+            { data: null, render: row => `${escapeHtml(row.gradeName)} / ${escapeHtml(row.section)}` },
+            { data: null, render: row => `${escapeHtml(row.teacherName)}<br><small>${escapeHtml(row.teacherContact)}</small>` },
+            { data: 'totalStudentCount' },
+            { data: 'presentTodayCount' },
+            { data: 'todayAttendancePercentage', render: value => `${Number(value || 0).toFixed(2)}%` },
+            { data: 'lastMonthAttendancePercentage', render: value => value == null ? '' : `${Number(value).toFixed(2)}%` },
+            { data: 'entryPointText', render: textRenderer },
+            { data: null, orderable: false, render: row => `<div class="btn-group btn-group-sm">
+                <a class="btn btn-outline-info" href="/StudentPortal/Followup?id=${row.id}&mode=view" title="View"><i class="ri-eye-line"></i></a>
+                <a class="btn btn-outline-primary" href="/StudentPortal/Followup?id=${row.id}" title="Edit"><i class="ri-edit-line"></i></a>
+                <button type="button" class="btn btn-outline-danger delete-followup" data-id="${row.id}" title="Delete"><i class="ri-delete-bin-line"></i></button>
+            </div>` }
+        ]
+    });
+
+    $('#institutionId').on('change', async function() {
+        grades = [];
+        fill(gradeSelect, [], 'All Grades');
+        fill(sectionSelect, [], 'All Sections');
+        gradeSelect.disabled = !this.value;
+        sectionSelect.disabled = true;
+        if (!this.value) return;
+        const response = await fetch(`?handler=GradeSections&institutionId=${encodeURIComponent(this.value)}`);
+        if (!response.ok) return;
+        grades = await response.json();
+        fill(gradeSelect, grades, 'All Grades');
+    });
+    $('#gradeId').on('change', function() {
+        const grade = grades.find(x => String(x.id) === this.value);
+        const sections = (grade?.sections || '').split(',').map(x => x.trim()).filter(Boolean);
+        fill(sectionSelect, sections.map(text => ({ id: text, text })), 'All Sections');
+        sectionSelect.disabled = !this.value;
+    });
+    $('#runFilters').on('click', () => table.ajax.reload());
+    $('#resetFilters').on('click', () => {
+        $('#institutionId,#gradeId,#section').val('');
+        $('#fromDate').val(defaultFrom);
+        $('#toDate').val(defaultTo);
+        grades = [];
+        fill(gradeSelect, [], 'All Grades');
+        fill(sectionSelect, [], 'All Sections');
+        gradeSelect.disabled = true;
+        sectionSelect.disabled = true;
+        table.ajax.reload();
+    });
+    $('#followupsTable').on('click', '.delete-followup', async function() {
+        if (!confirm('Delete this follow-up?')) return;
+        const body = new URLSearchParams({ id: this.dataset.id, __RequestVerificationToken: token });
+        const response = await fetch('?handler=Delete', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body
+        });
+        const result = await response.json();
+        const message = document.getElementById('followup-message');
+        message.textContent = result.message || (response.ok ? 'Follow-up deleted.' : 'Delete failed.');
+        message.className = `alert alert-${response.ok ? 'success' : 'danger'}`;
+        if (response.ok) table.ajax.reload(null, false);
+    });
+})();
+</script>
+}

@@ -44,11 +44,14 @@ BEGIN
     (22, N'Students', N'Settings', N'/Admin/Students', NULL, NULL),
     (23, N'Student Portal', NULL, N'#studentportal', N'ri-graduation-cap-line', N'studentportal'),
     (24, N'Student Dashboard', N'Student Portal', N'/StudentPortal/Dashboard', N'ri-dashboard-line', NULL),
-    (25, N'Student List', N'Student Portal', N'/StudentPortal/Directory', N'ri-list-check-2', NULL),
-    (26, N'My Institution', N'Student Portal', N'/StudentPortal/MyInstitution', N'ri-building-line', NULL),
-    (27, N'Student Registration', N'Student Portal', N'/StudentPortal/Registration', N'ri-user-add-line', NULL),
+    (25, N'Student Registration', N'Student Portal', N'/StudentPortal/Registration', N'ri-user-add-line', NULL),
+    (26, N'Student List', N'Student Portal', N'/StudentPortal/Directory', N'ri-list-check-2', NULL),
+    (27, N'My Institution', N'Student Portal', N'/StudentPortal/MyInstitution', N'ri-building-line', NULL),
     (28, N'Student Health', N'Student Portal', N'/StudentPortal/Health', NULL, NULL),
-    (29, N'Student Documents', N'Student Portal', N'/StudentPortal/Documents', NULL, NULL);
+    (29, N'Student Documents', N'Student Portal', N'/StudentPortal/Documents', NULL, NULL),
+    (30, N'Student Attendance', N'Student Portal', N'/StudentPortal/Attendance', N'ri-calendar-check-line', NULL),
+    (31, N'Student Follow-ups', N'Student Portal', N'/StudentPortal/Followups', N'ri-user-follow-line', NULL),
+    (32, N'Theme Activities', N'Student Portal', N'/StudentPortal/ThemeActivities', N'ri-palette-line', NULL);
 
     UPDATE @Menus
     SET PortalType = 2
