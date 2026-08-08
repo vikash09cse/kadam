@@ -10,7 +10,7 @@ BEGIN
 
     SELECT 
         ROW_NUMBER() OVER(ORDER BY R.Id) AS RowNumber,
-        R.Id, R.RoleName, R.CurrentStatus,
+        R.Id, R.RoleName, R.PortalType, R.CurrentStatus,
         COUNT(*) OVER() AS TotalCount
     FROM dbo.Roles R
     WHERE R.IsDeleted = 0

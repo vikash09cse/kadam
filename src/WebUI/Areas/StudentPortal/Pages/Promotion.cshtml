@@ -1,0 +1,67 @@
+@page
+@model PromotionModel
+@{
+    ViewData["Title"] = "Promote Student";
+}
+<div class="page-content">
+    <div class="container-fluid">
+        <div class="page-title-box d-sm-flex align-items-center justify-content-between">
+            <h4 class="mb-sm-0">Promote Student</h4>
+            <a href="/StudentPortal/MyInstitution" class="btn btn-secondary">Back to My Institution</a>
+        </div>
+        <form method="post" class="card">
+            <div class="card-header text-center"><h5 class="card-title mb-0">Student Promotion</h5></div>
+            <div class="card-body">
+                <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
+                <input asp-for="Promotion.StudentId" type="hidden" />
+                <div class="row g-3">
+                    <div class="col-md-4"><label class="form-label">Student</label><input class="form-control" value="@Model.Promotion.StudentName (@Model.Promotion.StudentCode)" readonly /></div>
+                    <div class="col-md-2"><label class="form-label">Age</label><input class="form-control" value="@Model.Promotion.Age" readonly /></div>
+                    <div class="col-md-3"><label class="form-label">Current Grade</label><input class="form-control" value="@Model.Promotion.CurrentGradeName / @Model.Promotion.CurrentSection" readonly /></div>
+                    <div class="col-md-3">
+                        <label asp-for="Promotion.DestinationGradeId" class="form-label">Promoted Grade <span class="text-danger">*</span></label>
+                        <select asp-for="Promotion.DestinationGradeId" id="promotion-grade" class="form-select">
+                            <option value="0">Select grade</option>
+                            @foreach (var grade in Model.Promotion.Grades)
+                            {
+                                <option value="@grade.Id" data-sections="@grade.Sections">@grade.Text</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label asp-for="Promotion.DestinationSection" class="form-label">Promoted Section <span class="text-danger">*</span></label>
+                        <select asp-for="Promotion.DestinationSection" id="promotion-section" class="form-select"><option value="">Select section</option></select>
+                    </div>
+                    <div class="col-md-3">
+                        <label asp-for="Promotion.PromotionDate" class="form-label">Promotion Date <span class="text-danger">*</span></label>
+                        <input asp-for="Promotion.PromotionDate" type="date" class="form-control"
+                               min="@Model.Promotion.EnrollmentDate.ToString("yyyy-MM-dd")"
+                               max="@DateTime.Today.ToString("yyyy-MM-dd")" />
+                    </div>
+                </div>
+            </div>
+            <div class="card-footer d-flex justify-content-end gap-2">
+                <button type="submit" class="btn btn-success">Promote</button>
+                <a href="/StudentPortal/MyInstitution" class="btn btn-danger">Cancel</a>
+            </div>
+        </form>
+    </div>
+</div>
+@section Scripts {
+<partial name="_ValidationScriptsPartial" />
+<script>
+(() => {
+    const grade = document.getElementById('promotion-grade');
+    const section = document.getElementById('promotion-section');
+    const selected = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.Promotion.DestinationSection));
+    const loadSections = () => {
+        const values = (grade.selectedOptions[0]?.dataset.sections || '').split(',').map(x => x.trim()).filter(Boolean);
+        section.innerHTML = '<option value="">Select section</option>' + values.map(x => `<option value="${x}">${x}</option>`).join('');
+        section.value = selected;
+    };
+    grade.addEventListener('change', () => { loadSections(); section.value = ''; });
+    loadSections();
+})();
+</script>
+}
+<style>.validation-summary-valid { display:none; }</style>

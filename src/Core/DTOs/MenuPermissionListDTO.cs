@@ -17,6 +17,7 @@ namespace Core.DTOs
     {
         public int Id { get; set; }
         public string MenuName { get; set; } = string.Empty;
+        public Core.Utilities.Enums.PortalType PortalType { get; set; } = Core.Utilities.Enums.PortalType.Admin;
         public bool IsSelected { get; set; }
     }
 }

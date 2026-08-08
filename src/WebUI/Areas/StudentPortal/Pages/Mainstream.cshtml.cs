@@ -18,7 +18,7 @@ public sealed class MainstreamModel(
 
     public async Task<IActionResult> OnGetAsync(int studentId)
     {
-        var denied = await RequirePageAsync("/StudentPortal/Directory");
+        var denied = await RequirePageAsync("/StudentPortal/MyInstitution");
         if (denied is not null) return denied;
 
         var model = await StudentsService.GetMainstream(studentId, CurrentUserId);
@@ -28,7 +28,7 @@ public sealed class MainstreamModel(
             TempData["ErrorMessage"] = model.HasExistingMainstream
                 ? "This student has already been mainstreamed."
                 : "Completed baseline and endline assessments are required before mainstreaming.";
-            return Redirect("/StudentPortal/Directory");
+            return Redirect("/StudentPortal/MyInstitution");
         }
 
         Mainstream = model;
@@ -41,21 +41,21 @@ public sealed class MainstreamModel(
 
     public async Task<IActionResult> OnGetDistrictsAsync(int stateId)
     {
-        var denied = await RequirePageAsync("/StudentPortal/Directory");
+        var denied = await RequirePageAsync("/StudentPortal/MyInstitution");
         if (denied is not null) return new JsonResult(Array.Empty<object>()) { StatusCode = 403 };
         return new JsonResult(await StudentsService.GetDistricts(stateId));
     }
 
     public async Task<IActionResult> OnGetInstitutionsAsync(int stateId, int districtId)
     {
-        var denied = await RequirePageAsync("/StudentPortal/Directory");
+        var denied = await RequirePageAsync("/StudentPortal/MyInstitution");
         if (denied is not null) return new JsonResult(Array.Empty<object>()) { StatusCode = 403 };
         return new JsonResult(await StudentsService.GetMainstreamInstitutions(CurrentUserId, stateId, districtId));
     }
 
     public async Task<IActionResult> OnGetGradeSectionsAsync(int institutionId)
     {
-        var denied = await RequirePageAsync("/StudentPortal/Directory");
+        var denied = await RequirePageAsync("/StudentPortal/MyInstitution");
         if (denied is not null) return new JsonResult(Array.Empty<object>()) { StatusCode = 403 };
         var items = await StudentsService.GetGradeSections(institutionId);
         return new JsonResult(items.Where(x => !x.Text.Equals("Kadam STC", StringComparison.OrdinalIgnoreCase)));
@@ -63,14 +63,14 @@ public sealed class MainstreamModel(
 
     public async Task<IActionResult> OnPostAsync()
     {
-        var denied = await RequirePageAsync("/StudentPortal/Directory");
+        var denied = await RequirePageAsync("/StudentPortal/MyInstitution");
         if (denied is not null) return denied;
 
         var result = await StudentsService.SaveMainstream(Mainstream, CurrentUserId);
         if (result.Success)
         {
             TempData["SuccessMessage"] = result.Message;
-            return Redirect("/StudentPortal/Directory");
+            return Redirect("/StudentPortal/MyInstitution");
         }
 
         foreach (var error in result.Errors) ModelState.AddModelError(string.Empty, error);

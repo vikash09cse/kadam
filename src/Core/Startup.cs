@@ -1,4 +1,5 @@
 ﻿using Core.Features.Admin;
+using Core.Features.StudentsWeb;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Core;
@@ -22,5 +23,7 @@ public static class DependencyInject
         services.AddScoped<StudentFollowupService>();
         services.AddScoped<StudentAttendanceService>();
         services.AddScoped<StudentTrioService>();
+        services.AddScoped<StudentsWebValidator>();
+        services.AddScoped<StudentsWebService>();
     }
 }

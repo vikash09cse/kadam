@@ -893,6 +893,10 @@ namespace Core.Features.Admin
         }
         public async Task<ServiceResponseDTO> SaveRole(Role role, int currentUserId)
         {
+            if (!Enum.IsDefined(role.PortalType))
+            {
+                return new ServiceResponseDTO(false, AppStatusCodes.BadRequest, false, "Please select a valid portal.");
+            }
             if (await _adminRepository.CheckDuplicateRoleName(role.RoleName, role.Id))
             {
                 return new ServiceResponseDTO(false, AppStatusCodes.BadRequest, true, MessageError.DuplicateRoleName);
@@ -925,6 +929,9 @@ namespace Core.Features.Admin
                 var permissions = await _adminRepository.GetMenuPermissions();
                 if (permissions == null || !permissions.Any())
                     return Enumerable.Empty<MenuPermissionDTO>();
+
+                var role = await _adminRepository.GetRole(roleId);
+                permissions = permissions.Where(x => x.PortalType == role.PortalType);
 
                 // Get the selected permissions for this role
                 var selectedMenuIds = await _adminRepository.GetRolePermissions(roleId);

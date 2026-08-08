@@ -19,12 +19,13 @@ BEGIN
             UPDATE SET 
                 TrioId = source.TrioId,
                 ModifyBy = @CreatedBy,
-                ModifyDate = GETDATE()
+                ModifyDate = GETDATE(),
+                DateEntryPoint = 1
         
         WHEN NOT MATCHED THEN
             -- Insert new record
-            INSERT (StudentId, TrioId, CreatedBy, DateCreated, IsDeleted)
-            VALUES (source.StudentId, source.TrioId, @CreatedBy, GETDATE(), 0);
+            INSERT (StudentId, TrioId, CreatedBy, DateCreated, IsDeleted, DateEntryPoint)
+            VALUES (source.StudentId, source.TrioId, @CreatedBy, GETDATE(), 0, 1);
         
         COMMIT TRANSACTION;
         

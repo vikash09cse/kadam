@@ -4,13 +4,19 @@ AS
 BEGIN
     SET NOCOUNT ON;
 
+    UPDATE MenuPermissions
+    SET MenuName = N'Student List'
+    WHERE MenuName = N'Student Directory'
+      AND MenuUrl = N'/StudentPortal/Directory';
+
     DECLARE @Menus TABLE (
         SortOrder INT,
         MenuName NVARCHAR(255),
         ParentMenuName NVARCHAR(255) NULL,
         MenuUrl VARCHAR(255) NULL,
         IconClass VARCHAR(100) NULL,
-        MenuKey VARCHAR(100) NULL
+        MenuKey VARCHAR(100) NULL,
+        PortalType TINYINT NOT NULL DEFAULT (1)
     );
 
     INSERT INTO @Menus (SortOrder, MenuName, ParentMenuName, MenuUrl, IconClass, MenuKey) VALUES
@@ -35,14 +41,25 @@ BEGIN
     (19, N'Reports', NULL, N'#reportlist', N'ri-file-edit-line', N'reportlist'),
     (20, N'Kadam Programme Report', N'Reports', N'/Admin/Report', NULL, NULL),
     (21, N'Student Attendance Report', N'Reports', N'/Admin/AttendanceReport', NULL, NULL),
-    (22, N'Students', N'Settings', N'/Admin/Students', NULL, NULL);
+    (22, N'Students', N'Settings', N'/Admin/Students', NULL, NULL),
+    (23, N'Student Portal', NULL, N'#studentportal', N'ri-graduation-cap-line', N'studentportal'),
+    (24, N'Student Dashboard', N'Student Portal', N'/StudentPortal/Dashboard', N'ri-dashboard-line', NULL),
+    (25, N'Student List', N'Student Portal', N'/StudentPortal/Directory', N'ri-list-check-2', NULL),
+    (26, N'My Institution', N'Student Portal', N'/StudentPortal/MyInstitution', N'ri-building-line', NULL),
+    (27, N'Student Registration', N'Student Portal', N'/StudentPortal/Registration', N'ri-user-add-line', NULL),
+    (28, N'Student Health', N'Student Portal', N'/StudentPortal/Health', NULL, NULL),
+    (29, N'Student Documents', N'Student Portal', N'/StudentPortal/Documents', NULL, NULL);
+
+    UPDATE @Menus
+    SET PortalType = 2
+    WHERE MenuName = N'Student Portal' OR ParentMenuName = N'Student Portal';
 
     ;WITH ParentMenus AS (
         SELECT m.MenuName, m.Id
         FROM MenuPermissions m
         WHERE m.IsDeleted = 0
     )
-    INSERT INTO MenuPermissions (MenuName, ParentId, MenuUrl, IconClass, SortOrder, MenuKey, CurrentStatus, IsDeleted, DateCreated)
+    INSERT INTO MenuPermissions (MenuName, ParentId, MenuUrl, IconClass, SortOrder, MenuKey, PortalType, CurrentStatus, IsDeleted, DateCreated)
     SELECT
         src.MenuName,
         p.Id,
@@ -50,6 +67,7 @@ BEGIN
         src.IconClass,
         src.SortOrder,
         src.MenuKey,
+        src.PortalType,
         1,
         0,
         GETDATE()
@@ -69,6 +87,7 @@ BEGIN
         child.IconClass = src.IconClass,
         child.SortOrder = src.SortOrder,
         child.MenuKey = src.MenuKey,
+        child.PortalType = src.PortalType,
         child.ParentId = parentMenu.Id
     FROM MenuPermissions child
     INNER JOIN @Menus src ON src.MenuName = child.MenuName AND child.IsDeleted = 0

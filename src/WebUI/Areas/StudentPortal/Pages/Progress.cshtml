@@ -1,0 +1,76 @@
+@page
+@model ProgressModel
+@{
+    ViewData["Title"] = "Student Progress";
+}
+<div class="page-content">
+    <div class="container-fluid">
+        <div class="page-title-box d-sm-flex align-items-center justify-content-between">
+            <h4 class="mb-sm-0">Student Progress</h4>
+            <a href="/StudentPortal/MyInstitution" class="btn btn-secondary">Back to My Institution</a>
+        </div>
+        @if (TempData["SuccessMessage"] is string success) { <div class="alert alert-success">@success</div> }
+        @if (TempData["ErrorMessage"] is string error) { <div class="alert alert-danger">@error</div> }
+        <div class="card mb-3">
+            <div class="card-body row g-3">
+                <div class="col-md-4"><strong>Student:</strong> @Model.Progress.StudentName (@Model.Progress.StudentCode)</div>
+                <div class="col-md-2"><strong>Grade:</strong> @Model.Progress.GradeName</div>
+                <div class="col-md-3"><strong>Entry Step:</strong> @Model.Progress.EntryStepId</div>
+                <div class="col-md-3"><strong>Exit Step:</strong> @Model.Progress.ExitStepId</div>
+            </div>
+        </div>
+        <div class="row g-3">
+            @for (var gradeLevel = 1; gradeLevel <= 5; gradeLevel++)
+            {
+                var level = gradeLevel;
+                var steps = Model.Progress.Steps.Where(x => ((x.StepId + 1) / 2) == level).ToList();
+                var inRange = steps.Any(x => x.IsInRange);
+                if (!inRange) continue;
+                var testCompleted = Model.Progress.CompletedGradeLevels.Contains(level);
+                <div class="col-lg-4 col-md-6">
+                    <div class="card h-100">
+                        <div class="card-header d-flex justify-content-between">
+                            <strong>Grade Test @level</strong>
+                            <span class="badge @(testCompleted ? "bg-success" : "bg-secondary")">@(testCompleted ? "Completed" : "Pending")</span>
+                        </div>
+                        <div class="card-body">
+                            @foreach (var step in steps)
+                            {
+                                var previousCompleted = step.StepId == Model.Progress.EntryStepId ||
+                                    Model.Progress.Steps.Any(x => x.StepId == step.StepId - 1 && x.IsCompleted);
+                                var priorTestCompleted = step.StepId <= Model.Progress.EntryStepId ||
+                                    step.StepId % 2 == 0 ||
+                                    Model.Progress.CompletedGradeLevels.Contains((step.StepId - 1) / 2);
+                                var canComplete = step.IsInRange && !step.IsCompleted && previousCompleted && priorTestCompleted;
+                                <div class="d-flex align-items-center justify-content-between border rounded p-2 mb-2">
+                                    <span>@step.StepText</span>
+                                    @if (step.IsCompleted)
+                                    {
+                                        <span class="badge bg-success">Completed</span>
+                                    }
+                                    else
+                                    {
+                                        <form method="post" asp-page-handler="CompleteStep">
+                                            <input type="hidden" name="studentId" value="@Model.Progress.StudentId" />
+                                            <input type="hidden" name="stepId" value="@step.StepId" />
+                                            <button class="btn btn-sm btn-primary" type="submit" disabled="@(!canComplete)"
+                                                    onclick="return confirm('Mark this step as completed?');">Complete</button>
+                                        </form>
+                                    }
+                                </div>
+                            }
+                            @if (steps.All(x => x.IsCompleted) && !testCompleted)
+                            {
+                                <a class="btn btn-warning w-100" href="/StudentPortal/GradeTest?studentId=@Model.Progress.StudentId&gradeLevelId=@level">Complete Grade Test @level</a>
+                            }
+                            else if (testCompleted)
+                            {
+                                <a class="btn btn-outline-success w-100" href="/StudentPortal/GradeTest?studentId=@Model.Progress.StudentId&gradeLevelId=@level">View/Edit Grade Test @level</a>
+                            }
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+</div>

@@ -10,5 +10,6 @@ namespace Core.Entities
         public int? ModifyBy { get; set; }
         public DateTime? ModifyDate { get; set; }
         public bool IsDeleted { get; set; } = false;
+        public byte DateEntryPoint { get; set; } = 1;
     }
 }

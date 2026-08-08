@@ -5,6 +5,13 @@ BEGIN
     SET NOCOUNT ON;
 
     DECLARE @IsAdmin BIT = 0;
+    DECLARE @PortalType TINYINT = 1;
+    DECLARE @RoleId INT = 0;
+
+    SELECT @PortalType = ISNULL(r.PortalType, 1), @RoleId = r.Id
+    FROM Users u
+    INNER JOIN Roles r ON u.RoleId = r.Id AND r.IsDeleted = 0
+    WHERE u.Id = @UserId AND u.IsDeleted = 0;
 
     IF EXISTS (
         SELECT 1
@@ -21,12 +28,20 @@ BEGIN
         FROM MenuPermissions m
         WHERE m.IsDeleted = 0
           AND m.CurrentStatus = 1
+          AND m.PortalType = @PortalType
           AND (
               @IsAdmin = 1
               OR m.Id IN (
                   SELECT ump.MenuId
                   FROM UserMenuPermissions ump
                   WHERE ump.UserId = @UserId AND ump.IsDeleted = 0
+              )
+              OR m.Id IN (
+                  SELECT rp.MenuId
+                  FROM RolePermissions rp
+                  WHERE rp.RoleId = @RoleId
+                    AND rp.IsDeleted = 0
+                    AND rp.CurrentStatus = 1
               )
           )
     ),
@@ -49,6 +64,7 @@ BEGIN
     FROM MenuPermissions m
     WHERE m.IsDeleted = 0
       AND m.CurrentStatus = 1
+      AND m.PortalType = @PortalType
       AND m.Id IN (SELECT Id FROM VisibleMenuIds)
     ORDER BY ISNULL(m.ParentId, m.Id), m.SortOrder, m.Id;
 END

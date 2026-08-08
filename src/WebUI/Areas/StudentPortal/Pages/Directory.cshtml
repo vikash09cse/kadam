@@ -48,7 +48,6 @@
                 <a class="btn btn-outline-success" href="/StudentPortal/Health?studentId=${r.id}" title="Health"><i class="ri-heart-pulse-line"></i></a>
                 <a class="btn btn-outline-info" href="/StudentPortal/Documents?studentId=${r.id}" title="Documents"><i class="ri-file-list-line"></i></a>
                 ${r.isBaselineAdded ? `<button class="btn btn-outline-secondary" data-action="trio" data-id="${r.id}" data-value="${r.trioId || ''}" data-name="${encode(r.studentName)}" data-code="${encode(r.studentId)}" title="Assign Trio ID" aria-label="Assign Trio ID"><i class="ri-group-line"></i></button>` : ''}
-                ${r.isMainstreamEligible ? `<a class="btn btn-outline-success" href="/StudentPortal/Mainstream?studentId=${r.id}" title="Mainstream student" aria-label="Mainstream student"><i class="ri-user-follow-line"></i></a>` : ''}
                 ${r.currentStatus !== 3 ? `<button class="btn btn-outline-warning" data-action="status" data-id="${r.id}" data-status="${r.currentStatus}" data-name="${encode(r.studentName)}" data-code="${encode(r.studentId)}" data-reason="${encode(r.inActiveReason)}" data-date="${encode((r.inActiveDate || '').substring(0,10))}" data-remarks="${encode(r.remarks)}" title="Update status" aria-label="Update status"><i class="ri-toggle-line"></i></button>` : ''}
             </div>`}
         ]

@@ -6,5 +6,6 @@ Create Table StudentTrios(
     DateCreated DATETIME DEFAULT GETDATE(),
     ModifyBy INT,
     ModifyDate DATETIME,
-    IsDeleted BIT DEFAULT 0
+    IsDeleted BIT DEFAULT 0,
+    DateEntryPoint TINYINT NOT NULL DEFAULT 1
 )

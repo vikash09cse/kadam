@@ -56,7 +56,8 @@ BEGIN
         UPDATE sfd
         SET sfd.IsDeleted = 1,
             sfd.DeletedBy = @DeletedBy,
-            sfd.DeletedDate = @Now
+            sfd.DeletedDate = @Now,
+            sfd.DateEntryPoint = 1
         FROM dbo.StudentFamilyDetails sfd
         WHERE sfd.StudentId = @StudentRecordId
           AND ISNULL(sfd.IsDeleted, 0) = 0;
@@ -64,7 +65,8 @@ BEGIN
         UPDATE sh
         SET sh.IsDeleted = 1,
             sh.DeletedBy = @DeletedBy,
-            sh.DeletedDate = @Now
+            sh.DeletedDate = @Now,
+            sh.DateEntryPoint = 1
         FROM dbo.StudentHealths sh
         WHERE sh.StudentId = @StudentRecordId
           AND ISNULL(sh.IsDeleted, 0) = 0;
@@ -72,7 +74,8 @@ BEGIN
         UPDATE sd
         SET sd.IsDeleted = 1,
             sd.DeletedBy = @DeletedBy,
-            sd.DeletedDate = @Now
+            sd.DeletedDate = @Now,
+            sd.DateEntryPoint = 1
         FROM dbo.StudentDocuments sd
         WHERE sd.StudentId = @StudentRecordId
           AND ISNULL(sd.IsDeleted, 0) = 0;
@@ -94,7 +97,8 @@ BEGIN
           AND ISNULL(sgtd.IsDeleted, 0) = 0;
 
         UPDATE stt
-        SET stt.IsDeleted = 1
+        SET stt.IsDeleted = 1,
+            stt.DateEntryPoint = 1
         FROM dbo.StudentTrios stt
         WHERE stt.StudentId = @StudentRecordId
           AND ISNULL(stt.IsDeleted, 0) = 0;
@@ -113,7 +117,8 @@ BEGIN
         UPDATE s
         SET s.IsDeleted = 1,
             s.DeletedBy = @DeletedBy,
-            s.DeletedDate = @Now
+            s.DeletedDate = @Now,
+            s.DateEntryPoint = 1
         FROM dbo.Students s
         WHERE s.Id = @StudentRecordId
           AND ISNULL(s.IsDeleted, 0) = 0;

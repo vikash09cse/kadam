@@ -48,6 +48,7 @@ namespace Infrastructure
                 existingDetails.ReligionId = familyDetails.ReligionId;
                 existingDetails.ParentMonthlyIncome = familyDetails.ParentMonthlyIncome;
                 existingDetails.ParentMontlyExpenditure = familyDetails.ParentMontlyExpenditure;
+                existingDetails.DateEntryPoint = 1;
                 _context.StudentFamilyDetails.Update(existingDetails);
             }
             else
@@ -66,6 +67,7 @@ namespace Infrastructure
                 familyDetails.IsDeleted = true;
                 familyDetails.DeletedBy = deletedBy;
                 familyDetails.DeletedDate = DateTime.UtcNow;
+                familyDetails.DateEntryPoint = 1;
                 return await _context.SaveChangesAsync() > 0;
             }
             return false;

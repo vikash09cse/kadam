@@ -14,5 +14,6 @@ namespace Core.Entities
         public string? IconClass { get; set; }
         public int SortOrder { get; set; }
         public string? MenuKey { get; set; }
+        public Utilities.Enums.PortalType PortalType { get; set; } = Utilities.Enums.PortalType.Admin;
     }
 }

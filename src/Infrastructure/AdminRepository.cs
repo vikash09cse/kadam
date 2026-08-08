@@ -1229,6 +1229,7 @@ namespace Infrastructure
                 {
                     Id = x.Id,
                     MenuName = x.MenuName,
+                    PortalType = x.PortalType,
                 })
                 .ToListAsync();
         }

@@ -1,0 +1,104 @@
+@page
+@model BaselineModel
+@{
+    ViewData["Title"] = "Student Baseline";
+}
+
+<div class="page-content">
+    <div class="container-fluid">
+        <div class="page-title-box d-sm-flex align-items-center justify-content-between">
+            <h4 class="mb-sm-0">Student Baseline</h4>
+            <a href="/StudentPortal/MyInstitution" class="btn btn-secondary">Back to My Institution</a>
+        </div>
+
+        <form method="post" class="card">
+            <div class="card-header text-center">
+                <h5 class="card-title mb-0">Baseline Assessment</h5>
+            </div>
+            <div class="card-body">
+                <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
+                @if (Model.Details.IsLocked)
+                {
+                    <div class="alert alert-warning">@Model.Details.LockReason</div>
+                }
+                <input asp-for="Assessment.StudentId" type="hidden" />
+
+                <div class="row g-3 mb-4">
+                    <div class="col-md-4">
+                        <label class="form-label">Student</label>
+                        <input class="form-control" value="@Model.Details.StudentName (@Model.Details.StudentCode)" readonly />
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">Grade</label>
+                        <input class="form-control" value="@Model.Details.GradeName" readonly />
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">Age</label>
+                        <input class="form-control" value="@Model.Details.Age" readonly />
+                    </div>
+                    <div class="col-md-4">
+                        <label asp-for="Assessment.CompletedDate" class="form-label">Completed Date <span class="text-danger">*</span></label>
+                        <input asp-for="Assessment.CompletedDate" type="date" class="form-control"
+                               min="@Model.Details.EnrollmentDate.ToString("yyyy-MM-dd")"
+                               max="@DateTime.Today.ToString("yyyy-MM-dd")"
+                               readonly="@Model.Details.IsLocked" />
+                    </div>
+                </div>
+
+                <div class="table-responsive">
+                    <table class="table table-bordered align-middle">
+                        <thead class="table-primary">
+                            <tr><th>Subject</th><th>Obtained Marks</th><th>Total Marks</th><th>Percentage</th></tr>
+                        </thead>
+                        <tbody>
+                        @for (var index = 0; index < Model.Details.Subjects.Count; index++)
+                        {
+                            var subject = Model.Details.Subjects[index];
+                            <tr>
+                                <td>
+                                    @subject.SubjectName
+                                    <input asp-for="Assessment.Scores[index].SubjectId" type="hidden" value="@subject.SubjectId" />
+                                </td>
+                                <td>
+                                    <input asp-for="Assessment.Scores[index].ObtainedMarks"
+                                           class="form-control assessment-mark"
+                                           type="number" min="0" max="@subject.TotalMarks"
+                                           step="0.01" data-total="@subject.TotalMarks"
+                                           readonly="@Model.Details.IsLocked" />
+                                </td>
+                                <td>@subject.TotalMarks.ToString("0.##")</td>
+                                <td><span class="assessment-percentage">@((subject.PercentageMarks.HasValue ? $"{subject.PercentageMarks:0}%" : "-"))</span></td>
+                            </tr>
+                        }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="card-footer d-flex justify-content-end gap-2">
+                @if (!Model.Details.IsLocked)
+                {
+                    <button type="submit" class="btn btn-success">Save Baseline</button>
+                }
+                <a href="/StudentPortal/MyInstitution" class="btn btn-danger">Cancel</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+<partial name="_ValidationScriptsPartial" />
+<script>
+document.querySelectorAll('.assessment-mark').forEach(input => {
+    const update = () => {
+        const value = Number(input.value);
+        const total = Number(input.dataset.total);
+        input.closest('tr').querySelector('.assessment-percentage').textContent =
+            input.value !== '' && total > 0 ? `${Math.round(value / total * 100)}%` : '-';
+    };
+    input.addEventListener('input', update);
+    update();
+});
+</script>
+}
+
+<style>.validation-summary-valid { display: none; }</style>

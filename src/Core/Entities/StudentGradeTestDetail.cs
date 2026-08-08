@@ -1,4 +1,5 @@
 using System;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace Core.Entities
 {
@@ -12,7 +13,8 @@ namespace Core.Entities
         public decimal? PercentageMarks { get; set; }
         public decimal? TotalMarks { get; set; }
         public DateTime? CompletedDate { get; set; }
-        public string SubjectName { get; set; } = string.Empty;
-        public int RowNo { get; set; } = 0;
+        public byte DateEntryPoint { get; set; } = 1;
+        [NotMapped] public string SubjectName { get; set; } = string.Empty;
+        [NotMapped] public int RowNo { get; set; } = 0;
     }
 }

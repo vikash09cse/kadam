@@ -7,5 +7,6 @@ namespace Core.Entities
         public string DocumentNumber { get; set; } = string.Empty;
         public string DocumentPath { get; set; } = string.Empty;
         public string DocumentFileName { get; set; } = string.Empty;
+        public byte DateEntryPoint { get; set; } = 1;
     }
 } 

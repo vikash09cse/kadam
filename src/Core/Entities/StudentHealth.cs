@@ -8,5 +8,6 @@ namespace Core.Entities
         public decimal? PercentagePhysicallyChallenged { get; set; }
         public string DisabilityCertificatePath { get; set; } = string.Empty;
         public string DisabilityCertificateFileName { get; set; } = string.Empty;
+        public byte DateEntryPoint { get; set; } = 1;
     }
 } 

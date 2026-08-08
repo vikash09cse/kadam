@@ -23,6 +23,13 @@ namespace Core.Utilities
             [Description("Closed")]
             Closed = 3
         }
+        public enum PortalType : byte
+        {
+            [Description("Admin Portal")]
+            Admin = 1,
+            [Description("Student Portal")]
+            Student = 2
+        }
         public enum InstitutionType
         {
             [Description("Primary School")]

@@ -8,5 +8,6 @@ namespace Core.Entities
         public bool IsCompleted { get; set; }
         public int CreatedBy { get; set; }
         public DateTime CreatedDate { get; set; }
+        public byte DateEntryPoint { get; set; } = 1;
     }
 }

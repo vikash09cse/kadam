@@ -28,5 +28,6 @@ namespace Core.Entities
         public string? Remarks { get; set; }
         public string? InActiveReason { get; set; }
         public DateTime? InActiveDate { get; set; }
+        public byte DateEntryPoint { get; set; } = 1;
     }
 }

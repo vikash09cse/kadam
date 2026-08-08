@@ -3,5 +3,8 @@ Create Or Alter PROCEDURE [dbo].[usp_StudentProfilePictureSave]
     @ProfilePicturePath Varchar(255)
 AS
 BEGIN
-     Update Students Set ProfilePicturePath = @ProfilePicturePath Where Id = @Id
+     UPDATE Students
+     SET ProfilePicturePath = @ProfilePicturePath,
+         DateEntryPoint = 1
+     WHERE Id = @Id
 End

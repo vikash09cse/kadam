@@ -34,6 +34,7 @@ CREATE TABLE [dbo].[Students](
 	[Remarks] [varchar](255) NULL,
 	[InActiveReason] [varchar](100) NULL,
 	[InActiveDate] [datetime] NULL,
+	[DateEntryPoint] [tinyint] NOT NULL CONSTRAINT [DF_Students_DateEntryPoint] DEFAULT ((1)),
 PRIMARY KEY CLUSTERED 
 (
 	[Id] ASC

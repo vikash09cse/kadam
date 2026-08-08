@@ -6,6 +6,7 @@ Create Table MenuPermissions(
     IconClass VARCHAR(100) NULL,
     SortOrder INT NOT NULL DEFAULT(0),
     MenuKey VARCHAR(100) NULL,
+    PortalType TINYINT NOT NULL DEFAULT 1,
     CurrentStatus INT NOT NULL,
     CreatedBy INT,
     DateCreated DATETIME DEFAULT GETDATE(),

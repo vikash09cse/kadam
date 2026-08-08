@@ -44,6 +44,7 @@ namespace Infrastructure
                 health.IsDeleted = true;
                 health.DeletedBy = deletedBy;
                 health.DeletedDate = DateTime.UtcNow;
+                health.DateEntryPoint = 1;
                 return await _context.SaveChangesAsync() > 0;
             }
             return false;
