@@ -167,24 +167,54 @@ namespace Core.Features.Admin
         }
 
         /// <summary>
-        /// Active divisions available for filter UIs.
-        /// Division-scoped roles (DO/SPM / AllowMultipleDivision) only see PeopleDivisions assignments.
+        /// Active divisions available for filter UIs (Dashboard, Programme Report).
+        /// Admin: all active. Division-scoped (DO/SPM): PeopleDivisions.
+        /// Other roles: distinct divisions from PeopleInstitutions assignments.
         /// </summary>
         public async Task<IEnumerable<DropdownDTO>> GetDivisionsForUser(int userId)
         {
             var allActive = (await _adminRepository.GetDivisionsByStatus(Enums.Status.Active)).ToList();
-            if (!await IsDivisionScopedUser(userId))
+            if (userId <= 0)
             {
                 return allActive;
             }
 
-            var assignedIds = (await _adminRepository.GetPeopleDivisionIds(userId)).ToHashSet();
-            if (assignedIds.Count == 0)
+            var user = await _adminRepository.GetUser(userId);
+            if (user == null || user.Id == 0 || user.RoleId <= 0)
+            {
+                return allActive;
+            }
+
+            var role = await _adminRepository.GetRole(user.RoleId);
+            var roleName = role?.RoleName?.Trim() ?? string.Empty;
+            if (roleName.Equals(RoleNames.Admin, StringComparison.OrdinalIgnoreCase))
+            {
+                return allActive;
+            }
+
+            if (RoleNames.IsDivisionScopedRole(role))
+            {
+                var assignedDivisionIds = (await _adminRepository.GetPeopleDivisionIds(userId)).ToHashSet();
+                if (assignedDivisionIds.Count == 0)
+                {
+                    return [];
+                }
+
+                return allActive.Where(d => assignedDivisionIds.Contains(d.Value)).ToList();
+            }
+
+            var institutionDivisionIds = (await _adminRepository.GetPeopleInstitutionAssignments(userId))
+                .Select(a => a.DivisionId)
+                .Where(id => id > 0)
+                .Distinct()
+                .ToHashSet();
+
+            if (institutionDivisionIds.Count == 0)
             {
                 return [];
             }
 
-            return allActive.Where(d => assignedIds.Contains(d.Value)).ToList();
+            return allActive.Where(d => institutionDivisionIds.Contains(d.Value)).ToList();
         }
 
         public async Task<ServiceResponseDTO> SavePeopleDivisions(int userId, IEnumerable<int> divisionIds)
