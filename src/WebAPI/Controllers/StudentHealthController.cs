@@ -17,6 +17,7 @@ namespace WebAPI.Controllers
         [HttpPost("SaveStudentHealth")]
         public async Task<IActionResult> SaveStudentHealth([FromBody] StudentHealth health)
         {
+            health.DateEntryPoint = 1;
             var response = await _studentHealthService.SaveStudentHealth(health);
             return StatusCode(response.StatusCode, response);
         }

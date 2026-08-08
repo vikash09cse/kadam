@@ -4,7 +4,11 @@ using WebUI;
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
-builder.Services.AddRazorPages();
+builder.Services.AddRazorPages(options =>
+{
+    options.Conventions.AuthorizeFolder("/Admin", "AdminPortal");
+    options.Conventions.AuthorizeAreaFolder("StudentPortal", "/", "StudentPortal");
+});
 builder.Services.AddHttpContextAccessor();
 builder.AddServices();
 
@@ -36,7 +40,7 @@ app.UseStaticFiles(new StaticFileOptions { ContentTypeProvider = apkContentTypes
 app.UseRouting();
 
 app.UseAuthentication();
-//app.UseAuthorization();
+app.UseAuthorization();
 
 app.MapStaticAssets();
 app.MapRazorPages()

@@ -17,6 +17,7 @@ namespace WebAPI.Controllers
         [HttpPost("SaveStudentDocument")]
         public async Task<IActionResult> SaveStudentDocument([FromBody] StudentDocument document)
         {
+            document.DateEntryPoint = 1;
             var response = await _studentDocumentService.SaveStudentDocument(document);
             return StatusCode(response.StatusCode, response);
         }

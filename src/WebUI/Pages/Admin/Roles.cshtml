@@ -45,6 +45,7 @@
                                         <tr>
                                             <th style="width: 8%;">Sr.No.</th>
                                             <th>Role Name</th>
+                                            <th>Portal</th>
                                             <th style="width: 8%;">Status</th>
                                             <th style="width: 8%;">Action</th>
                                         </tr>
@@ -75,6 +76,18 @@
                                 <input type="text" class="form-control" id="roleName" name="roleName" 
                                        ng-model="vm.roleInfo.roleName" required>
                                 <span class="text-danger" ng-show="vm.isSubmit && roleForm.roleName.$error.required">Required.</span>
+                            </div>
+                        </div>
+                        <div class="form-group row mb-3">
+                            <div class="col">
+                                <label for="portalType">Portal<span class="text-danger">*</span></label>
+                                <select class="form-select" id="portalType" name="portalType"
+                                        ng-model="vm.roleInfo.portalType" required>
+                                    <option value="">Select portal</option>
+                                    <option ng-value="1">Admin Portal</option>
+                                    <option ng-value="2">Student Portal</option>
+                                </select>
+                                <span class="text-danger" ng-show="vm.isSubmit && roleForm.portalType.$error.required">Required.</span>
                             </div>
                         </div>
                         <div class="form-group row">
@@ -275,6 +288,7 @@
                         columns: [
                             { data: 'rowNumber' },
                             { data: 'roleName' },
+                            { data: 'portalTypeText' },
                             { data: 'currentStatusText' },
                             {
                                 data: null,
@@ -314,6 +328,7 @@
                     vm.roleInfo = {
                         id: 0,
                         roleName: '',
+                        portalType: 1,
                         allowMultipleDivision: false
                     };
                 };
