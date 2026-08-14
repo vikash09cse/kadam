@@ -2,12 +2,17 @@ Create Or Alter Procedure [dbo].[usp_Users]
 (
  @QueryType			Int,
  @Id				Int=Null,
- @Email				Varchar(100)=Null
+ @Email				Varchar(100)=Null,
+ @UserName			Varchar(100)=Null
 )
 AS
 	If @QueryType=1
 		BEGIN
 			Select Count(1) From Users Where Email=@Email AND Id!=@Id
+		End
+	Else If @QueryType=5
+		BEGIN
+			Select Count(1) From Users Where UserName=@UserName AND Id!=@Id
 		End
 	Else If @QueryType=2
 		BEGIN

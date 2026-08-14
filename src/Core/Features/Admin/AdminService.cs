@@ -33,6 +33,10 @@ namespace Core.Features.Admin
             {
                 return new ServiceResponseDTO(false, AppStatusCodes.BadRequest, true, MessageError.DuplicateEmail);
             }
+            if (await _adminRepository.CheckUserNameExist(user.UserName, user.Id))
+            {
+                return new ServiceResponseDTO(false, AppStatusCodes.BadRequest, true, MessageError.DuplicateUserName);
+            }
             user.DivisionId = 0;
             user.ActivityType = "";
             user.Grade = "";

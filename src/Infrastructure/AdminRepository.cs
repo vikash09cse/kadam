@@ -31,6 +31,18 @@ namespace Infrastructure
             return rowCount > 0;
         }
 
+        public async Task<bool> CheckUserNameExist(string userName, int id)
+        {
+            var SP = DBConstant.SP.usp_Users;
+            var P = new DynamicParameters();
+            P.Add(DBConstant.Param.QueryType, 5);
+            P.Add(DBConstant.Param.Id, id);
+            P.Add(DBConstant.Param.UserName, userName);
+            var rowCount = await _db.Connection
+                .ExecuteScalarAsync<int>(SP, P, _db.Transaction, null, CommandType.StoredProcedure);
+            return rowCount > 0;
+        }
+
         public async Task<bool> DeleteUser(int id)
         {
             var SP = DBConstant.SP.usp_Users;

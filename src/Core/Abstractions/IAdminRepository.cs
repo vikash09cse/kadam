@@ -13,6 +13,7 @@ namespace Core.Abstractions
         Task<IEnumerable<UserListDTO>> GetUserList(int pageNumber, int pageSize, string searchTerm);
         Task<IEnumerable<PeopleExportDTO>> GetPeopleExportList();
         Task<bool> CheckUserExist(string email, int id);
+        Task<bool> CheckUserNameExist(string userName, int id);
         Task<Users> GetUser(int id);
         Task<bool> SaveUser(Users user);
         Task<bool> DeleteUser(int id);
