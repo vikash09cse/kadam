@@ -58,7 +58,7 @@
                                         <th style="width: 6%;">Age</th>
                                         <th style="width: 10%;">Enrollment Date</th>
                                         <th style="width: 8%;">Status</th>
-                                        @if (Model.IsAdmin)
+                                        @if (Model.CanDelete)
                                         {
                                             <th style="width: 8%;">Action</th>
                                         }
@@ -85,7 +85,7 @@
     <script src="~/js/loaderInterceptor.js"></script>
 
     <script type="text/javascript">
-        var isAdminUser = @Json.Serialize(Model.IsAdmin);
+        var canDeleteStudent = @Json.Serialize(Model.CanDelete);
 
         var app = angular.module('studentListApp', ['app']);
 
@@ -127,16 +127,12 @@
                     { data: 'currentStatusText' }
                 ];
 
-                if (isAdminUser) {
+                if (canDeleteStudent) {
                     columns.push({
                         data: null,
                         orderable: false,
                         render: function(data, type, row) {
-                            return `
-                                <button class="btn btn-sm btn-danger" title="Delete" onclick="deleteStudent(${row.id})">
-                                    <i class="mdi mdi-close-thick"></i>
-                                </button>
-                            `;
+                            return `<button class="btn btn-sm btn-danger" title="Delete" onclick="deleteStudent(${row.id})"><i class="mdi mdi-close-thick"></i></button>`;
                         }
                     });
                 }

@@ -121,6 +121,7 @@ namespace Core.Abstractions
         Task<IEnumerable<UserMenuPermissionItemDTO>> GetUserMenuPermissions(int userId);
         Task<bool> SaveUserMenuPermissions(UserMenuPermissionsDTO userMenuPermissions, int createdBy);
         Task<IEnumerable<NavigationMenuDTO>> GetUserNavigationMenus(int userId);
+        Task<PageActionPermission> GetPageActionPermission(int userId, string menuUrl);
         Task SeedNavigationMenus();
         Task EnsureNavigationMenusSeeded();
         #endregion

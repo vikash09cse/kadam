@@ -1220,12 +1220,30 @@ namespace Infrastructure
         {
             var rolePermission = await _context.RolePermissions.Where(x => x.RoleId == rolePermissions.RoleId).ToListAsync();
             _context.RolePermissions.RemoveRange(rolePermission);
-            foreach (var menuId in rolePermissions.PermissionIds)
+
+            var items = (rolePermissions.Permissions ?? [])
+                .Where(x => x.MenuId > 0)
+                .GroupBy(x => x.MenuId)
+                .Select(g => g.First())
+                .ToList();
+
+            if (items.Count == 0)
+            {
+                items = (rolePermissions.PermissionIds ?? [])
+                    .Where(id => id > 0)
+                    .Distinct()
+                    .Select(id => new RolePermissionItemDTO { MenuId = id, CanAddEdit = true, CanDelete = true })
+                    .ToList();
+            }
+
+            foreach (var item in items)
             {
                 _context.RolePermissions.Add(new RolePermission
                 {
                     RoleId = rolePermissions.RoleId,
-                    MenuId = menuId,
+                    MenuId = item.MenuId,
+                    CanAddEdit = item.CanAddEdit,
+                    CanDelete = item.CanDelete,
                     CreatedBy = createdBy,
                     DateCreated = DateTime.UtcNow
                 });
@@ -1241,6 +1259,7 @@ namespace Infrastructure
                 {
                     Id = x.Id,
                     MenuName = x.MenuName,
+                    MenuUrl = x.MenuUrl,
                     PortalType = x.PortalType,
                 })
                 .ToListAsync();
@@ -1265,12 +1284,29 @@ namespace Infrastructure
                 .ToListAsync();
             _context.UserMenuPermissions.RemoveRange(existing);
 
-            foreach (var menuId in userMenuPermissions.MenuIds.Distinct())
+            var items = (userMenuPermissions.Permissions ?? [])
+                .Where(x => x.MenuId > 0)
+                .GroupBy(x => x.MenuId)
+                .Select(g => g.First())
+                .ToList();
+
+            if (items.Count == 0)
+            {
+                items = (userMenuPermissions.MenuIds ?? [])
+                    .Where(id => id > 0)
+                    .Distinct()
+                    .Select(id => new UserMenuPermissionSaveItemDTO { MenuId = id, CanAddEdit = true, CanDelete = true })
+                    .ToList();
+            }
+
+            foreach (var item in items)
             {
                 _context.UserMenuPermissions.Add(new UserMenuPermission
                 {
                     UserId = userMenuPermissions.UserId,
-                    MenuId = menuId,
+                    MenuId = item.MenuId,
+                    CanAddEdit = item.CanAddEdit,
+                    CanDelete = item.CanDelete,
                     CreatedBy = createdBy,
                     DateCreated = DateTime.UtcNow,
                     CurrentStatus = Enums.Status.Active
@@ -1291,6 +1327,72 @@ namespace Infrastructure
                 parameters,
                 _db.Transaction,
                 commandType: CommandType.StoredProcedure);
+        }
+
+        public async Task<PageActionPermission> GetPageActionPermission(int userId, string menuUrl)
+        {
+            var user = await GetUser(userId);
+            if (user == null || user.Id == 0)
+            {
+                return PageActionPermission.None;
+            }
+
+            var role = user.RoleId > 0 ? await GetRole(user.RoleId) : null;
+            if (role != null && string.Equals(role.RoleName?.Trim(), RoleNames.Admin, StringComparison.OrdinalIgnoreCase))
+            {
+                return PageActionPermission.Full;
+            }
+
+            var menuId = await _context.MenuPermissions
+                .AsNoTracking()
+                .Where(m =>
+                    !m.IsDeleted
+                    && m.CurrentStatus == Enums.Status.Active
+                    && m.MenuUrl != null
+                    && m.MenuUrl.ToLower() == menuUrl.ToLower())
+                .Select(m => (int?)m.Id)
+                .FirstOrDefaultAsync();
+
+            if (menuId == null)
+            {
+                return PageActionPermission.None;
+            }
+
+            var userGrant = await _context.UserMenuPermissions
+                .AsNoTracking()
+                .Where(x => x.UserId == userId && x.MenuId == menuId.Value && !x.IsDeleted)
+                .Select(x => new { x.CanAddEdit, x.CanDelete })
+                .FirstOrDefaultAsync();
+
+            var roleGrant = role != null && role.Id > 0
+                ? await _context.RolePermissions
+                    .AsNoTracking()
+                    .Where(x => x.RoleId == role.Id && x.MenuId == menuId.Value && !x.IsDeleted && x.CurrentStatus == Enums.Status.Active)
+                    .Select(x => new { x.CanAddEdit, x.CanDelete })
+                    .FirstOrDefaultAsync()
+                : null;
+
+            if (userGrant == null && roleGrant == null)
+            {
+                return PageActionPermission.None;
+            }
+
+            if (userGrant != null)
+            {
+                return new PageActionPermission
+                {
+                    CanView = true,
+                    CanAddEdit = userGrant.CanAddEdit,
+                    CanDelete = userGrant.CanDelete
+                };
+            }
+
+            return new PageActionPermission
+            {
+                CanView = true,
+                CanAddEdit = roleGrant!.CanAddEdit,
+                CanDelete = roleGrant.CanDelete
+            };
         }
 
         public async Task SeedNavigationMenus()

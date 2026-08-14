@@ -4,10 +4,11 @@ using Core.Features.Admin;
 using Core.Utilities;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
+using WebUI.Services;
 
 namespace WebUI.Pages.Admin
 {
-    public class DivisionsModel(AdminService adminService, AuthenticationService authenticationService) : PageModel
+    public class DivisionsModel(AdminService adminService, AuthenticationService authenticationService, PagePermissionGuard pagePermissions) : PageModel
     {
         public async Task<IActionResult> OnGetDivisionList(int draw, int start, int length, string searchValue)
         {
@@ -18,6 +19,8 @@ namespace WebUI.Pages.Admin
 
         public async Task<IActionResult> OnPostSaveDivision([FromBody] Division division)
         {
+            var denied = await pagePermissions.ForbidAddEditAsync();
+            if (denied != null) return denied;
             if (division == null)
             {
                 return new JsonResult(new { success = false, message = MessageError.InvalidData });
@@ -29,6 +32,8 @@ namespace WebUI.Pages.Admin
 
         public async Task<IActionResult> OnPostDeleteDivision(int id)
         {
+            var denied = await pagePermissions.ForbidDeleteAsync();
+            if (denied != null) return denied;
             var response = await adminService.DeleteDivision(id, authenticationService.GetCurrentUserId());
             return new JsonResult(response);
         }
@@ -85,6 +90,8 @@ namespace WebUI.Pages.Admin
 
         public async Task<IActionResult> OnPostSaveDivisionLocation([FromBody] SaveDivisionLocationDTO assignment)
         {
+            var denied = await pagePermissions.ForbidAddEditAsync();
+            if (denied != null) return denied;
             if (assignment == null)
             {
                 return new JsonResult(new { success = false, message = MessageError.InvalidData });

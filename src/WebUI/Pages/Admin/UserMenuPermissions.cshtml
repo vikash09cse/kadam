@@ -35,29 +35,70 @@
                         <p class="text-muted mb-4">
                             Select the menus this user can access. Parent menus are shown automatically when a child menu is assigned.
                             Admin users always see all menus regardless of these settings.
+                            Add/Edit and Delete on a user override the role defaults for that page.
                         </p>
 
                         <form method="post">
                             <input type="hidden" asp-for="UserId" />
 
-                            <div class="permissions-list border rounded p-3" style="max-height: 520px; overflow-y: auto;">
+                            <div class="permissions-list border rounded p-3" style="max-height: 560px; overflow-y: auto;">
+                                <div class="row fw-semibold border-bottom pb-2 mb-2 d-none d-md-flex">
+                                    <div class="col-md-6">Menu</div>
+                                    <div class="col-md-2">Access</div>
+                                    <div class="col-md-2">Add/Edit</div>
+                                    <div class="col-md-2">Delete</div>
+                                </div>
                                 @foreach (var menu in Model.Menus)
                                 {
                                     var isChild = menu.ParentId.HasValue && menu.ParentId.Value > 0;
-                                    <div class="form-check mb-2 @(isChild ? "ms-4" : "")">
-                                        <input class="form-check-input"
-                                               type="checkbox"
-                                               name="SelectedMenuIds"
-                                               value="@menu.Id"
-                                               id="menu_@menu.Id"
-                                               @(Model.SelectedMenuIds.Contains(menu.Id) ? "checked" : null) />
-                                        <label class="form-check-label" for="menu_@menu.Id">
-                                            @menu.MenuName
-                                            @if (isChild && !string.IsNullOrWhiteSpace(menu.ParentMenuName))
+                                    <div class="row align-items-center mb-2 @(isChild ? "ms-3" : "") permission-row">
+                                        <div class="col-md-6">
+                                            <label class="form-check-label" for="menu_@menu.Id">
+                                                @menu.MenuName
+                                                @if (isChild && !string.IsNullOrWhiteSpace(menu.ParentMenuName))
+                                                {
+                                                    <small class="text-muted">(@menu.ParentMenuName)</small>
+                                                }
+                                                @if (menu.IsInherited)
+                                                {
+                                                    <small class="text-muted">from role</small>
+                                                }
+                                            </label>
+                                        </div>
+                                        <div class="col-md-2">
+                                            <div class="form-check">
+                                                <input class="form-check-input js-access"
+                                                       type="checkbox"
+                                                       name="SelectedMenuIds"
+                                                       value="@menu.Id"
+                                                       id="menu_@menu.Id"
+                                                       @(Model.SelectedMenuIds.Contains(menu.Id) ? "checked" : null) />
+                                            </div>
+                                        </div>
+                                        <div class="col-md-2">
+                                            @if (menu.HasActions)
                                             {
-                                                <small class="text-muted">(@menu.ParentMenuName)</small>
+                                                <div class="form-check">
+                                                    <input class="form-check-input js-add-edit"
+                                                           type="checkbox"
+                                                           name="AddEditMenuIds"
+                                                           value="@menu.Id"
+                                                           @(Model.AddEditMenuIds.Contains(menu.Id) ? "checked" : null) />
+                                                </div>
                                             }
-                                        </label>
+                                        </div>
+                                        <div class="col-md-2">
+                                            @if (menu.HasActions)
+                                            {
+                                                <div class="form-check">
+                                                    <input class="form-check-input js-delete"
+                                                           type="checkbox"
+                                                           name="DeleteMenuIds"
+                                                           value="@menu.Id"
+                                                           @(Model.DeleteMenuIds.Contains(menu.Id) ? "checked" : null) />
+                                                </div>
+                                            }
+                                        </div>
                                     </div>
                                 }
                             </div>
@@ -75,3 +116,30 @@
         </div>
     </div>
 </div>
+
+@section Scripts {
+    <script>
+        document.querySelectorAll('.permission-row').forEach(function (row) {
+            var access = row.querySelector('.js-access');
+            var addEdit = row.querySelector('.js-add-edit');
+            var del = row.querySelector('.js-delete');
+            if (!access) return;
+
+            function syncFromAccess() {
+                if (!access.checked) {
+                    if (addEdit) addEdit.checked = false;
+                    if (del) del.checked = false;
+                }
+            }
+            function syncToAccess() {
+                if ((addEdit && addEdit.checked) || (del && del.checked)) {
+                    access.checked = true;
+                }
+            }
+
+            access.addEventListener('change', syncFromAccess);
+            if (addEdit) addEdit.addEventListener('change', syncToAccess);
+            if (del) del.addEventListener('change', syncToAccess);
+        });
+    </script>
+}

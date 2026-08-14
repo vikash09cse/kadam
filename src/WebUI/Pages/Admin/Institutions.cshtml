@@ -20,10 +20,10 @@
                                 <i class="mdi mdi-file-excel"></i> Download Excel
                             </button>
                         </form>
-                        <a href="/Admin/InstitutionBulkImport" class="btn btn-success me-2">
+                        <a href="/Admin/InstitutionBulkImport" class="btn btn-success me-2 js-requires-add-edit">
                             <i class="mdi mdi-file-excel"></i> Bulk Import
                         </a>
-                        <button type="button" class="btn btn-primary" ng-click="vm.openAddInstitutionModal()">
+                            <button type="button" class="btn btn-primary js-requires-add-edit" ng-click="vm.openAddInstitutionModal()">
                             Add Institution
                         </button>
                     </div>
@@ -505,16 +505,13 @@
                                 data: null,
                                 orderable: false,
                                 render: function(data, type, row) {
-                                    return `
-                                        <div class="btn-group">
-                                            <button class="btn btn-sm btn-warning" title="Edit" ng-click="vm.editInstitution(${row.id})">
-                                                <i class="mdi mdi-pencil"></i>
-                                            </button>
-                                            <button class="btn btn-sm btn-danger" title="Remove" ng-click="vm.removeInstitution(${row.id})">
-                                                <i class="mdi mdi-close-thick"></i>
-                                            </button>
-                                        </div>
-                                    `;
+                                    var editBtn = window.canAddEdit()
+                                        ? `<button class="btn btn-sm btn-warning" title="Edit" ng-click="vm.editInstitution(${row.id})"><i class="mdi mdi-pencil"></i></button>`
+                                        : '';
+                                    var deleteBtn = window.canDelete()
+                                        ? `<button class="btn btn-sm btn-danger" title="Remove" ng-click="vm.removeInstitution(${row.id})"><i class="mdi mdi-close-thick"></i></button>`
+                                        : '';
+                                    return `<div class="btn-group">${editBtn}${deleteBtn}</div>`;
                                 }
                             }
                         ],

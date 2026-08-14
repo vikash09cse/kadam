@@ -2,6 +2,7 @@ using Core.Features.Admin;
 using Core.Utilities;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
+using WebUI.Services;
 
 namespace WebUI.Pages.Admin
 {
@@ -9,11 +10,13 @@ namespace WebUI.Pages.Admin
     {
         private readonly AdminService _adminService;
         private readonly AuthenticationService _authenticationService;
+        private readonly PagePermissionGuard _pagePermissions;
 
-        public AssignDivisionModel(AdminService adminService, AuthenticationService authenticationService)
+        public AssignDivisionModel(AdminService adminService, AuthenticationService authenticationService, PagePermissionGuard pagePermissions)
         {
             _adminService = adminService;
             _authenticationService = authenticationService;
+            _pagePermissions = pagePermissions;
         }
 
         [BindProperty(SupportsGet = true)]
@@ -59,6 +62,13 @@ namespace WebUI.Pages.Admin
             if (Id <= 0)
             {
                 return RedirectToPage("/Admin/Peoples");
+            }
+
+            if (!await _pagePermissions.CanAddEditAsync())
+            {
+                TempData["ErrorMessage"] = MessageError.NoPermission;
+                await LoadPageDataAsync();
+                return Page();
             }
 
             if (SelectedDivisionIds == null || SelectedDivisionIds.Count == 0)

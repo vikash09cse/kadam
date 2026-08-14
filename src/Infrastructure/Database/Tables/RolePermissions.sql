@@ -9,5 +9,7 @@ Create Table RolePermissions(
     ModifyDate DATETIME,
     DeletedBy INT,
     DeletedDate DATETIME,
-    IsDeleted BIT DEFAULT 0
+    IsDeleted BIT DEFAULT 0,
+    CanAddEdit BIT NOT NULL DEFAULT 1,
+    CanDelete BIT NOT NULL DEFAULT 1
 );

@@ -13,7 +13,7 @@
                 <div class="page-title-box d-sm-flex align-items-center justify-content-between">
                     <h4 class="mb-sm-0">Programs</h4>
                     <div class="text-end">
-                        <button type="button" class="btn btn-primary" ng-click="openAddProgramModal()">
+                        <button type="button" class="btn btn-primary js-requires-add-edit" ng-click="openAddProgramModal()">
                             Add Program
                         </button>
                     </div>
@@ -132,12 +132,8 @@
                         render: function (data, type, row) {
                             var buttons = `
                                 <div class="btn-group">
-                                    <button class="btn btn-sm btn-warning" title="Edit" onclick="editProgram(${row.id})">
-                                        <i class="mdi mdi-pencil"></i>
-                                    </button>
-                                    <button class="btn btn-sm btn-danger" title="Remove" onclick="removeProgram(${row.id})">
-                                        <i class="mdi mdi-trash-can"></i>
-                                    </button>
+                                    ${window.canAddEdit() ? `<button class="btn btn-sm btn-warning" title="Edit" onclick="editProgram(${row.id})"><i class="mdi mdi-pencil"></i></button>` : ''}
+                                    ${window.canDelete() ? `<button class="btn btn-sm btn-danger" title="Remove" onclick="removeProgram(${row.id})"><i class="mdi mdi-trash-can"></i></button>` : ''}
                                 </div>
                             `;
                             return buttons;

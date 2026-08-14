@@ -5,10 +5,11 @@ using Core.Features.Admin;
 using Core.Utilities;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
+using WebUI.Services;
 
 namespace WebUI.Pages.Admin
 {
-    public class VillagesModel(AdminService adminService, AuthenticationService authenticationService) : PageModel
+    public class VillagesModel(AdminService adminService, AuthenticationService authenticationService, PagePermissionGuard pagePermissions) : PageModel
     {
         public async Task<IActionResult> OnGetVillageList(int draw, int start, int length, string searchValue)
         {
@@ -18,6 +19,8 @@ namespace WebUI.Pages.Admin
 
         public async Task<IActionResult> OnPostSaveVillage([FromBody] Village village)
         {
+            var denied = await pagePermissions.ForbidAddEditAsync();
+            if (denied != null) return denied;
             if (village == null)
             {
                 return new JsonResult(new { success = false, message = MessageError.InvalidData });
@@ -29,6 +32,8 @@ namespace WebUI.Pages.Admin
 
         public async Task<IActionResult> OnPostDeleteVillage(int id)
         {
+            var denied = await pagePermissions.ForbidDeleteAsync();
+            if (denied != null) return denied;
             var response = await adminService.DeleteVillage(id, authenticationService.GetCurrentUserId());
             return new JsonResult(response);
         }
@@ -56,6 +61,8 @@ namespace WebUI.Pages.Admin
 
         public async Task<IActionResult> OnPostBulkImportVillages(IFormFile excelFile)
         {
+            var denied = await pagePermissions.ForbidAddEditAsync();
+            if (denied != null) return denied;
             if (excelFile == null || excelFile.Length == 0)
                 return new JsonResult(new { success = false, message = "Please select a valid Excel file." });
 

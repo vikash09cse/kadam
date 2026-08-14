@@ -7,10 +7,11 @@ using Core.Utilities;
 using Core.Entities;
 using static Core.Utilities.Enums;
 using Core.DTOs.Users;
+using WebUI.Services;
 
 namespace WebUI.Pages.Admin
 {
-    public class InstitutionsModel(InstitutionService _institutionService, AdminService adminService, AuthenticationService authenticationService) : PageModel
+    public class InstitutionsModel(InstitutionService _institutionService, AdminService adminService, AuthenticationService authenticationService, PagePermissionGuard pagePermissions) : PageModel
     {
         
 
@@ -160,6 +161,8 @@ namespace WebUI.Pages.Admin
         /// </summary>
         public async Task<IActionResult> OnPostSaveInstitutionAsync([FromBody] InstitutionSave institution)
         {
+            var denied = await pagePermissions.ForbidAddEditAsync();
+            if (denied != null) return denied;
             if (!ModelState.IsValid)
             {
                 return new JsonResult(new { success = false, message = "Invalid data." });
@@ -185,6 +188,8 @@ namespace WebUI.Pages.Admin
         /// </summary>
         public async Task<IActionResult> OnPostDeleteInstitutionAsync(int id)
         {
+            var denied = await pagePermissions.ForbidDeleteAsync();
+            if (denied != null) return denied;
             try
             {
                 // Retrieve current user ID

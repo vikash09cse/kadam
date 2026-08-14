@@ -1,3 +1,9 @@
+@using Core.Features.Admin
+@inject PagePermissionService PagePermissionService
+@inject AuthenticationService AuthenticationService
+@{
+    var pagePerm = await PagePermissionService.GetAsync(AuthenticationService.GetCurrentUserId(), Context.Request.Path.Value);
+}
 <!DOCTYPE html>
 <html lang="en" data-layout="vertical" data-sidebar="light" data-sidebar-size="lg">
 <head>
@@ -21,6 +27,22 @@
     <link rel="stylesheet" href="//cdn.datatables.net/1.12.1/css/jquery.dataTables.min.css">
     <link rel="stylesheet" href="//cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css" />
     <script src="https://code.jquery.com/jquery-3.6.0.js"></script>
+    <script>
+        window.pagePermissions = {
+            canAddEdit: @Json.Serialize(pagePerm.CanAddEdit),
+            canDelete: @Json.Serialize(pagePerm.CanDelete)
+        };
+        window.canAddEdit = function () { return !!(window.pagePermissions && window.pagePermissions.canAddEdit); };
+        window.canDelete = function () { return !!(window.pagePermissions && window.pagePermissions.canDelete); };
+        document.addEventListener('DOMContentLoaded', function () {
+            if (!window.canAddEdit()) {
+                document.querySelectorAll('.js-requires-add-edit').forEach(function (el) { el.remove(); });
+            }
+            if (!window.canDelete()) {
+                document.querySelectorAll('.js-requires-delete').forEach(function (el) { el.remove(); });
+            }
+        });
+    </script>
 </head>
 <body>
     <!-- Navigation-->

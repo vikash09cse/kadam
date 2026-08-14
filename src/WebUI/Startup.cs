@@ -55,6 +55,7 @@ namespace WebUI
             });
 
             builder.Services.AddScoped<AuthenticationService>();
+            builder.Services.AddScoped<WebUI.Services.PagePermissionGuard>();
             builder.Services.InjectCore();
             builder.Services.InjectInfrastructure();
         }

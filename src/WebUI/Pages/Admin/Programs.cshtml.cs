@@ -2,6 +2,7 @@ using Core.Features.Admin;
 using Core.Utilities;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
+using WebUI.Services;
 
 namespace WebUI.Pages.Admin
 {
@@ -9,11 +10,13 @@ namespace WebUI.Pages.Admin
     {
         private readonly AdminService _adminService;
         private readonly AuthenticationService _authenticationService;
+        private readonly PagePermissionGuard _pagePermissions;
 
-        public ProgramsModel(AdminService adminService, AuthenticationService authenticationService)
+        public ProgramsModel(AdminService adminService, AuthenticationService authenticationService, PagePermissionGuard pagePermissions)
         {
             _adminService = adminService;
             _authenticationService = authenticationService;
+            _pagePermissions = pagePermissions;
         }
 
         public async Task<IActionResult> OnGetProgramList(int draw, int start, int length, string searchValue)
@@ -25,6 +28,8 @@ namespace WebUI.Pages.Admin
 
         public async Task<IActionResult> OnPostSaveProgram([FromBody] Core.Entities.Program program)
         {
+            var denied = await _pagePermissions.ForbidAddEditAsync();
+            if (denied != null) return denied;
             if (program == null)
             {
                 return new JsonResult(new { success = false, message = MessageError.InvalidData });
@@ -36,6 +41,8 @@ namespace WebUI.Pages.Admin
 
         public async Task<IActionResult> OnPostDeleteProgram(int id)
         {
+            var denied = await _pagePermissions.ForbidDeleteAsync();
+            if (denied != null) return denied;
             var response = await _adminService.DeleteProgram(id, _authenticationService.GetCurrentUserId());
             return new JsonResult(response);
         }

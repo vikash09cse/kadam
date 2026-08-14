@@ -21,6 +21,7 @@ public static class MessageSuccess
 public static class MessageError
 {
     public const string DuplicateEmail = "Email already exists, please try using different email.";
+    public const string NoPermission = "You do not have permission to perform this action.";
     public const string DuplicateUserName = "Username already exists, please try using different username.";
     public const string DuplicateDivisionName = "Division name already exists, please try using different name.";
     public const string DuplicateDivisionCode = "Division code already exists, please try using different code.";

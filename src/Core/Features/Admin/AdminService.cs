@@ -944,7 +944,10 @@ namespace Core.Features.Admin
                 var permissionsList = permissions.ToList();
                 for (var i = 0; i < permissionsList.Count; i++)
                 {
-                    permissionsList[i].IsSelected = selectedMenuIds.Any(x => x.MenuId == permissionsList[i].Id);
+                    var selected = selectedMenuIds.FirstOrDefault(x => x.MenuId == permissionsList[i].Id);
+                    permissionsList[i].IsSelected = selected != null;
+                    permissionsList[i].CanAddEdit = selected?.CanAddEdit ?? false;
+                    permissionsList[i].CanDelete = selected?.CanDelete ?? false;
                 }
                 permissions = permissionsList;
 

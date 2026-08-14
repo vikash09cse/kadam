@@ -6,6 +6,7 @@ using Core.Utilities;
 using static Core.Utilities.Enums;
 using Core.DTOs.Users;
 using Core.Entities;
+using WebUI.Services;
 
 namespace WebUI.Pages.Admin
 {
@@ -14,12 +15,14 @@ namespace WebUI.Pages.Admin
         private readonly AdminService _adminService;
         private readonly AuthenticationService _authenticationService;
         private readonly InstitutionService _institutionService;
+        private readonly PagePermissionGuard _pagePermissions;
 
-        public PeoplesModel(AdminService adminService, AuthenticationService authenticationService, InstitutionService institutionService)
+        public PeoplesModel(AdminService adminService, AuthenticationService authenticationService, InstitutionService institutionService, PagePermissionGuard pagePermissions)
         {
             _adminService = adminService;
             _authenticationService = authenticationService;
             _institutionService = institutionService;
+            _pagePermissions = pagePermissions;
         }
 
         public void OnGet()
@@ -137,6 +140,8 @@ namespace WebUI.Pages.Admin
         {
             try
             {
+                var denied = await _pagePermissions.ForbidAddEditAsync();
+                if (denied != null) return denied;
                 if (userRequest?.User == null)
                 {
                     return new JsonResult(new { success = false, message = MessageError.InvalidData });
@@ -180,6 +185,8 @@ namespace WebUI.Pages.Admin
         }
         public async Task<IActionResult> OnPostSaveUserPrograms([FromBody] List<UserProgram> userPrograms)
         {
+            var denied = await _pagePermissions.ForbidAddEditAsync();
+            if (denied != null) return denied;
             var result = await _adminService.SaveUserPrograms(userPrograms);
             return new JsonResult(result);
         }
@@ -260,12 +267,16 @@ namespace WebUI.Pages.Admin
         }
         public async Task<IActionResult> OnPostSavePeopleInstitution([FromBody] PeopleInstitution peopleInstitution)
         {
+            var denied = await _pagePermissions.ForbidAddEditAsync();
+            if (denied != null) return denied;
             var result = await _adminService.SavePeopleInstitution(peopleInstitution);
             return new JsonResult(result);
         }
 
         public async Task<IActionResult> OnPostDeleteUser(int id)
         {
+            var denied = await _pagePermissions.ForbidDeleteAsync();
+            if (denied != null) return denied;
             if (id <= 0)
             {
                 return new JsonResult(new { success = false, message = MessageError.InvalidData });
@@ -293,6 +304,8 @@ namespace WebUI.Pages.Admin
 
         public async Task<IActionResult> OnPostResetUserPassword(int id)
         {
+            var denied = await _pagePermissions.ForbidAddEditAsync();
+            if (denied != null) return denied;
             var result = await _adminService.ResetUserPassword(id);
             return new JsonResult(result);
         }

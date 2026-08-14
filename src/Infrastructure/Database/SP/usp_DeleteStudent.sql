@@ -10,20 +10,6 @@ BEGIN
 
         IF NOT EXISTS (
             SELECT 1
-            FROM dbo.Users u
-            INNER JOIN dbo.Roles r ON u.RoleId = r.Id AND r.IsDeleted = 0
-            WHERE u.Id = @DeletedBy
-              AND u.IsDeleted = 0
-              AND LOWER(LTRIM(RTRIM(r.RoleName))) = 'admin'
-        )
-        BEGIN
-            ROLLBACK TRANSACTION;
-            SELECT 0 AS Success, 'Only admin users can delete students.' AS Message;
-            RETURN;
-        END
-
-        IF NOT EXISTS (
-            SELECT 1
             FROM dbo.Students
             WHERE Id = @StudentRecordId AND IsDeleted = 0
         )
