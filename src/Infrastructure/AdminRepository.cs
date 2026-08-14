@@ -381,6 +381,52 @@ namespace Infrastructure
                 .ToListAsync();
         }
 
+        public async Task<IEnumerable<DropdownDTO>> GetInstitutionsFiltered(int? stateId, int? divisionId, IEnumerable<int>? allowedDivisionIds, IEnumerable<int>? allowedInstitutionIds)
+        {
+            var query = _context.Institutions.Where(i => !i.IsDeleted && i.CurrentStatus == Enums.Status.Active);
+
+            if (stateId is > 0)
+            {
+                query = query.Where(i => i.StateId == stateId);
+            }
+
+            if (divisionId is > 0)
+            {
+                query = query.Where(i => i.DivisionId == divisionId);
+            }
+
+            if (allowedDivisionIds != null)
+            {
+                var divisionIds = allowedDivisionIds.Distinct().ToList();
+                if (divisionIds.Count == 0)
+                {
+                    return [];
+                }
+
+                query = query.Where(i => divisionIds.Contains(i.DivisionId));
+            }
+
+            if (allowedInstitutionIds != null)
+            {
+                var institutionIds = allowedInstitutionIds.Distinct().ToList();
+                if (institutionIds.Count == 0)
+                {
+                    return [];
+                }
+
+                query = query.Where(i => institutionIds.Contains(i.Id));
+            }
+
+            return await query
+                .OrderBy(i => i.InstitutionName)
+                .Select(i => new DropdownDTO
+                {
+                    Value = i.Id,
+                    Text = i.InstitutionName
+                })
+                .ToListAsync();
+        }
+
         public async Task<IEnumerable<int>> GetPeopleDivisionIds(int userId)
         {
             return await _context.PeopleDivisions
@@ -538,6 +584,60 @@ namespace Infrastructure
             var parameters = new DynamicParameters();
             parameters.Add("@CurrentStatus", currentStatus);
             return await _db.Connection.QueryAsync<DropdownDTO>(storedProcedure, parameters, _db.Transaction, commandType: CommandType.StoredProcedure);
+        }
+
+        public async Task<IEnumerable<int>> GetDivisionIdsByStateId(int stateId)
+        {
+            var fromLocations = await _context.DivisionLocations
+                .Where(x => x.StateId == stateId && !x.IsDeleted)
+                .Select(x => x.DivisionId)
+                .Distinct()
+                .ToListAsync();
+
+            var fromDivisions = await _context.Divisions
+                .Where(x => x.StateId == stateId && !x.IsDeleted)
+                .Select(x => x.Id)
+                .ToListAsync();
+
+            return fromLocations.Union(fromDivisions).Distinct().ToList();
+        }
+
+        public async Task<IEnumerable<int>> GetStateIdsByDivisionIds(IEnumerable<int> divisionIds)
+        {
+            var ids = divisionIds?.Where(id => id > 0).Distinct().ToList() ?? [];
+            if (ids.Count == 0)
+            {
+                return [];
+            }
+
+            var fromLocations = await _context.DivisionLocations
+                .Where(x => ids.Contains(x.DivisionId) && !x.IsDeleted)
+                .Select(x => x.StateId)
+                .Distinct()
+                .ToListAsync();
+
+            var fromDivisions = await _context.Divisions
+                .Where(x => ids.Contains(x.Id) && !x.IsDeleted && x.StateId.HasValue && x.StateId > 0)
+                .Select(x => x.StateId!.Value)
+                .Distinct()
+                .ToListAsync();
+
+            return fromLocations.Union(fromDivisions).Distinct().ToList();
+        }
+
+        public async Task<IEnumerable<int>> GetStateIdsByInstitutionIds(IEnumerable<int> institutionIds)
+        {
+            var ids = institutionIds?.Where(id => id > 0).Distinct().ToList() ?? [];
+            if (ids.Count == 0)
+            {
+                return [];
+            }
+
+            return await _context.Institutions
+                .Where(x => ids.Contains(x.Id) && !x.IsDeleted && x.StateId > 0)
+                .Select(x => x.StateId)
+                .Distinct()
+                .ToListAsync();
         }
 
         public async Task<DivisionLocationAssignmentDTO> GetDivisionLocationAssignment(int divisionId)

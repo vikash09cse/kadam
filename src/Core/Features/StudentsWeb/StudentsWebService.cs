@@ -397,6 +397,42 @@ public sealed class StudentsWebService(
         };
     }
 
+    public async Task<StudentsWebSaveResult> SaveBaselineCompletedDate(
+        StudentsWebAssessmentSaveDTO model, int userId)
+    {
+        var assessment = await repository.GetAssessment(
+            model.StudentId, StudentsWebAssessmentKind.Baseline, userId);
+        if (assessment is null)
+            return new StudentsWebSaveResult { Message = "Student was not found or access was denied." };
+        if (!assessment.CanChangeCompletedDate)
+            return new StudentsWebSaveResult { Message = assessment.IsLocked ? assessment.LockReason : "Baseline date cannot be changed." };
+
+        var errors = new List<string>();
+        if (!model.CompletedDate.HasValue) errors.Add("Baseline completion date is required.");
+        else
+        {
+            if (model.CompletedDate.Value.Date < assessment.EnrollmentDate.Date)
+                errors.Add("Baseline date cannot be before enrollment.");
+            if (model.CompletedDate.Value.Date > DateTime.Today)
+                errors.Add("Baseline date cannot be in the future.");
+        }
+        if (errors.Count > 0)
+            return new StudentsWebSaveResult { Errors = errors, Message = "Baseline date is invalid." };
+
+        var status = await repository.UpdateBaselineCompletedDate(
+            model.StudentId, model.CompletedDate!.Value, userId);
+        return status switch
+        {
+            StudentsWebAssessmentSaveStatus.Saved =>
+                new StudentsWebSaveResult { Success = true, Id = model.StudentId, Message = "Baseline date updated successfully." },
+            StudentsWebAssessmentSaveStatus.Locked =>
+                new StudentsWebSaveResult { Id = model.StudentId, Message = "Completed students are read-only." },
+            StudentsWebAssessmentSaveStatus.InvalidDate =>
+                new StudentsWebSaveResult { Id = model.StudentId, Message = "Baseline date cannot be after the endline date, before enrollment, or in the future." },
+            _ => new StudentsWebSaveResult { Id = model.StudentId, Message = "Student was not found or access was denied." }
+        };
+    }
+
     public async Task<StudentsWebSaveResult> SaveEndline(
         StudentsWebAssessmentSaveDTO model, int userId)
     {

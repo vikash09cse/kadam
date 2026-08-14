@@ -39,6 +39,8 @@ public interface IStudentsWebRepository
         int studentId, StudentsWebAssessmentKind kind, int userId);
     Task<StudentsWebAssessmentSaveStatus> SaveBaseline(
         StudentsWebAssessmentSaveDTO model, StudentsWebAssessmentDTO assessment, int userId);
+    Task<StudentsWebAssessmentSaveStatus> UpdateBaselineCompletedDate(
+        int studentId, DateTime completedDate, int userId);
     Task<StudentsWebAssessmentSaveStatus> SaveEndline(
         StudentsWebAssessmentSaveDTO model, StudentsWebAssessmentDTO assessment, int userId);
     Task<StudentsWebProgressDTO?> GetProgress(int studentId, int userId);

@@ -36,6 +36,11 @@ namespace Core.Features.Admin
             return response;
         }
 
+        public async Task<IEnumerable<StudentFollowupListDTO>> GetFollowupReport(int userId, StudentFollowupReportFilterDTO filter)
+        {
+            return await _studentFollowupRepository.GetFollowupReport(userId, filter);
+        }
+
         public async Task<ServiceResponseDTO> DeleteStudentFollowup(int id, int userId)
         {
             var isDeleted = await _studentFollowupRepository.DeleteStudentFollowup(id, userId);

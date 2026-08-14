@@ -76,5 +76,14 @@ namespace Core.Features.Admin
             return new ServiceResponseDTO(isSaved, isSaved ? AppStatusCodes.Success : AppStatusCodes.Unauthorized, 
                 result: isSaved, isSaved ? MessageSuccess.Saved : MessageError.CodeIssue);
         }
+
+        public async Task<ServiceResponseDTO> UpdateBaselineCompletedDate(UpdateBaselineCompletedDateDTO model)
+        {
+            if (model == null || model.StudentId <= 0)
+                return new ServiceResponseDTO(false, AppStatusCodes.BadRequest, true, MessageError.InvalidData);
+
+            var (success, message) = await _repository.UpdateBaselineCompletedDate(model);
+            return new ServiceResponseDTO(success, success ? AppStatusCodes.Success : AppStatusCodes.BadRequest, success, message);
+        }
     }
 } 

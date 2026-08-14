@@ -29,4 +29,11 @@ namespace Core.DTOs.App
         public List<StudentBaselineDetailWithSubjectDTO> StudentBaselineDetails { get; set; }
     }
 
+    public class UpdateBaselineCompletedDateDTO
+    {
+        public int StudentId { get; set; }
+        public DateTime CompletedDate { get; set; }
+        public int CreatedBy { get; set; }
+    }
+
 } 

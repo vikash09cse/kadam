@@ -71,7 +71,7 @@
                                 @if (Model.Student.IsBaselineAdded) { <input asp-for="Student.GradeId" type="hidden" /> }
                             </div>
                             <div class="col-md-4" id="sectionGroup"><label asp-for="Student.Section" class="form-label">Section</label><select asp-for="Student.Section" id="section" class="form-select"><option value="@Model.Student.Section">@(!string.IsNullOrWhiteSpace(Model.Student.Section) ? Model.Student.Section : "Select")</option></select></div>
-                            <div class="col-md-4" id="registrationNumberGroup"><label asp-for="Student.StudentRegistratioNumber" class="form-label">Student Registration Number</label><input asp-for="Student.StudentRegistratioNumber" class="form-control" maxlength="20" inputmode="numeric" /></div>
+                            <div class="col-md-4" id="registrationNumberGroup"><label asp-for="Student.StudentRegistratioNumber" class="form-label">Student Registration Number</label><input asp-for="Student.StudentRegistratioNumber" class="form-control" maxlength="50" /></div>
 
                             <div id="kadamFields" class="col-12">
                                 <div class="row g-3">
@@ -98,7 +98,11 @@
                         <h5 class="text-primary mb-3">Father's Information</h5>
                         <div class="row g-3">
                             <div class="col-md-4"><label asp-for="Student.FatherName" class="form-label">Name</label><input asp-for="Student.FatherName" class="form-control" maxlength="50" /></div>
-                            <div class="col-md-2"><label asp-for="Student.FatherAge" class="form-label">Age *</label><input asp-for="Student.FatherAge" type="number" min="0" max="99" class="form-control" /></div>
+                            <div class="col-md-2">
+                                <label asp-for="Student.FatherAge" class="form-label">Age *</label>
+                                <input asp-for="Student.FatherAge" type="number" min="0" max="98" class="form-control parent-age" data-parent="Father" />
+                                <div class="form-text">Enter 0 if unknown. Otherwise more than 20 and less than 99.</div>
+                            </div>
                             <div class="col-md-3"><label asp-for="Student.FatherOccupationId" class="form-label">Occupation</label><select asp-for="Student.FatherOccupationId" asp-items="Model.FatherOccupations" class="form-select"><option value="">Select</option></select></div>
                             <div class="col-md-3"><label asp-for="Student.FatherEducationId" class="form-label">Education</label><select asp-for="Student.FatherEducationId" asp-items="Model.Educations" class="form-select"><option value="">Select</option></select></div>
                         </div>
@@ -106,7 +110,11 @@
                         <h5 class="text-primary mt-4 mb-3">Mother's Information</h5>
                         <div class="row g-3">
                             <div class="col-md-4"><label asp-for="Student.MotherName" class="form-label">Name</label><input asp-for="Student.MotherName" class="form-control" maxlength="50" /></div>
-                            <div class="col-md-2"><label asp-for="Student.MotherAge" class="form-label">Age *</label><input asp-for="Student.MotherAge" type="number" min="0" max="99" class="form-control" /></div>
+                            <div class="col-md-2">
+                                <label asp-for="Student.MotherAge" class="form-label">Age *</label>
+                                <input asp-for="Student.MotherAge" type="number" min="0" max="98" class="form-control parent-age" data-parent="Mother" />
+                                <div class="form-text">Enter 0 if unknown. Otherwise more than 20 and less than 99.</div>
+                            </div>
                             <div class="col-md-3"><label asp-for="Student.MotherOccupationId" class="form-label">Occupation</label><select asp-for="Student.MotherOccupationId" asp-items="Model.Occupations" class="form-select"><option value="">Select</option></select></div>
                             <div class="col-md-3"><label asp-for="Student.MotherEducationId" class="form-label">Education</label><select asp-for="Student.MotherEducationId" asp-items="Model.Educations" class="form-select"><option value="">Select</option></select></div>
                         </div>
@@ -282,6 +290,26 @@
         profilePicture?.addEventListener('change', event => {
             cameraPicture.value = '';
             previewPicture(event);
+        });
+
+        function isValidParentAge(value) {
+            if (value === '' || value == null) return false;
+            const age = Number(value);
+            if (!Number.isInteger(age)) return false;
+            return age === 0 || (age > 20 && age < 99);
+        }
+
+        document.querySelector('form')?.addEventListener('submit', event => {
+            for (const input of document.querySelectorAll('.parent-age')) {
+                if (!isValidParentAge(input.value)) {
+                    event.preventDefault();
+                    const parent = input.dataset.parent || 'Parent';
+                    alert(`${parent}'s age must be 0 if unknown, or more than 20 and less than 99.`);
+                    bootstrap.Tab.getOrCreateInstance(document.querySelector('#family-tab')).show();
+                    input.focus();
+                    return;
+                }
+            }
         });
     })();
 </script>

@@ -661,6 +661,49 @@ public sealed class StudentsWebRepository(IDbSession db, DatabaseContext context
         }
     }
 
+    public async Task<StudentsWebAssessmentSaveStatus> UpdateBaselineCompletedDate(
+        int studentId, DateTime completedDate, int userId)
+    {
+        if (!await CanAccessStudent(studentId, userId))
+            return StudentsWebAssessmentSaveStatus.NotAuthorizedOrNotFound;
+
+        var student = await context.Students.FirstOrDefaultAsync(x => x.Id == studentId && !x.IsDeleted);
+        if (student is null)
+            return StudentsWebAssessmentSaveStatus.NotAuthorizedOrNotFound;
+        if (student.CurrentStatus == Core.Utilities.Enums.Status.Closed)
+            return StudentsWebAssessmentSaveStatus.Locked;
+
+        var details = await context.StudentBaselineDetails
+            .Where(x => x.StudentId == studentId && !x.IsDeleted &&
+                        x.BaselineType == "baselinepreAssessment")
+            .ToListAsync();
+        if (details.Count == 0)
+            return StudentsWebAssessmentSaveStatus.NotAuthorizedOrNotFound;
+
+        var date = completedDate.Date;
+        if (date < student.EnrollmentDate.Date || date > DateTime.Today)
+            return StudentsWebAssessmentSaveStatus.InvalidDate;
+
+        var endlineDates = await context.StudentBaselineDetails
+            .Where(x => x.StudentId == studentId && !x.IsDeleted &&
+                        x.BaselineType == "endlinepreAssessment" && x.CompletedDate.HasValue)
+            .Select(x => x.CompletedDate!.Value)
+            .ToListAsync();
+        if (endlineDates.Count > 0 && date > endlineDates.Max().Date)
+            return StudentsWebAssessmentSaveStatus.InvalidDate;
+
+        foreach (var detail in details)
+        {
+            detail.CompletedDate = date;
+            detail.ModifyBy = userId;
+            detail.ModifyDate = DateTime.UtcNow;
+            detail.DateEntryPoint = StudentsWebEntryPoint.Web;
+        }
+
+        await context.SaveChangesAsync();
+        return StudentsWebAssessmentSaveStatus.Saved;
+    }
+
     public async Task<StudentsWebAssessmentSaveStatus> SaveEndline(
         StudentsWebAssessmentSaveDTO model, StudentsWebAssessmentDTO assessment, int userId)
     {

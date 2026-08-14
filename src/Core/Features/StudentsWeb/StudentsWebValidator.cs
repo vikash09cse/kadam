@@ -55,8 +55,8 @@ public sealed partial class StudentsWebValidator
 
         if (model.IsKadamPlusStudent &&
             (string.IsNullOrWhiteSpace(model.StudentRegistratioNumber) ||
-             !model.StudentRegistratioNumber.All(char.IsDigit)))
-            errors.Add("Student registration number is required and must contain digits only.");
+             model.StudentRegistratioNumber.Trim().Length > 50))
+            errors.Add("Student registration number is required and cannot exceed 50 characters.");
 
         if (!model.IsKadamPlusStudent)
         {
@@ -144,8 +144,10 @@ public sealed partial class StudentsWebValidator
     {
         ValidateName(model.FatherName, "Father's name", errors);
         ValidateName(model.MotherName, "Mother's name", errors);
-        if (!model.FatherAge.HasValue || model.FatherAge is < 0 or > 99) errors.Add("Father's age must be between 0 and 99.");
-        if (!model.MotherAge.HasValue || model.MotherAge is < 0 or > 99) errors.Add("Mother's age must be between 0 and 99.");
+        if (!IsValidParentAge(model.FatherAge))
+            errors.Add("Father's age must be 0 if unknown, or more than 20 and less than 99.");
+        if (!IsValidParentAge(model.MotherAge))
+            errors.Add("Mother's age must be 0 if unknown, or more than 20 and less than 99.");
         if (string.IsNullOrWhiteSpace(model.PrimaryContactNumber) || !MobilePattern().IsMatch(model.PrimaryContactNumber))
             errors.Add("Primary contact number must contain exactly 10 digits.");
         if (!string.IsNullOrWhiteSpace(model.AlternateContactNumber) &&
@@ -165,4 +167,7 @@ public sealed partial class StudentsWebValidator
         if (string.IsNullOrWhiteSpace(model.ParentMonthlyIncome)) errors.Add("Monthly income is required.");
         if (string.IsNullOrWhiteSpace(model.ParentMontlyExpenditure)) errors.Add("Monthly expenditure is required.");
     }
+
+    private static bool IsValidParentAge(int? age) =>
+        age is 0 or (> 20 and < 99);
 }

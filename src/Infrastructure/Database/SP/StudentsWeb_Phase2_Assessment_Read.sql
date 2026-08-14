@@ -52,6 +52,7 @@ BEGIN
             CAST(NULL AS DATETIME) BaselineCompletedDate,
             CAST(0 AS BIT) HasProgress,
             CAST(0 AS BIT) IsLocked,
+            CAST(0 AS BIT) CanChangeCompletedDate,
             CAST('' AS VARCHAR(200)) LockReason;
         SELECT TOP (0)
             CAST(0 AS INT) DetailId,
@@ -89,6 +90,14 @@ BEGIN
             ) THEN 1
             WHEN @AssessmentType = 'endlinepreAssessment' AND assessment.CompletedDate IS NOT NULL THEN 1
             ELSE 0 END AS BIT) IsLocked,
+        CAST(CASE
+            WHEN s.CurrentStatus = 3 THEN 0
+            WHEN @AssessmentType = 'baselinepreAssessment' AND EXISTS (
+                SELECT 1 FROM dbo.StudentBaselineDetails d
+                WHERE d.StudentId = s.Id AND d.IsDeleted = 0
+                  AND d.BaselineType = 'baselinepreAssessment'
+            ) THEN 1
+            ELSE 0 END AS BIT) CanChangeCompletedDate,
         CASE
             WHEN s.CurrentStatus = 3 THEN 'Completed students are read-only.'
             WHEN @AssessmentType = 'endlinepreAssessment' AND baseline.CompletedDate IS NULL
@@ -96,7 +105,7 @@ BEGIN
             WHEN @AssessmentType = 'baselinepreAssessment' AND EXISTS (
                 SELECT 1 FROM dbo.StudentProgressSteps progress
                 WHERE progress.StudentId = s.Id AND progress.IsCompleted = 1
-            ) THEN 'Baseline is locked because student progress has started.'
+            ) THEN 'Baseline marks are locked because student progress has started. You can still update the baseline date.'
             WHEN @AssessmentType = 'endlinepreAssessment' AND assessment.CompletedDate IS NOT NULL
                 THEN 'Endline has already been completed.'
             ELSE '' END LockReason

@@ -29,7 +29,7 @@ namespace Core.Abstractions
         Task<bool> SaveStudentMainstream(StudentMainstream studentMainstream);
         Task<bool> HasBaselineDetails(int studentId);
         Task<IEnumerable<KadamProgrammeReportDTO>> GetKadamProgrammeReport(int? userId, KadamProgrammeReportFilterDTO? filter = null);
-        Task<IEnumerable<StudentAdminListDTO>> GetStudents(int pageNumber, int pageSize, string? studentName, string? studentId, int userId);
+        Task<IEnumerable<StudentAdminListDTO>> GetStudents(int pageNumber, int pageSize, string? studentName, string? studentId, int? status, int userId);
         Task<IEnumerable<StudentAttendanceSummaryReportDTO>> GetStudentAttendanceSummaryReport(int userId, StudentAttendanceSummaryReportFilterDTO filter);
         Task<IEnumerable<AppGradeSectionDTO>> GetGradeSectionsByInstitutionId(int institutionId);
     }

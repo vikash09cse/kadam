@@ -10,5 +10,8 @@ namespace Core.DTOs
         public int Age { get; set; }
         public DateTime? EnrollmentDate { get; set; }
         public string StudentRegistratioNumber { get; set; } = string.Empty;
+        public new string CurrentStatusText => CurrentStatus == Core.Utilities.Enums.Status.Closed
+            ? "Completed"
+            : CurrentStatus.ToString();
     }
 }

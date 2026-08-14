@@ -55,4 +55,25 @@ public sealed class BaselineModel(
         Details = details;
         return Page();
     }
+
+    public async Task<IActionResult> OnPostUpdateDateAsync()
+    {
+        var denied = await RequirePageAsync("/StudentPortal/MyInstitution");
+        if (denied is not null) return denied;
+
+        var result = await StudentsService.SaveBaselineCompletedDate(Assessment, CurrentUserId);
+        if (result.Success)
+        {
+            TempData["SuccessMessage"] = result.Message;
+            return Redirect("/StudentPortal/MyInstitution");
+        }
+
+        foreach (var error in result.Errors) ModelState.AddModelError(string.Empty, error);
+        if (result.Errors.Count == 0) ModelState.AddModelError(string.Empty, result.Message);
+        var details = await StudentsService.GetAssessment(
+            Assessment.StudentId, StudentsWebAssessmentKind.Baseline, CurrentUserId);
+        if (details is null) return NotFound();
+        Details = details;
+        return Page();
+    }
 }

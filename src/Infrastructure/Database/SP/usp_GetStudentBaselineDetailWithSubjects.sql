@@ -64,7 +64,8 @@ BEGIN
         sbd.PercentageMarks,
         ISNULL(sbd.TotalMarks, @SubjectTotalMarks) AS TotalMarks,
         sbd.CurrentStatus,
-        sb.SubjectName
+        sb.SubjectName,
+        sbd.CompletedDate
     FROM  Subjects sb 
     LEFT JOIN StudentBaselineDetails sbd ON sbd.SubjectId = sb.Id AND sbd.StudentId = @StudentId 
     AND sbd.BaselineType = COALESCE(@BaselineType, sbd.BaselineType)

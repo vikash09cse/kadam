@@ -20,6 +20,7 @@ public sealed class StudentsWebAssessmentDTO
     public DateTime? BaselineCompletedDate { get; set; }
     public bool HasProgress { get; set; }
     public bool IsLocked { get; set; }
+    public bool CanChangeCompletedDate { get; set; }
     public string LockReason { get; set; } = string.Empty;
     public List<StudentsWebAssessmentSubjectDTO> Subjects { get; set; } = [];
 }
@@ -62,7 +63,8 @@ public enum StudentsWebAssessmentSaveStatus
     Saved,
     NotAuthorizedOrNotFound,
     Locked,
-    InvalidSubjects
+    InvalidSubjects,
+    InvalidDate
 }
 
 public sealed class StudentsWebProgressDTO

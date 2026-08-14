@@ -47,5 +47,12 @@ namespace WebAPI.Controllers
             var response = await _studentBaselineDetailService.SaveStudentBaselineDetail(entity);
             return StatusCode(response.StatusCode, response);
         }
+
+        [HttpPost("update-baseline-date")]
+        public async Task<IActionResult> UpdateBaselineCompletedDate([FromBody] UpdateBaselineCompletedDateDTO entity)
+        {
+            var response = await _studentBaselineDetailService.UpdateBaselineCompletedDate(entity);
+            return StatusCode(response.StatusCode, response);
+        }
     }
 } 

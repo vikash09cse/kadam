@@ -175,9 +175,63 @@ namespace Core.Features.Admin
         /// Admin: all active. Division-scoped (DO/SPM): PeopleDivisions.
         /// Other roles: distinct divisions from PeopleInstitutions assignments.
         /// </summary>
-        public async Task<IEnumerable<DropdownDTO>> GetDivisionsForUser(int userId)
+        public async Task<IEnumerable<DropdownDTO>> GetDivisionsForUser(int userId, int? stateId = null)
         {
             var allActive = (await _adminRepository.GetDivisionsByStatus(Enums.Status.Active)).ToList();
+            IEnumerable<DropdownDTO> scoped = allActive;
+            if (userId <= 0)
+            {
+                scoped = allActive;
+            }
+            else
+            {
+                var user = await _adminRepository.GetUser(userId);
+                if (user == null || user.Id == 0 || user.RoleId <= 0)
+                {
+                    scoped = allActive;
+                }
+                else
+                {
+                    var role = await _adminRepository.GetRole(user.RoleId);
+                    var roleName = role?.RoleName?.Trim() ?? string.Empty;
+                    if (roleName.Equals(RoleNames.Admin, StringComparison.OrdinalIgnoreCase))
+                    {
+                        scoped = allActive;
+                    }
+                    else if (RoleNames.IsDivisionScopedRole(role))
+                    {
+                        var assignedDivisionIds = (await _adminRepository.GetPeopleDivisionIds(userId)).ToHashSet();
+                        scoped = assignedDivisionIds.Count == 0
+                            ? []
+                            : allActive.Where(d => assignedDivisionIds.Contains(d.Value)).ToList();
+                    }
+                    else
+                    {
+                        var institutionDivisionIds = (await _adminRepository.GetPeopleInstitutionAssignments(userId))
+                            .Select(a => a.DivisionId)
+                            .Where(id => id > 0)
+                            .Distinct()
+                            .ToHashSet();
+
+                        scoped = institutionDivisionIds.Count == 0
+                            ? []
+                            : allActive.Where(d => institutionDivisionIds.Contains(d.Value)).ToList();
+                    }
+                }
+            }
+
+            if (stateId is > 0)
+            {
+                var stateDivisionIds = (await _adminRepository.GetDivisionIdsByStateId(stateId.Value)).ToHashSet();
+                scoped = scoped.Where(d => stateDivisionIds.Contains(d.Value)).ToList();
+            }
+
+            return scoped;
+        }
+
+        public async Task<IEnumerable<DropdownDTO>> GetStatesForUser(int userId)
+        {
+            var allActive = (await _adminRepository.GetStatesByStatus(Enums.Status.Active)).ToList();
             if (userId <= 0)
             {
                 return allActive;
@@ -196,29 +250,75 @@ namespace Core.Features.Admin
                 return allActive;
             }
 
+            HashSet<int> allowedStateIds;
             if (RoleNames.IsDivisionScopedRole(role))
             {
-                var assignedDivisionIds = (await _adminRepository.GetPeopleDivisionIds(userId)).ToHashSet();
-                if (assignedDivisionIds.Count == 0)
-                {
-                    return [];
-                }
-
-                return allActive.Where(d => assignedDivisionIds.Contains(d.Value)).ToList();
+                var divisionIds = await _adminRepository.GetPeopleDivisionIds(userId);
+                allowedStateIds = (await _adminRepository.GetStateIdsByDivisionIds(divisionIds)).ToHashSet();
+            }
+            else
+            {
+                var institutionIds = (await _adminRepository.GetPeopleInstitutionAssignments(userId))
+                    .SelectMany(a => (a.InstitutionIds ?? string.Empty)
+                        .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+                    .Select(id => int.TryParse(id, out var parsed) ? parsed : 0)
+                    .Where(id => id > 0)
+                    .Distinct()
+                    .ToList();
+                allowedStateIds = (await _adminRepository.GetStateIdsByInstitutionIds(institutionIds)).ToHashSet();
             }
 
-            var institutionDivisionIds = (await _adminRepository.GetPeopleInstitutionAssignments(userId))
-                .Select(a => a.DivisionId)
-                .Where(id => id > 0)
-                .Distinct()
-                .ToHashSet();
-
-            if (institutionDivisionIds.Count == 0)
+            if (allowedStateIds.Count == 0)
             {
                 return [];
             }
 
-            return allActive.Where(d => institutionDivisionIds.Contains(d.Value)).ToList();
+            return allActive.Where(s => allowedStateIds.Contains(s.Value)).ToList();
+        }
+
+        public async Task<IEnumerable<DropdownDTO>> GetInstitutionsForUser(int userId, int? stateId, int? divisionId)
+        {
+            int? filterStateId = stateId is > 0 ? stateId : null;
+            int? filterDivisionId = divisionId is > 0 ? divisionId : null;
+
+            if (userId <= 0)
+            {
+                return await _adminRepository.GetInstitutionsFiltered(filterStateId, filterDivisionId, null, null);
+            }
+
+            var user = await _adminRepository.GetUser(userId);
+            if (user == null || user.Id == 0 || user.RoleId <= 0)
+            {
+                return await _adminRepository.GetInstitutionsFiltered(filterStateId, filterDivisionId, null, null);
+            }
+
+            var role = await _adminRepository.GetRole(user.RoleId);
+            var roleName = role?.RoleName?.Trim() ?? string.Empty;
+            if (roleName.Equals(RoleNames.Admin, StringComparison.OrdinalIgnoreCase))
+            {
+                return await _adminRepository.GetInstitutionsFiltered(filterStateId, filterDivisionId, null, null);
+            }
+
+            if (RoleNames.IsDivisionScopedRole(role))
+            {
+                var assignedDivisionIds = (await _adminRepository.GetPeopleDivisionIds(userId)).ToList();
+                if (filterDivisionId.HasValue)
+                {
+                    assignedDivisionIds = assignedDivisionIds.Where(id => id == filterDivisionId.Value).ToList();
+                }
+
+                return await _adminRepository.GetInstitutionsFiltered(filterStateId, null, assignedDivisionIds, null);
+            }
+
+            var institutionIds = (await _adminRepository.GetPeopleInstitutionAssignments(userId))
+                .SelectMany(a => (a.InstitutionIds ?? string.Empty)
+                    .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+                .Select(id => int.TryParse(id, out var parsed) ? parsed : 0)
+                .Where(id => id > 0)
+                .Distinct()
+                .ToList();
+
+            return await _adminRepository.GetInstitutionsFiltered(filterStateId, filterDivisionId, null, institutionIds);
         }
 
         public async Task<ServiceResponseDTO> SavePeopleDivisions(int userId, IEnumerable<int> divisionIds)

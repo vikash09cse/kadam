@@ -41,7 +41,7 @@
                         <input asp-for="Assessment.CompletedDate" type="date" class="form-control"
                                min="@Model.Details.EnrollmentDate.ToString("yyyy-MM-dd")"
                                max="@DateTime.Today.ToString("yyyy-MM-dd")"
-                               readonly="@Model.Details.IsLocked" />
+                               readonly="@(Model.Details.IsLocked && !Model.Details.CanChangeCompletedDate)" />
                     </div>
                 </div>
 
@@ -78,6 +78,10 @@
                 @if (!Model.Details.IsLocked)
                 {
                     <button type="submit" class="btn btn-success">Save Baseline</button>
+                }
+                else if (Model.Details.CanChangeCompletedDate)
+                {
+                    <button type="submit" asp-page-handler="UpdateDate" class="btn btn-success">Update Baseline Date</button>
                 }
                 <a href="/StudentPortal/MyInstitution" class="btn btn-danger">Cancel</a>
             </div>

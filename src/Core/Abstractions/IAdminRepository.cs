@@ -24,6 +24,7 @@ namespace Core.Abstractions
         Task<PeopleInstitution?> GetPeopleInstitution(int userId);
         Task<IEnumerable<PeopleInstitution>> GetPeopleInstitutionAssignments(int userId);
         Task<IEnumerable<DropdownDTO>> GetInstitutionsByIds(IEnumerable<int> institutionIds);
+        Task<IEnumerable<DropdownDTO>> GetInstitutionsFiltered(int? stateId, int? divisionId, IEnumerable<int>? allowedDivisionIds, IEnumerable<int>? allowedInstitutionIds);
         Task<IEnumerable<int>> GetPeopleDivisionIds(int userId);
         Task<bool> SavePeopleDivisions(int userId, IEnumerable<int> divisionIds);
         Task ClearPeopleInstitutions(int userId);
@@ -38,6 +39,9 @@ namespace Core.Abstractions
         Task<bool> CheckDuplicateDivisionName(string divisionName, int id);
         Task<bool> CheckDuplicateDivisionCode(string divisionCode, int id);
         Task<IEnumerable<DropdownDTO>> GetDivisionsByStatus(Enums.Status? currentStatus);
+        Task<IEnumerable<int>> GetDivisionIdsByStateId(int stateId);
+        Task<IEnumerable<int>> GetStateIdsByDivisionIds(IEnumerable<int> divisionIds);
+        Task<IEnumerable<int>> GetStateIdsByInstitutionIds(IEnumerable<int> institutionIds);
         Task<DivisionLocationAssignmentDTO> GetDivisionLocationAssignment(int divisionId);
         Task<bool> SaveDivisionLocation(SaveDivisionLocationDTO assignment, int currentUserId);
         Task<IEnumerable<DropdownDTO>> GetBlocksByDistrictIds(IEnumerable<int> districtIds);

@@ -21,19 +21,28 @@
                 <div class="card">
                     <div class="card-body">
                         <div class="row g-3 align-items-end mb-3">
-                            <div class="col-md-4">
+                            <div class="col-md-3">
                                 <label for="studentNameFilter" class="form-label">Student Name</label>
                                 <input type="text" id="studentNameFilter" class="form-control"
                                        ng-model="vm.filters.studentName"
                                        placeholder="Search by student name"
                                        ng-keypress="vm.onFilterKeyPress($event)">
                             </div>
-                            <div class="col-md-4">
+                            <div class="col-md-3">
                                 <label for="studentIdFilter" class="form-label">Student Id</label>
                                 <input type="text" id="studentIdFilter" class="form-control"
                                        ng-model="vm.filters.studentId"
                                        placeholder="Search by Kadam student id"
                                        ng-keypress="vm.onFilterKeyPress($event)">
+                            </div>
+                            <div class="col-md-2">
+                                <label for="statusFilter" class="form-label">Status</label>
+                                <select id="statusFilter" class="form-select" ng-model="vm.filters.status">
+                                    <option value="">All</option>
+                                    <option value="1">Active</option>
+                                    <option value="2">InActive</option>
+                                    <option value="3">Completed</option>
+                                </select>
                             </div>
                             <div class="col-md-4">
                                 <button type="button" class="btn btn-primary me-2" ng-click="vm.searchStudents()">
@@ -102,7 +111,8 @@
 
             vm.filters = {
                 studentName: '',
-                studentId: ''
+                studentId: '',
+                status: ''
             };
 
             function getAntiForgeryHeaders() {
@@ -167,7 +177,8 @@
                                 start: data.start,
                                 length: data.length,
                                 studentName: vm.filters.studentName,
-                                studentId: vm.filters.studentId
+                                studentId: vm.filters.studentId,
+                                status: vm.filters.status || null
                             },
                             headers: getAntiForgeryHeaders()
                         }).then(function(response) {
@@ -207,6 +218,7 @@
             vm.clearFilters = function() {
                 vm.filters.studentName = '';
                 vm.filters.studentId = '';
+                vm.filters.status = '';
                 vm.searchStudents();
             };
 

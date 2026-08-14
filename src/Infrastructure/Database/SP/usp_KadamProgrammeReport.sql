@@ -120,14 +120,19 @@ BEGIN
         CAST(ongoing.LastStepId AS VARCHAR) AS OngoingStep,
         CAST(ongoing.StepCount AS VARCHAR) AS NoOfStepsCompleted,
         CAST(gt.GradeTest1 AS VARCHAR) AS GradeTest1,
+        CAST(gt.GradeTest1Percentage AS VARCHAR) AS GradeTest1Percentage,
         CONVERT(VARCHAR(10), gt.GradeTest1Date, 120) AS GradeTest1Date,
         CAST(gt.GradeTest2 AS VARCHAR) AS GradeTest2,
+        CAST(gt.GradeTest2Percentage AS VARCHAR) AS GradeTest2Percentage,
         CONVERT(VARCHAR(10), gt.GradeTest2Date, 120) AS GradeTest2Date,
         CAST(gt.GradeTest3 AS VARCHAR) AS GradeTest3,
+        CAST(gt.GradeTest3Percentage AS VARCHAR) AS GradeTest3Percentage,
         CONVERT(VARCHAR(10), gt.GradeTest3Date, 120) AS GradeTest3Date,
         CAST(gt.GradeTest4 AS VARCHAR) AS GradeTest4,
+        CAST(gt.GradeTest4Percentage AS VARCHAR) AS GradeTest4Percentage,
         CONVERT(VARCHAR(10), gt.GradeTest4Date, 120) AS GradeTest4Date,
         CAST(gt.GradeTest5 AS VARCHAR) AS GradeTest5,
+        CAST(gt.GradeTest5Percentage AS VARCHAR) AS GradeTest5Percentage,
         CONVERT(VARCHAR(10), gt.GradeTest5Date, 120) AS GradeTest5Date,
         '' AS ProgressSpeed,
         '' AS ProgressColor,
@@ -190,23 +195,29 @@ BEGIN
     LEFT JOIN (
         SELECT
             StudentId,
-            MAX(CASE WHEN GradeLevelId = 1 THEN Pct END) AS GradeTest1,
+            MAX(CASE WHEN GradeLevelId = 1 THEN Marks END) AS GradeTest1,
+            MAX(CASE WHEN GradeLevelId = 1 THEN Pct END) AS GradeTest1Percentage,
             MAX(CASE WHEN GradeLevelId = 1 THEN CompletedDate END) AS GradeTest1Date,
-            MAX(CASE WHEN GradeLevelId = 2 THEN Pct END) AS GradeTest2,
+            MAX(CASE WHEN GradeLevelId = 2 THEN Marks END) AS GradeTest2,
+            MAX(CASE WHEN GradeLevelId = 2 THEN Pct END) AS GradeTest2Percentage,
             MAX(CASE WHEN GradeLevelId = 2 THEN CompletedDate END) AS GradeTest2Date,
-            MAX(CASE WHEN GradeLevelId = 3 THEN Pct END) AS GradeTest3,
+            MAX(CASE WHEN GradeLevelId = 3 THEN Marks END) AS GradeTest3,
+            MAX(CASE WHEN GradeLevelId = 3 THEN Pct END) AS GradeTest3Percentage,
             MAX(CASE WHEN GradeLevelId = 3 THEN CompletedDate END) AS GradeTest3Date,
-            MAX(CASE WHEN GradeLevelId = 4 THEN Pct END) AS GradeTest4,
+            MAX(CASE WHEN GradeLevelId = 4 THEN Marks END) AS GradeTest4,
+            MAX(CASE WHEN GradeLevelId = 4 THEN Pct END) AS GradeTest4Percentage,
             MAX(CASE WHEN GradeLevelId = 4 THEN CompletedDate END) AS GradeTest4Date,
-            MAX(CASE WHEN GradeLevelId = 5 THEN Pct END) AS GradeTest5,
+            MAX(CASE WHEN GradeLevelId = 5 THEN Marks END) AS GradeTest5,
+            MAX(CASE WHEN GradeLevelId = 5 THEN Pct END) AS GradeTest5Percentage,
             MAX(CASE WHEN GradeLevelId = 5 THEN CompletedDate END) AS GradeTest5Date
         FROM (
             SELECT
                 StudentId,
                 GradeLevelId,
+                CAST(SUM(ObtainedMarks) AS DECIMAL(18,2)) AS Marks,
                 CASE
                     WHEN SUM(TotalMarks) > 0
-                    THEN ROUND((SUM(ObtainedMarks) / SUM(TotalMarks)) * 100, 0)
+                    THEN ROUND((SUM(ObtainedMarks) / SUM(TotalMarks)) * 100, 2)
                     ELSE NULL
                 END AS Pct,
                 MAX(CompletedDate) AS CompletedDate

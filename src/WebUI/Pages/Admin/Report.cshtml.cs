@@ -1,7 +1,6 @@
 using ClosedXML.Excel;
 using Core.DTOs;
 using Core.Features.Admin;
-using Core.Utilities;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 
@@ -46,6 +45,18 @@ namespace WebUI.Pages.Admin
 
             await LoadDropdownsAsync(userId);
             return Page();
+        }
+
+        public async Task<IActionResult> OnGetDivisionsByState(int? stateId)
+        {
+            var userId = authenticationService.GetCurrentUserId();
+            if (userId <= 0)
+            {
+                return Unauthorized();
+            }
+
+            var divisions = await adminService.GetDivisionsForUser(userId, stateId > 0 ? stateId : null);
+            return new JsonResult(divisions);
         }
 
         public async Task<IActionResult> OnPostDownloadReportAsync()
@@ -123,8 +134,24 @@ namespace WebUI.Pages.Admin
 
         private async Task LoadDropdownsAsync(int userId)
         {
-            States = await adminService.GetStatesByStatus(Enums.Status.Active);
-            Divisions = await adminService.GetDivisionsForUser(userId);
+            States = await adminService.GetStatesForUser(userId);
+            ClampStateId();
+            Divisions = await adminService.GetDivisionsForUser(userId, StateId > 0 ? StateId : null);
+        }
+
+        private void ClampStateId()
+        {
+            if (!StateId.HasValue || StateId.Value <= 0)
+            {
+                StateId = null;
+                return;
+            }
+
+            var allowedIds = States.Select(s => s.Value).ToHashSet();
+            if (!allowedIds.Contains(StateId.Value))
+            {
+                StateId = null;
+            }
         }
 
         private void ClampSelectedDivisionIds()
@@ -212,14 +239,19 @@ namespace WebUI.Pages.Admin
                 ("Ongoing Step", x => x.OngoingStep),
                 ("No. of Steps Completed", x => x.NoOfStepsCompleted),
                 ("Grade Test 1", x => x.GradeTest1),
+                ("Grade Test 1 %", x => x.GradeTest1Percentage),
                 ("Grade Test 1 Date", x => x.GradeTest1Date),
                 ("Grade Test 2", x => x.GradeTest2),
+                ("Grade Test 2 %", x => x.GradeTest2Percentage),
                 ("Grade Test 2 Date", x => x.GradeTest2Date),
                 ("Grade Test 3", x => x.GradeTest3),
+                ("Grade Test 3 %", x => x.GradeTest3Percentage),
                 ("Grade Test 3 Date", x => x.GradeTest3Date),
                 ("Grade Test 4", x => x.GradeTest4),
+                ("Grade Test 4 %", x => x.GradeTest4Percentage),
                 ("Grade Test 4 Date", x => x.GradeTest4Date),
                 ("Grade Test 5", x => x.GradeTest5),
+                ("Grade Test 5 %", x => x.GradeTest5Percentage),
                 ("Grade Test 5 Date", x => x.GradeTest5Date),
                 ("Progress Speed", x => x.ProgressSpeed),
                 ("Progress Color", x => x.ProgressColor),

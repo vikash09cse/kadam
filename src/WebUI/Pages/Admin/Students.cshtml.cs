@@ -17,7 +17,7 @@ namespace WebUI.Pages.Admin
             CanDelete = await pagePermissions.CanDeleteAsync();
         }
 
-        public async Task<IActionResult> OnGetStudentList(int draw, int start, int length, string? studentName, string? studentId)
+        public async Task<IActionResult> OnGetStudentList(int draw, int start, int length, string? studentName, string? studentId, int? status)
         {
             try
             {
@@ -30,6 +30,7 @@ namespace WebUI.Pages.Admin
                     length,
                     studentName,
                     studentId,
+                    status,
                     userId);
 
                 return new JsonResult(result);
