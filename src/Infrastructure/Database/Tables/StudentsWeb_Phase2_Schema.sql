@@ -24,11 +24,6 @@ IF COL_LENGTH('dbo.StudentGradeTestDetails', 'CurrentStatus') IS NULL
 IF COL_LENGTH('dbo.StudentGradeTestDetails', 'ModifyBy') IS NULL
     ALTER TABLE dbo.StudentGradeTestDetails ADD ModifyBy INT NULL;
 
-UPDATE dbo.StudentGradeTestDetails SET IsDeleted = 0 WHERE IsDeleted IS NULL;
-UPDATE dbo.StudentGradeTestDetails SET CurrentStatus = 1 WHERE CurrentStatus IS NULL;
-UPDATE dbo.StudentGradeTestDetails SET CreatedBy = 0 WHERE CreatedBy IS NULL;
-UPDATE dbo.StudentGradeTestDetails SET DateCreated = GETDATE() WHERE DateCreated IS NULL;
-
 IF COL_LENGTH('dbo.StudentGradeStartAndEndDetails', 'DateEntryPoint') IS NULL
     ALTER TABLE dbo.StudentGradeStartAndEndDetails
     ADD DateEntryPoint TINYINT NOT NULL
@@ -38,6 +33,17 @@ IF COL_LENGTH('dbo.StudentMainstreams', 'DateEntryPoint') IS NULL
     ALTER TABLE dbo.StudentMainstreams
     ADD DateEntryPoint TINYINT NOT NULL
         CONSTRAINT DF_StudentMainstreams_DateEntryPoint DEFAULT (1);
+
+COMMIT TRANSACTION;
+GO
+
+SET XACT_ABORT ON;
+BEGIN TRANSACTION;
+
+UPDATE dbo.StudentGradeTestDetails SET IsDeleted = 0 WHERE IsDeleted IS NULL;
+UPDATE dbo.StudentGradeTestDetails SET CurrentStatus = 1 WHERE CurrentStatus IS NULL;
+UPDATE dbo.StudentGradeTestDetails SET CreatedBy = 0 WHERE CreatedBy IS NULL;
+UPDATE dbo.StudentGradeTestDetails SET DateCreated = GETDATE() WHERE DateCreated IS NULL;
 
 COMMIT TRANSACTION;
 GO

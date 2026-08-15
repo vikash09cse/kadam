@@ -1,8 +1,9 @@
-@page
+@page "{handler?}"
 @model MyInstitutionModel
 @{
     ViewData["Title"] = "My Institution";
 }
+@Html.AntiForgeryToken()
 
 <div class="page-content">
     <div class="container-fluid">
@@ -107,9 +108,15 @@
     const gradeSelect = document.getElementById('gradeId');
     const sectionSelect = document.getElementById('section');
 
+    const token = document.querySelector('input[name="__RequestVerificationToken"]').value;
     const table = $('#institutionStudentsTable').DataTable({
         serverSide:true, processing:true, searching:false, ordering:false,
-        ajax:{url:'?handler=Students',data:d => {
+        ajax:{
+            url:'@Url.Page("/MyInstitution", pageHandler: "Students")',
+            type:'POST',
+            method:'POST',
+            headers:{ RequestVerificationToken: token },
+            data:d => {
             d.searchText = $('#searchText').val();
             d.institutionId = $('#institutionId').val();
             d.gradeId = $('#gradeId').val();
@@ -156,7 +163,7 @@
         gradeSelect.disabled = !this.value;
         sectionSelect.disabled = true;
         if (!this.value) return;
-        const response = await fetch(`?handler=GradeSections&institutionId=${this.value}`);
+        const response = await fetch('@Url.Page("/MyInstitution", pageHandler: "GradeSections")?institutionId=' + encodeURIComponent(this.value));
         if (!response.ok) return;
         grades = await response.json();
         fill(gradeSelect, grades, 'All Grades');

@@ -14,7 +14,7 @@ public sealed class DirectoryModel(
         return denied ?? Page();
     }
 
-    public async Task<IActionResult> OnGetStudentsAsync(
+    public async Task<IActionResult> OnPostStudentsAsync(
         int draw, int start, int length, string? studentName, string? studentId, string? aadhaarNumber, int? status)
     {
         var denied = await RequirePageAsync("/StudentPortal/Directory");

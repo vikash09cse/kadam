@@ -105,8 +105,8 @@ BEGIN
 
     IF @FollowupMenuId IS NOT NULL AND @AttendanceMenuId IS NOT NULL
     BEGIN
-        INSERT INTO RolePermissions (RoleId, MenuId, CurrentStatus, DateCreated, CanAddEdit, CanDelete)
-        SELECT rp.RoleId, @FollowupMenuId, 1, GETDATE(), ISNULL(rp.CanAddEdit, 0), ISNULL(rp.CanDelete, 0)
+        INSERT INTO RolePermissions (RoleId, MenuId, CurrentStatus, CreatedBy, DateCreated, CanAddEdit, CanDelete)
+        SELECT rp.RoleId, @FollowupMenuId, 1, ISNULL(rp.CreatedBy, 0), GETDATE(), ISNULL(rp.CanAddEdit, 0), ISNULL(rp.CanDelete, 0)
         FROM RolePermissions rp
         WHERE rp.MenuId = @AttendanceMenuId
           AND ISNULL(rp.IsDeleted, 0) = 0
@@ -118,8 +118,8 @@ BEGIN
                 AND ISNULL(existing.IsDeleted, 0) = 0
           );
 
-        INSERT INTO UserMenuPermissions (UserId, MenuId, CurrentStatus, DateCreated, CanAddEdit, CanDelete)
-        SELECT ump.UserId, @FollowupMenuId, 1, GETDATE(), ISNULL(ump.CanAddEdit, 0), ISNULL(ump.CanDelete, 0)
+        INSERT INTO UserMenuPermissions (UserId, MenuId, CurrentStatus, CreatedBy, DateCreated, CanAddEdit, CanDelete)
+        SELECT ump.UserId, @FollowupMenuId, 1, ISNULL(ump.CreatedBy, 0), GETDATE(), ISNULL(ump.CanAddEdit, 0), ISNULL(ump.CanDelete, 0)
         FROM UserMenuPermissions ump
         WHERE ump.MenuId = @AttendanceMenuId
           AND ISNULL(ump.IsDeleted, 0) = 0

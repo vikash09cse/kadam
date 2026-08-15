@@ -18,3 +18,7 @@ BEGIN
     ALTER TABLE dbo.RolePermissions ADD CanDelete BIT NOT NULL CONSTRAINT DF_RolePermissions_CanDelete DEFAULT (1);
 END
 GO
+
+UPDATE dbo.UserMenuPermissions SET CreatedBy = 0 WHERE CreatedBy IS NULL;
+UPDATE dbo.RolePermissions SET CreatedBy = 0 WHERE CreatedBy IS NULL;
+GO

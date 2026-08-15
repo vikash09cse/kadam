@@ -1,4 +1,4 @@
-@page
+@page "{handler?}"
 @model DirectoryModel
 @{
     ViewData["Title"] = "Student List";
@@ -34,10 +34,16 @@
     const decode = value => decodeURIComponent(value || '');
     const table = $('#studentsTable').DataTable({
         serverSide: true, processing: true, searching: false, ordering: false,
-        ajax: { url: '?handler=Students', data: d => {
-            d.studentName = $('#studentName').val(); d.studentId = $('#studentId').val();
-            d.aadhaarNumber = $('#aadhaarNumber').val(); d.status = $('#status').val();
-        }},
+        ajax: {
+            url: '@Url.Page("/Directory", pageHandler: "Students")',
+            type: 'POST',
+            method: 'POST',
+            headers,
+            data: d => {
+                d.studentName = $('#studentName').val(); d.studentId = $('#studentId').val();
+                d.aadhaarNumber = $('#aadhaarNumber').val(); d.status = $('#status').val();
+            }
+        },
         columns: [
             {data:'rowNumber'}, {data:'studentId'}, {data:'studentName'}, {data:'institutionName'},
             {data:null, render:r => `${r.gradeName} / ${r.section}`}, {data:'age'},
@@ -70,7 +76,7 @@
                     : undefined,
                 showCancelButton:true
             });
-            if (a.isConfirmed) await send('?handler=Trio', {studentId:id,trioId:Number(a.value)});
+            if (a.isConfirmed) await send('@Url.Page("/Directory", pageHandler: "Trio")', {studentId:id,trioId:Number(a.value)});
         } else {
             const currentStatus = Number(this.dataset.status);
             const a = await Swal.fire({
@@ -111,7 +117,7 @@
                     return {studentId:id,status,inActiveReason:reason||'',inActiveDate:date||null,remarks:$('#s-remarks').val()};
                 }
             });
-            if (a.isConfirmed) await send('?handler=Status', a.value);
+            if (a.isConfirmed) await send('@Url.Page("/Directory", pageHandler: "Status")', a.value);
         }
     });
     async function send(url, body) {

@@ -34,7 +34,7 @@ public sealed class ThemeActivitiesModel(
             await StudentsService.GetThemeActivityGradeSections(CurrentUserId, institutionId));
     }
 
-    public async Task<IActionResult> OnGetThemeActivitiesAsync(
+    public async Task<IActionResult> OnPostListAsync(
         int draw, int start, int length, int? institutionId, int? themeId,
         int? gradeId, string? section, DateTime? fromDate, DateTime? toDate)
     {

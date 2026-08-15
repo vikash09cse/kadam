@@ -1,4 +1,4 @@
-@page
+@page "{handler?}"
 @model ThemeActivitiesModel
 @{
     ViewData["Title"] = "Theme Activities";
@@ -102,10 +102,15 @@
     };
     const table = $('#activitiesTable').DataTable({
         serverSide: true, processing: true, searching: false, ordering: false,
-        ajax: { url: '?handler=ThemeActivities', data: d => {
+        ajax: {
+            url: '@Url.Page("/ThemeActivities", pageHandler: "List")',
+            type: 'POST',
+            method: 'POST',
+            headers: { RequestVerificationToken: token },
+            data: d => {
             d.institutionId = $('#institutionId').val();
-            d.themeId = $('#themeId').val();
             d.gradeId = $('#gradeId').val();
+            d.themeId = $('#themeId').val();
             d.section = $('#section').val();
             d.fromDate = $('#fromDate').val();
             d.toDate = $('#toDate').val();
@@ -137,7 +142,7 @@
         gradeSelect.disabled = !this.value;
         sectionSelect.disabled = true;
         if (!this.value) return;
-        const response = await fetch(`?handler=GradeSections&institutionId=${encodeURIComponent(this.value)}`);
+        const response = await fetch('@Url.Page("/ThemeActivities", pageHandler: "GradeSections")?institutionId=' + encodeURIComponent(this.value));
         if (!response.ok) return;
         grades = await response.json();
         fill(gradeSelect, grades, 'All Grades');
@@ -163,7 +168,7 @@
     $('#activitiesTable').on('click', '.delete-activity', async function() {
         if (!confirm('Delete this theme activity?')) return;
         const body = new URLSearchParams({ id: this.dataset.id, __RequestVerificationToken: token });
-        const response = await fetch('?handler=Delete', {
+        const response = await fetch('@Url.Page("/ThemeActivities", pageHandler: "Delete")', {
             method: 'POST',
             headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
             body

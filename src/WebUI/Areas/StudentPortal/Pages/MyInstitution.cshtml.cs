@@ -31,7 +31,7 @@ public sealed class MyInstitutionModel(
         return new JsonResult(await StudentsService.GetGradeSections(institutionId));
     }
 
-    public async Task<IActionResult> OnGetStudentsAsync(
+    public async Task<IActionResult> OnPostStudentsAsync(
         int draw, int start, int length, string? searchText, int? institutionId,
         int? gradeId, string? section, DateTime? fromDate, DateTime? toDate, int? status)
     {

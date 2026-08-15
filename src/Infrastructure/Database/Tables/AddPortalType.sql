@@ -9,6 +9,12 @@ IF COL_LENGTH('dbo.MenuPermissions', 'PortalType') IS NULL
     ALTER TABLE dbo.MenuPermissions ADD PortalType TINYINT NOT NULL
         CONSTRAINT DF_MenuPermissions_PortalType DEFAULT (1) WITH VALUES;
 
+COMMIT TRANSACTION;
+GO
+
+SET XACT_ABORT ON;
+BEGIN TRANSACTION;
+
 UPDATE dbo.MenuPermissions
 SET MenuName = 'Student List'
 WHERE MenuName = 'Student Directory'
@@ -90,3 +96,4 @@ FROM dbo.MenuPermissions menuItem
 INNER JOIN @CanonicalMenus canonical ON canonical.MenuId = menuItem.Id;
 
 COMMIT TRANSACTION;
+GO

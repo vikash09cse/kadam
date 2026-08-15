@@ -42,11 +42,26 @@
                             <input type="hidden" asp-for="UserId" />
 
                             <div class="permissions-list border rounded p-3" style="max-height: 560px; overflow-y: auto;">
-                                <div class="row fw-semibold border-bottom pb-2 mb-2 d-none d-md-flex">
+                                <div class="row fw-semibold border-bottom pb-2 mb-2 d-none d-md-flex align-items-center">
                                     <div class="col-md-6">Menu</div>
-                                    <div class="col-md-2">Access</div>
-                                    <div class="col-md-2">Add/Edit</div>
-                                    <div class="col-md-2">Delete</div>
+                                    <div class="col-md-2">
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="checkbox" id="checkAllAccess" />
+                                            <label class="form-check-label" for="checkAllAccess">Access</label>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-2">
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="checkbox" id="checkAllAddEdit" />
+                                            <label class="form-check-label" for="checkAllAddEdit">Add/Edit</label>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-2">
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="checkbox" id="checkAllDelete" />
+                                            <label class="form-check-label" for="checkAllDelete">Delete</label>
+                                        </div>
+                                    </div>
                                 </div>
                                 @foreach (var menu in Model.Menus)
                                 {
@@ -119,27 +134,103 @@
 
 @section Scripts {
     <script>
-        document.querySelectorAll('.permission-row').forEach(function (row) {
-            var access = row.querySelector('.js-access');
-            var addEdit = row.querySelector('.js-add-edit');
-            var del = row.querySelector('.js-delete');
-            if (!access) return;
+        (function () {
+            var rows = Array.from(document.querySelectorAll('.permission-row'));
+            var checkAllAccess = document.getElementById('checkAllAccess');
+            var checkAllAddEdit = document.getElementById('checkAllAddEdit');
+            var checkAllDelete = document.getElementById('checkAllDelete');
 
-            function syncFromAccess() {
-                if (!access.checked) {
-                    if (addEdit) addEdit.checked = false;
-                    if (del) del.checked = false;
-                }
+            function boxes(selector) {
+                return rows.map(function (row) { return row.querySelector(selector); }).filter(Boolean);
             }
-            function syncToAccess() {
+
+            function setHeaderState(header, items) {
+                if (!header || items.length === 0) {
+                    if (header) {
+                        header.checked = false;
+                        header.indeterminate = false;
+                    }
+                    return;
+                }
+                var checkedCount = items.filter(function (item) { return item.checked; }).length;
+                header.checked = checkedCount === items.length;
+                header.indeterminate = checkedCount > 0 && checkedCount < items.length;
+            }
+
+            function refreshHeaders() {
+                setHeaderState(checkAllAccess, boxes('.js-access'));
+                setHeaderState(checkAllAddEdit, boxes('.js-add-edit'));
+                setHeaderState(checkAllDelete, boxes('.js-delete'));
+            }
+
+            function syncRowFromAccess(row) {
+                var access = row.querySelector('.js-access');
+                if (!access || access.checked) return;
+                var addEdit = row.querySelector('.js-add-edit');
+                var del = row.querySelector('.js-delete');
+                if (addEdit) addEdit.checked = false;
+                if (del) del.checked = false;
+            }
+
+            function syncRowToAccess(row) {
+                var access = row.querySelector('.js-access');
+                var addEdit = row.querySelector('.js-add-edit');
+                var del = row.querySelector('.js-delete');
+                if (!access) return;
                 if ((addEdit && addEdit.checked) || (del && del.checked)) {
                     access.checked = true;
                 }
             }
 
-            access.addEventListener('change', syncFromAccess);
-            if (addEdit) addEdit.addEventListener('change', syncToAccess);
-            if (del) del.addEventListener('change', syncToAccess);
-        });
+            rows.forEach(function (row) {
+                var access = row.querySelector('.js-access');
+                var addEdit = row.querySelector('.js-add-edit');
+                var del = row.querySelector('.js-delete');
+                if (!access) return;
+
+                access.addEventListener('change', function () {
+                    syncRowFromAccess(row);
+                    refreshHeaders();
+                });
+                if (addEdit) addEdit.addEventListener('change', function () {
+                    syncRowToAccess(row);
+                    refreshHeaders();
+                });
+                if (del) del.addEventListener('change', function () {
+                    syncRowToAccess(row);
+                    refreshHeaders();
+                });
+            });
+
+            if (checkAllAccess) {
+                checkAllAccess.addEventListener('change', function () {
+                    boxes('.js-access').forEach(function (item) {
+                        item.checked = checkAllAccess.checked;
+                    });
+                    rows.forEach(syncRowFromAccess);
+                    refreshHeaders();
+                });
+            }
+            if (checkAllAddEdit) {
+                checkAllAddEdit.addEventListener('change', function () {
+                    boxes('.js-add-edit').forEach(function (item) {
+                        item.checked = checkAllAddEdit.checked;
+                    });
+                    rows.forEach(syncRowToAccess);
+                    refreshHeaders();
+                });
+            }
+            if (checkAllDelete) {
+                checkAllDelete.addEventListener('change', function () {
+                    boxes('.js-delete').forEach(function (item) {
+                        item.checked = checkAllDelete.checked;
+                    });
+                    rows.forEach(syncRowToAccess);
+                    refreshHeaders();
+                });
+            }
+
+            refreshHeaders();
+        })();
     </script>
 }

@@ -1,4 +1,4 @@
-@page
+@page "{handler?}"
 @model FollowupsModel
 @{
     ViewData["Title"] = "Student Follow-ups";
@@ -91,7 +91,12 @@
     };
     const table = $('#followupsTable').DataTable({
         serverSide: true, processing: true, searching: false, ordering: false,
-        ajax: { url: '?handler=Followups', data: d => {
+        ajax: {
+            url: '@Url.Page("/Followups", pageHandler: "List")',
+            type: 'POST',
+            method: 'POST',
+            headers: { RequestVerificationToken: token },
+            data: d => {
             d.institutionId = $('#institutionId').val();
             d.gradeId = $('#gradeId').val();
             d.section = $('#section').val();
@@ -124,7 +129,7 @@
         gradeSelect.disabled = !this.value;
         sectionSelect.disabled = true;
         if (!this.value) return;
-        const response = await fetch(`?handler=GradeSections&institutionId=${encodeURIComponent(this.value)}`);
+        const response = await fetch('@Url.Page("/Followups", pageHandler: "GradeSections")?institutionId=' + encodeURIComponent(this.value));
         if (!response.ok) return;
         grades = await response.json();
         fill(gradeSelect, grades, 'All Grades');
@@ -150,7 +155,7 @@
     $('#followupsTable').on('click', '.delete-followup', async function() {
         if (!confirm('Delete this follow-up?')) return;
         const body = new URLSearchParams({ id: this.dataset.id, __RequestVerificationToken: token });
-        const response = await fetch('?handler=Delete', {
+        const response = await fetch('@Url.Page("/Followups", pageHandler: "Delete")', {
             method: 'POST',
             headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
             body

@@ -35,7 +35,7 @@ public sealed class FollowupsModel(
         return new JsonResult(await StudentsService.GetGradeSections(institutionId));
     }
 
-    public async Task<IActionResult> OnGetFollowupsAsync(
+    public async Task<IActionResult> OnPostListAsync(
         int draw, int start, int length, int? institutionId, int? gradeId,
         string? section, DateTime? fromDate, DateTime? toDate)
     {

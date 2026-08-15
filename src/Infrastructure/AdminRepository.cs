@@ -1314,12 +1314,25 @@ namespace Infrastructure
         }
         public async Task<IEnumerable<RolePermission>> GetRolePermissions(int roleId)
         {
-            return await _context.RolePermissions.Where(x => x.RoleId == roleId).ToListAsync();
+            return await _context.RolePermissions
+                .AsNoTracking()
+                .Where(x => x.RoleId == roleId)
+                .Select(x => new RolePermission
+                {
+                    Id = x.Id,
+                    RoleId = x.RoleId,
+                    MenuId = x.MenuId,
+                    CanAddEdit = x.CanAddEdit,
+                    CanDelete = x.CanDelete,
+                    CreatedBy = 0
+                })
+                .ToListAsync();
         }
         public async Task<bool> SaveRolePermissions(RolePermissionsDTO rolePermissions, int createdBy)
         {
-            var rolePermission = await _context.RolePermissions.Where(x => x.RoleId == rolePermissions.RoleId).ToListAsync();
-            _context.RolePermissions.RemoveRange(rolePermission);
+            await _context.RolePermissions
+                .Where(x => x.RoleId == rolePermissions.RoleId)
+                .ExecuteDeleteAsync();
 
             var items = (rolePermissions.Permissions ?? [])
                 .Where(x => x.MenuId > 0)
@@ -1379,10 +1392,9 @@ namespace Infrastructure
 
         public async Task<bool> SaveUserMenuPermissions(UserMenuPermissionsDTO userMenuPermissions, int createdBy)
         {
-            var existing = await _context.UserMenuPermissions
+            await _context.UserMenuPermissions
                 .Where(x => x.UserId == userMenuPermissions.UserId)
-                .ToListAsync();
-            _context.UserMenuPermissions.RemoveRange(existing);
+                .ExecuteDeleteAsync();
 
             var items = (userMenuPermissions.Permissions ?? [])
                 .Where(x => x.MenuId > 0)
