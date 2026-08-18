@@ -42,6 +42,7 @@ BEGIN
     (20, N'Kadam Programme Report', N'Reports', N'/Admin/Report', NULL, NULL),
     (21, N'Student Attendance Report', N'Reports', N'/Admin/AttendanceReport', NULL, NULL),
     (22, N'Student Follow-up Report', N'Reports', N'/Admin/FollowupReport', NULL, NULL),
+    (23, N'Theme Activity Report', N'Reports', N'/Admin/ThemeActivityReport', NULL, NULL),
     (22, N'Students', N'Settings', N'/Admin/Students', NULL, NULL),
     (23, N'Student Portal', NULL, N'#studentportal', N'ri-graduation-cap-line', N'studentportal'),
     (24, N'Student Dashboard', N'Student Portal', N'/StudentPortal/Dashboard', N'ri-dashboard-line', NULL),
@@ -100,8 +101,10 @@ BEGIN
 
     DECLARE @FollowupMenuId INT;
     DECLARE @AttendanceMenuId INT;
+    DECLARE @ThemeActivityReportMenuId INT;
     SELECT @FollowupMenuId = Id FROM MenuPermissions WHERE IsDeleted = 0 AND MenuUrl = N'/Admin/FollowupReport';
     SELECT @AttendanceMenuId = Id FROM MenuPermissions WHERE IsDeleted = 0 AND MenuUrl = N'/Admin/AttendanceReport';
+    SELECT @ThemeActivityReportMenuId = Id FROM MenuPermissions WHERE IsDeleted = 0 AND MenuUrl = N'/Admin/ThemeActivityReport';
 
     IF @FollowupMenuId IS NOT NULL AND @AttendanceMenuId IS NOT NULL
     BEGIN
@@ -128,6 +131,35 @@ BEGIN
               FROM UserMenuPermissions existing
               WHERE existing.UserId = ump.UserId
                 AND existing.MenuId = @FollowupMenuId
+                AND ISNULL(existing.IsDeleted, 0) = 0
+          );
+    END
+
+    IF @ThemeActivityReportMenuId IS NOT NULL AND @FollowupMenuId IS NOT NULL
+    BEGIN
+        INSERT INTO RolePermissions (RoleId, MenuId, CurrentStatus, CreatedBy, DateCreated, CanAddEdit, CanDelete)
+        SELECT rp.RoleId, @ThemeActivityReportMenuId, 1, ISNULL(rp.CreatedBy, 0), GETDATE(), ISNULL(rp.CanAddEdit, 0), ISNULL(rp.CanDelete, 0)
+        FROM RolePermissions rp
+        WHERE rp.MenuId = @FollowupMenuId
+          AND ISNULL(rp.IsDeleted, 0) = 0
+          AND NOT EXISTS (
+              SELECT 1
+              FROM RolePermissions existing
+              WHERE existing.RoleId = rp.RoleId
+                AND existing.MenuId = @ThemeActivityReportMenuId
+                AND ISNULL(existing.IsDeleted, 0) = 0
+          );
+
+        INSERT INTO UserMenuPermissions (UserId, MenuId, CurrentStatus, CreatedBy, DateCreated, CanAddEdit, CanDelete)
+        SELECT ump.UserId, @ThemeActivityReportMenuId, 1, ISNULL(ump.CreatedBy, 0), GETDATE(), ISNULL(ump.CanAddEdit, 0), ISNULL(ump.CanDelete, 0)
+        FROM UserMenuPermissions ump
+        WHERE ump.MenuId = @FollowupMenuId
+          AND ISNULL(ump.IsDeleted, 0) = 0
+          AND NOT EXISTS (
+              SELECT 1
+              FROM UserMenuPermissions existing
+              WHERE existing.UserId = ump.UserId
+                AND existing.MenuId = @ThemeActivityReportMenuId
                 AND ISNULL(existing.IsDeleted, 0) = 0
           );
     END

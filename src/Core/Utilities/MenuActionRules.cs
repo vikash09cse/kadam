@@ -8,6 +8,7 @@ namespace Core.Utilities
             "/Admin/Index",
             "/Admin/Report",
             "/Admin/AttendanceReport",
+            "/Admin/ThemeActivityReport",
             "/StudentPortal/Dashboard"
         };
 
