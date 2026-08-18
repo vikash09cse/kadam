@@ -1,0 +1,237 @@
+@page
+@model ThemeActivityModel
+@{
+    ViewData["Title"] = Model.IsView ? "View Theme Activity" : (Model.Input.Id > 0 ? "Edit Theme Activity" : "Add Theme Activity");
+    var disabled = Model.IsView ? "disabled" : null;
+}
+
+<div class="page-content">
+    <div class="container-fluid">
+        <div class="page-title-box d-flex align-items-center justify-content-between">
+            <h4 class="mb-sm-0">@ViewData["Title"]</h4>
+            <a asp-page="/ThemeActivities" asp-area="StudentPortal" class="btn btn-secondary">Back to list</a>
+        </div>
+
+        <div class="card">
+            <div class="card-body">
+                <form id="activityForm" method="post" asp-page-handler="Save">
+                    <input asp-for="Input.Id" type="hidden" />
+                    <div id="gradeSectionInputs"></div>
+                    <div asp-validation-summary="All" class="alert alert-danger"></div>
+
+                    <div class="row g-3">
+                        <div class="col-lg-3 col-md-6">
+                            <label asp-for="Input.ActivityDate" class="form-label">Activity Date <span class="text-danger">*</span></label>
+                            <input asp-for="Input.ActivityDate" type="date" class="form-control"
+                                   min="@Model.MinimumDate.ToString("yyyy-MM-dd")"
+                                   max="@Model.Today.ToString("yyyy-MM-dd")" disabled="@disabled" />
+                        </div>
+                        <div class="col-lg-3 col-md-6">
+                            <label asp-for="Input.InstitutionId" class="form-label">Institution <span class="text-danger">*</span></label>
+                            <select asp-for="Input.InstitutionId" id="institutionId" class="form-select" disabled="@disabled">
+                                <option value="">Select institution</option>
+                                @foreach (var item in Model.Institutions)
+                                {
+                                    <option value="@item.Id">@item.Text</option>
+                                }
+                            </select>
+                        </div>
+                        <div class="col-lg-3 col-md-6">
+                            <label asp-for="Input.ThemeId" class="form-label">Theme <span class="text-danger">*</span></label>
+                            <select asp-for="Input.ThemeId" class="form-select" disabled="@disabled">
+                                <option value="">Select theme</option>
+                                @foreach (var item in Model.Themes)
+                                {
+                                    <option value="@item.Id">@item.Text</option>
+                                }
+                            </select>
+                        </div>
+                        <div class="col-lg-3 col-md-6">
+                            <label for="eligibleStudents" class="form-label">Total Eligible Students</label>
+                            <input id="eligibleStudents" class="form-control" value="@(Model.Detail?.TotalStudents ?? 0)" readonly />
+                        </div>
+
+                        <div class="col-12">
+                            <label class="form-label">Grades and Sections <span class="text-danger">*</span></label>
+                            <div id="gradeSections" class="border rounded p-3">
+                                <span class="text-muted">Select an institution first.</span>
+                            </div>
+                        </div>
+
+                        <div class="col-lg-3 col-md-6">
+                            <label asp-for="Input.StudentsAttended" class="form-label">Students Attended <span class="text-danger">*</span></label>
+                            <input asp-for="Input.StudentsAttended" id="studentsAttended" type="number"
+                                   min="0" class="form-control participant-input" disabled="@disabled" />
+                        </div>
+                        <div class="col-lg-3 col-md-6">
+                            <label asp-for="Input.DidChildrensDayHappen" class="form-label">Children's Day <span class="text-danger">*</span></label>
+                            <select asp-for="Input.DidChildrensDayHappen" id="childrensDay" class="form-select" disabled="@disabled">
+                                <option value="false">No</option>
+                                <option value="true">Yes</option>
+                            </select>
+                        </div>
+                        <div class="col-lg-3 col-md-6">
+                            <label asp-for="Input.ParentsAttended" class="form-label">Parents Attended</label>
+                            <input asp-for="Input.ParentsAttended" id="parentsAttended" type="number"
+                                   min="0" class="form-control participant-input" disabled="@disabled" />
+                        </div>
+                        <div class="col-lg-3 col-md-6">
+                            <label for="totalParticipants" class="form-label">Total Participants</label>
+                            <input id="totalParticipants" class="form-control" readonly />
+                        </div>
+                        @if (Model.Detail is not null)
+                        {
+                            <div class="col-lg-3 col-md-6">
+                                <label class="form-label">Latest Source</label>
+                                <input class="form-control" value="@Model.Detail.EntryPointText" readonly />
+                            </div>
+                        }
+                    </div>
+
+                    @if (!Model.IsView)
+                    {
+                        <div class="mt-4">
+                            <button type="submit" class="btn btn-success">Save Theme Activity</button>
+                            <a asp-page="/ThemeActivities" asp-area="StudentPortal" class="btn btn-secondary">Cancel</a>
+                        </div>
+                    }
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .validation-summary-valid { display: none; }
+</style>
+
+@section Scripts {
+<script>
+(() => {
+    const isView = @Model.IsView.ToString().ToLowerInvariant();
+    const selected = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(
+        Model.Input.GradeSections.Select(x => new { x.GradeId, x.GradeName, x.Section })));
+    const institution = document.getElementById('institutionId');
+    const container = document.getElementById('gradeSections');
+    const hiddenContainer = document.getElementById('gradeSectionInputs');
+    const students = document.getElementById('studentsAttended');
+    const childrensDay = document.getElementById('childrensDay');
+    const parents = document.getElementById('parentsAttended');
+    let countRequest = 0;
+
+    const key = (gradeId, section) => `${gradeId}:${String(section).trim().toLowerCase()}`;
+    const selectedKeys = new Set(selected.map(x => key(x.GradeId, x.Section)));
+    const getSelections = () => Array.from(container.querySelectorAll('.grade-section:checked')).map(input => ({
+        gradeId: Number(input.dataset.gradeId),
+        section: input.dataset.section
+    }));
+    const calculateParticipants = () => {
+        const studentCount = Number(students.value || 0);
+        const parentCount = childrensDay.value === 'true' ? Number(parents.value || 0) : 0;
+        document.getElementById('totalParticipants').value = studentCount + parentCount;
+        parents.disabled = isView || childrensDay.value !== 'true';
+        if (childrensDay.value !== 'true') parents.value = '';
+        parents.max = String(Math.max(studentCount, 0));
+    };
+    const refreshEligible = async () => {
+        if (isView) return;
+        const request = ++countRequest;
+        const selections = getSelections();
+        if (!institution.value || selections.length === 0) {
+            document.getElementById('eligibleStudents').value = 0;
+            return;
+        }
+        const query = new URLSearchParams({
+            handler: 'EligibleCount',
+            institutionId: institution.value,
+            gradeSections: JSON.stringify(selections)
+        });
+        const response = await fetch(`?${query}`);
+        if (!response.ok || request !== countRequest) return;
+        const result = await response.json();
+        document.getElementById('eligibleStudents').value = result.total;
+        students.max = result.total;
+    };
+    const renderGradeSections = grades => {
+        selected.forEach(item => {
+            let grade = grades.find(x => Number(x.id) === Number(item.GradeId));
+            if (!grade) {
+                grade = { id: item.GradeId, text: item.GradeName || `Grade ${item.GradeId}`, sections: '' };
+                grades.push(grade);
+            }
+            const sections = (grade.sections || '').split(',').map(x => x.trim()).filter(Boolean);
+            if (!sections.some(x => x.toLowerCase() === String(item.Section).trim().toLowerCase()))
+                grade.sections = [...sections, item.Section].join(',');
+        });
+        container.replaceChildren();
+        if (!grades.length) {
+            const empty = document.createElement('span');
+            empty.className = 'text-muted';
+            empty.textContent = 'No assigned grade and section is available.';
+            container.append(empty);
+            return;
+        }
+        grades.forEach(grade => {
+            const group = document.createElement('div');
+            group.className = 'mb-2';
+            const title = document.createElement('strong');
+            title.className = 'me-3';
+            title.textContent = grade.text;
+            group.append(title);
+            (grade.sections || '').split(',').map(x => x.trim()).filter(Boolean).forEach(section => {
+                const wrapper = document.createElement('label');
+                wrapper.className = 'form-check form-check-inline';
+                const checkbox = document.createElement('input');
+                checkbox.type = 'checkbox';
+                checkbox.className = 'form-check-input grade-section';
+                checkbox.dataset.gradeId = grade.id;
+                checkbox.dataset.section = section;
+                checkbox.checked = selectedKeys.has(key(grade.id, section));
+                checkbox.disabled = isView;
+                checkbox.addEventListener('change', refreshEligible);
+                const text = document.createElement('span');
+                text.className = 'form-check-label';
+                text.textContent = section;
+                wrapper.append(checkbox, text);
+                group.append(wrapper);
+            });
+            container.append(group);
+        });
+        refreshEligible();
+    };
+    const loadGradeSections = async () => {
+        container.innerHTML = '<span class="text-muted">Loading...</span>';
+        if (!institution.value) {
+            container.innerHTML = '<span class="text-muted">Select an institution first.</span>';
+            document.getElementById('eligibleStudents').value = 0;
+            return;
+        }
+        const response = await fetch(`?handler=GradeSections&institutionId=${encodeURIComponent(institution.value)}`);
+        renderGradeSections(response.ok ? await response.json() : []);
+    };
+
+    institution.addEventListener('change', () => {
+        selectedKeys.clear();
+        loadGradeSections();
+    });
+    childrensDay.addEventListener('change', calculateParticipants);
+    students.addEventListener('input', calculateParticipants);
+    parents.addEventListener('input', calculateParticipants);
+    document.getElementById('activityForm').addEventListener('submit', () => {
+        hiddenContainer.replaceChildren();
+        getSelections().forEach((selection, index) => {
+            [['GradeId', selection.gradeId], ['Section', selection.section]].forEach(([name, value]) => {
+                const input = document.createElement('input');
+                input.type = 'hidden';
+                input.name = `Input.GradeSections[${index}].${name}`;
+                input.value = value;
+                hiddenContainer.append(input);
+            });
+        });
+    });
+
+    if (institution.value) loadGradeSections();
+    calculateParticipants();
+})();
+</script>
+}

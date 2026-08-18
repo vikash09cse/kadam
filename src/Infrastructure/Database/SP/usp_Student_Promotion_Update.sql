@@ -12,6 +12,7 @@ BEGIN
         Section = @Section,
         PromotionDate = @PromotionDate,
         ModifyBy = @ModifyBy,
-        ModifyDate = GETDATE()
+        ModifyDate = GETDATE(),
+        DateEntryPoint = 1
     WHERE Id = @StudentId
 END

@@ -1,0 +1,64 @@
+@page
+@model GradeTestModel
+@{
+    ViewData["Title"] = $"Grade Test {Model.Details.GradeLevelId}";
+}
+<div class="page-content">
+    <div class="container-fluid">
+        <div class="page-title-box d-sm-flex align-items-center justify-content-between">
+            <h4 class="mb-sm-0">Grade Test @Model.Details.GradeLevelId</h4>
+            <a href="/StudentPortal/Progress?studentId=@Model.Details.StudentId" class="btn btn-secondary">Back to Progress</a>
+        </div>
+        <form method="post" class="card">
+            <div class="card-body">
+                <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
+                <input asp-for="GradeTest.StudentId" type="hidden" />
+                <input asp-for="GradeTest.GradeLevelId" type="hidden" />
+                <div class="row g-3 mb-4">
+                    <div class="col-md-6"><label class="form-label">Student</label><input class="form-control" value="@Model.Details.StudentName (@Model.Details.StudentCode)" readonly /></div>
+                    <div class="col-md-3">
+                        <label asp-for="GradeTest.CompletedDate" class="form-label">Completed Date</label>
+                        <input asp-for="GradeTest.CompletedDate" type="date" class="form-control"
+                               min="@Model.Details.EnrollmentDate.ToString("yyyy-MM-dd")" max="@DateTime.Today.ToString("yyyy-MM-dd")" />
+                    </div>
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-bordered align-middle">
+                        <thead class="table-primary"><tr><th>Subject</th><th>Obtained Marks</th><th>Total Marks</th><th>Percentage</th></tr></thead>
+                        <tbody>
+                        @for (var index = 0; index < Model.Details.Subjects.Count; index++)
+                        {
+                            var subject = Model.Details.Subjects[index];
+                            <tr>
+                                <td>@subject.SubjectName<input asp-for="GradeTest.Scores[index].SubjectId" type="hidden" value="@subject.SubjectId" /></td>
+                                <td><input asp-for="GradeTest.Scores[index].ObtainedMarks" class="form-control test-mark" type="number"
+                                           min="0.01" max="@subject.TotalMarks" step="0.01" data-total="@subject.TotalMarks" required /></td>
+                                <td>@subject.TotalMarks.ToString("0.##")</td>
+                                <td><span class="test-percentage">@((subject.PercentageMarks.HasValue ? $"{subject.PercentageMarks:0}%" : "-"))</span></td>
+                            </tr>
+                        }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="card-footer d-flex justify-content-end gap-2">
+                <button type="submit" class="btn btn-success">Save Grade Test</button>
+                <a href="/StudentPortal/Progress?studentId=@Model.Details.StudentId" class="btn btn-danger">Cancel</a>
+            </div>
+        </form>
+    </div>
+</div>
+@section Scripts {
+<partial name="_ValidationScriptsPartial" />
+<script>
+document.querySelectorAll('.test-mark').forEach(input => {
+    const update = () => {
+        const value = Number(input.value), total = Number(input.dataset.total);
+        input.closest('tr').querySelector('.test-percentage').textContent =
+            input.value !== '' && total > 0 ? `${Math.round(value / total * 100)}%` : '-';
+    };
+    input.addEventListener('input', update); update();
+});
+</script>
+}
+<style>.validation-summary-valid { display:none; }</style>

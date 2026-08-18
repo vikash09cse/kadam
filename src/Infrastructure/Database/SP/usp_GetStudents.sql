@@ -3,84 +3,57 @@ CREATE OR ALTER PROCEDURE dbo.usp_GetStudents
     @PageSize INT = 10,
     @StudentName NVARCHAR(100) = NULL,
     @StudentId NVARCHAR(50) = NULL,
-    @UserId INT
+    @UserId INT,
+    @Status INT = NULL
 AS
 BEGIN
     SET NOCOUNT ON;
 
+    SET @PageNumber = CASE WHEN @PageNumber < 1 THEN 1 ELSE @PageNumber END;
+    SET @PageSize = CASE WHEN @PageSize < 1 THEN 10 WHEN @PageSize > 100 THEN 100 ELSE @PageSize END;
+
     DECLARE @Offset INT = (@PageNumber - 1) * @PageSize;
-    DECLARE @InstitutionIds VARCHAR(MAX) = NULL;
-    DECLARE @FilterByInstitution BIT = 0;
-    DECLARE @FilterByDivision BIT = 0;
-    DECLARE @FilterByCreatedBy BIT = 0;
+    DECLARE @IsAdmin BIT = 0;
+    DECLARE @HasExplicitScope BIT = 0;
+    DECLARE @Name NVARCHAR(100) = NULLIF(LTRIM(RTRIM(@StudentName)), '');
+    DECLARE @Code NVARCHAR(50) = NULLIF(LTRIM(RTRIM(@StudentId)), '');
 
-    DECLARE @AssignedDivisions TABLE (DivisionId INT NOT NULL PRIMARY KEY);
+    SELECT @IsAdmin = CASE WHEN LOWER(LTRIM(RTRIM(r.RoleName))) = 'admin' THEN 1 ELSE 0 END
+    FROM dbo.Users u
+    INNER JOIN dbo.Roles r ON r.Id = u.RoleId AND r.IsDeleted = 0
+    WHERE u.Id = @UserId AND u.IsDeleted = 0;
 
-    IF @UserId IS NOT NULL AND @UserId > 0
+    IF EXISTS (SELECT 1 FROM dbo.PeopleDivisions WHERE UserId = @UserId)
+       OR EXISTS (SELECT 1 FROM dbo.PeopleInstitutions WHERE UserId = @UserId)
+        SET @HasExplicitScope = 1;
+
+    CREATE TABLE #AllowedInstitutions
+    (
+        InstitutionId INT NOT NULL PRIMARY KEY
+    );
+
+    IF @IsAdmin = 0 AND @HasExplicitScope = 1
     BEGIN
-        IF EXISTS (
-            SELECT 1
-            FROM dbo.Users u
-            INNER JOIN dbo.Roles r ON u.RoleId = r.Id AND r.IsDeleted = 0
-            WHERE u.Id = @UserId
-              AND u.IsDeleted = 0
-              AND LOWER(LTRIM(RTRIM(r.RoleName))) = 'admin'
-        )
-        BEGIN
-            SET @FilterByInstitution = 0;
-            SET @FilterByDivision = 0;
-            SET @FilterByCreatedBy = 0;
-        END
-        ELSE IF OBJECT_ID(N'dbo.PeopleDivisions', N'U') IS NOT NULL
-        BEGIN
-            IF EXISTS (SELECT 1 FROM dbo.PeopleDivisions WHERE UserId = @UserId)
-            BEGIN
-                SET @FilterByDivision = 1;
-                INSERT INTO @AssignedDivisions (DivisionId)
-                SELECT DISTINCT pd.DivisionId
-                FROM dbo.PeopleDivisions pd
-                WHERE pd.UserId = @UserId;
-            END
-            ELSE IF EXISTS (
-                SELECT 1
-                FROM dbo.PeopleInstitutions pi
-                WHERE pi.UserId = @UserId
-                  AND LTRIM(RTRIM(ISNULL(pi.InstitutionIds, ''))) <> ''
-            )
-            BEGIN
-                SET @FilterByInstitution = 1;
-                SELECT @InstitutionIds = STRING_AGG(CAST(LTRIM(RTRIM(s.Item)) AS VARCHAR(20)), ',')
-                FROM dbo.PeopleInstitutions pi
-                CROSS APPLY dbo.SplitString(pi.InstitutionIds, ',') s
-                WHERE pi.UserId = @UserId
-                  AND LTRIM(RTRIM(ISNULL(pi.InstitutionIds, ''))) <> ''
-                  AND TRY_CAST(LTRIM(RTRIM(s.Item)) AS INT) IS NOT NULL;
-            END
-            ELSE
-            BEGIN
-                SET @FilterByCreatedBy = 1;
-            END
-        END
-        ELSE IF EXISTS (
-            SELECT 1
-            FROM dbo.PeopleInstitutions pi
-            WHERE pi.UserId = @UserId
-              AND LTRIM(RTRIM(ISNULL(pi.InstitutionIds, ''))) <> ''
-        )
-        BEGIN
-            SET @FilterByInstitution = 1;
-            SELECT @InstitutionIds = STRING_AGG(CAST(LTRIM(RTRIM(s.Item)) AS VARCHAR(20)), ',')
-            FROM dbo.PeopleInstitutions pi
-            CROSS APPLY dbo.SplitString(pi.InstitutionIds, ',') s
-            WHERE pi.UserId = @UserId
-              AND LTRIM(RTRIM(ISNULL(pi.InstitutionIds, ''))) <> ''
-              AND TRY_CAST(LTRIM(RTRIM(s.Item)) AS INT) IS NOT NULL;
-        END
-        ELSE
-        BEGIN
-            SET @FilterByCreatedBy = 1;
-        END
-    END
+        INSERT INTO #AllowedInstitutions (InstitutionId)
+        SELECT DISTINCT i.Id
+        FROM dbo.Institutions i
+        INNER JOIN dbo.PeopleDivisions pd
+            ON pd.DivisionId = i.DivisionId AND pd.UserId = @UserId
+        WHERE i.IsDeleted = 0;
+
+        INSERT INTO #AllowedInstitutions (InstitutionId)
+        SELECT DISTINCT parsed.InstitutionId
+        FROM dbo.PeopleInstitutions pi
+        CROSS APPLY dbo.SplitString(pi.InstitutionIds, ',') split
+        CROSS APPLY (VALUES (TRY_CAST(LTRIM(RTRIM(split.Item)) AS INT))) parsed(InstitutionId)
+        WHERE pi.UserId = @UserId
+          AND parsed.InstitutionId IS NOT NULL
+          AND NOT EXISTS (
+              SELECT 1
+              FROM #AllowedInstitutions allowed
+              WHERE allowed.InstitutionId = parsed.InstitutionId
+          );
+    END;
 
     SELECT
         ROW_NUMBER() OVER (ORDER BY s.EnrollmentDate DESC, s.Id DESC) AS RowNumber,
@@ -100,41 +73,27 @@ BEGIN
     LEFT JOIN dbo.Grades g ON g.Id = s.GradeId
     WHERE s.IsDeleted = 0
       AND (
-          (@FilterByInstitution = 0 AND @FilterByDivision = 0 AND @FilterByCreatedBy = 0)
-          OR (
-              @FilterByDivision = 1
-              AND i.Id IS NOT NULL
-              AND i.DivisionId IN (SELECT ad.DivisionId FROM @AssignedDivisions ad)
+          @IsAdmin = 1
+          OR EXISTS (
+              SELECT 1 FROM #AllowedInstitutions allowed
+              WHERE allowed.InstitutionId = s.InstitutionId
           )
-          OR (
-              @FilterByInstitution = 1
-              AND @InstitutionIds IS NOT NULL
-              AND LTRIM(RTRIM(@InstitutionIds)) <> ''
-              AND s.InstitutionId IN (
-                  SELECT TRY_CAST(LTRIM(RTRIM(Item)) AS INT)
-                  FROM dbo.SplitString(@InstitutionIds, ',')
-                  WHERE TRY_CAST(LTRIM(RTRIM(Item)) AS INT) IS NOT NULL
-              )
-          )
-          OR (
-              @FilterByCreatedBy = 1
-              AND s.CreatedBy = @UserId
-          )
+          OR (@HasExplicitScope = 0 AND s.CreatedBy = @UserId)
+      )
+      AND (@Status IS NULL OR s.CurrentStatus = @Status)
+      AND (
+          @Name IS NULL
+          OR s.FirstName LIKE '%' + @Name + '%'
+          OR s.LastName LIKE '%' + @Name + '%'
+          OR CONCAT(s.FirstName, ' ', s.LastName) LIKE '%' + @Name + '%'
       )
       AND (
-          @StudentName IS NULL
-          OR LTRIM(RTRIM(@StudentName)) = ''
-          OR s.FirstName LIKE '%' + LTRIM(RTRIM(@StudentName)) + '%'
-          OR s.LastName LIKE '%' + LTRIM(RTRIM(@StudentName)) + '%'
-          OR CONCAT(s.FirstName, ' ', s.LastName) LIKE '%' + LTRIM(RTRIM(@StudentName)) + '%'
-      )
-      AND (
-          @StudentId IS NULL
-          OR LTRIM(RTRIM(@StudentId)) = ''
-          OR s.StudentId LIKE '%' + LTRIM(RTRIM(@StudentId)) + '%'
+          @Code IS NULL
+          OR s.StudentId LIKE '%' + @Code + '%'
       )
     ORDER BY s.EnrollmentDate DESC, s.Id DESC
     OFFSET @Offset ROWS
-    FETCH NEXT @PageSize ROWS ONLY;
+    FETCH NEXT @PageSize ROWS ONLY
+    OPTION (RECOMPILE);
 END
 GO

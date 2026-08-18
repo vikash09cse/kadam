@@ -131,31 +131,49 @@
                         data: null,
                         orderable: false,
                         render: function(data, type, row) {
-                            var assignAction = isDivisionScopedUserRow(row)
-                                ? `<a href="/Admin/AssignDivision?id=${row.id}" class="btn btn-sm btn-success" title="Assign Division">
-                                        <i class="mdi mdi-map-marker-multiple"></i> Assign Division
+                            var editBtn = window.canAddEdit()
+                                ? `<button class="btn btn-sm btn-warning" title="Edit" ng-click="vm.editPerson(${row.id})">
+                                        <i class="mdi mdi-pencil"></i>
+                                   </button>`
+                                : '';
+                            var resetBtn = window.canAddEdit()
+                                ? `<button class="btn btn-sm btn-info" title="Reset password" ng-click="vm.confirmResetPassword(${row.id})">
+                                        <i class="mdi mdi-lock-reset"></i>
+                                   </button>`
+                                : '';
+                            var deleteBtn = window.canDelete()
+                                ? `<button class="btn btn-sm btn-danger" title="Remove" ng-click="vm.removePerson(${row.id})">
+                                        <i class="mdi mdi-close-thick"></i>
+                                   </button>`
+                                : '';
+                            var programBtn = window.canAddEdit()
+                                ? `<button class="btn btn-sm btn-primary" title="Assign Program" ng-click="vm.assignProgram(${row.id})">
+                                        <i class="mdi mdi-plus"></i> Assign Program
+                                   </button>`
+                                : '';
+                            var assignAction = '';
+                            if (window.canAddEdit()) {
+                                assignAction = isDivisionScopedUserRow(row)
+                                    ? `<a href="/Admin/AssignDivision?id=${row.id}" class="btn btn-sm btn-success" title="Assign Division">
+                                            <i class="mdi mdi-map-marker-multiple"></i> Assign Division
+                                       </a>`
+                                    : `<a href="/Admin/AssignInstitution?id=${row.id}" class="btn btn-sm btn-success" title="Assign Institution">
+                                            <i class="mdi mdi-building"></i> Assign Institution
+                                       </a>`;
+                            }
+                            var menuBtn = window.canAddEdit()
+                                ? `<a href="/Admin/UserMenuPermissions/${row.id}" class="btn btn-sm btn-secondary" title="Menu Permission">
+                                        <i class="mdi mdi-menu"></i> Menu Permission
                                    </a>`
-                                : `<a href="/Admin/AssignInstitution?id=${row.id}" class="btn btn-sm btn-success" title="Assign Institution">
-                                        <i class="mdi mdi-building"></i> Assign Institution
-                                   </a>`;
+                                : '';
                             return `
                                 <div class="btn-group">
-                                    <button class="btn btn-sm btn-warning" title="Edit" ng-click="vm.editPerson(${row.id})">
-                                        <i class="mdi mdi-pencil"></i>
-                                    </button>
-                                    <button class="btn btn-sm btn-info" title="Reset password" ng-click="vm.confirmResetPassword(${row.id})">
-                                        <i class="mdi mdi-lock-reset"></i>
-                                    </button>
-                                    <button class="btn btn-sm btn-danger" title="Remove" ng-click="vm.removePerson(${row.id})">
-                                        <i class="mdi mdi-close-thick"></i>
-                                    </button>
-                                    <button class="btn btn-sm btn-primary" title="Assign Program" ng-click="vm.assignProgram(${row.id})">
-                                        <i class="mdi mdi-plus"></i> Assign Program
-                                    </button>
+                                    ${editBtn}
+                                    ${resetBtn}
+                                    ${deleteBtn}
+                                    ${programBtn}
                                     ${assignAction}
-                                    <a href="/Admin/UserMenuPermissions/${row.id}" class="btn btn-sm btn-secondary" title="Menu Permission">
-                                        <i class="mdi mdi-menu"></i> Menu Permission
-                                    </a>
+                                    ${menuBtn}
                                 </div>
                             `;
                         }

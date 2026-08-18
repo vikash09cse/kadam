@@ -1,0 +1,90 @@
+@page
+@model DocumentsModel
+@{
+    ViewData["Title"] = "Student Documents";
+}
+
+<div class="page-content">
+    <div class="container-fluid">
+        <div class="page-title-box d-sm-flex align-items-center justify-content-between">
+            <h4 class="mb-sm-0">Documents: @Model.StudentName</h4>
+            <a href="/StudentPortal/Directory" class="btn btn-outline-secondary">Student List</a>
+        </div>
+        @if (TempData["SuccessMessage"] is string success) { <div class="alert alert-success">@success</div> }
+        @if (TempData["ErrorMessage"] is string error) { <div class="alert alert-danger">@error</div> }
+
+        <div class="row g-3">
+            <div class="col-lg-5">
+                <form method="post" enctype="multipart/form-data" class="card">
+                    <div class="card-header text-center"><h5 class="card-title mb-0">Student Document Information</h5></div>
+                    <div class="card-body">
+                        <div asp-validation-summary="All" class="alert alert-danger"></div>
+                        <input asp-for="Document.Id" type="hidden" />
+                        <input asp-for="Document.StudentId" type="hidden" />
+                        <input asp-for="Document.DocumentPath" type="hidden" />
+                        <input asp-for="Document.DocumentFileName" type="hidden" />
+                        <div class="mb-3">
+                            <label asp-for="Document.DocumentTypeId" class="form-label">Document Type</label>
+                            <select asp-for="Document.DocumentTypeId" asp-items="Model.DocumentTypes" class="form-select"><option value="0">Select</option></select>
+                        </div>
+                        <div class="mb-3">
+                            <label asp-for="Document.DocumentNumber" class="form-label">Document Number</label>
+                            <input asp-for="Document.DocumentNumber" class="form-control" minlength="5" maxlength="25" pattern="[A-Za-z0-9]+" placeholder="Enter document number" />
+                        </div>
+                        <div class="mb-3">
+                            <label asp-for="DocumentFile" class="form-label">File</label>
+                            <input asp-for="DocumentFile" type="file" accept=".pdf,.jpg,.jpeg,.png" class="form-control" />
+                            @if (!string.IsNullOrWhiteSpace(Model.Document.DocumentPath))
+                            {
+                                <div class="mt-2">
+                                    <span class="text-muted">Uploaded Document:</span>
+                                    <a href="@Model.GetDocumentUrl(Model.Document.DocumentPath)" target="_blank" rel="noopener">@Model.Document.DocumentFileName</a>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                    <div class="card-footer d-flex justify-content-end gap-2">
+                        <button type="submit" class="btn btn-success">Save</button>
+                        <a href="/StudentPortal/Directory" class="btn btn-danger">Cancel</a>
+                    </div>
+                </form>
+            </div>
+            <div class="col-lg-7">
+                <div class="card">
+                    <div class="card-header"><h5 class="card-title mb-0">Uploaded Documents</h5></div>
+                    <div class="card-body table-responsive">
+                        <table class="table table-nowrap">
+                            <thead class="table-primary"><tr><th>Type</th><th>Number</th><th>Source</th><th>Actions</th></tr></thead>
+                            <tbody>
+                                @foreach (var document in Model.Documents)
+                                {
+                                    <tr>
+                                        <td>@(((Core.Utilities.Enums.DocumentTypes)document.DocumentTypeId).ToString())</td>
+                                        <td>@document.DocumentNumber</td>
+                                        <td>@(document.DateEntryPoint == 2 ? "Web" : "Mobile")</td>
+                                        <td>
+                                            <a href="@Model.GetDocumentUrl(document.DocumentPath)" target="_blank" rel="noopener" class="btn btn-sm btn-outline-info">Open</a>
+                                            <a href="/StudentPortal/Documents?studentId=@document.StudentId&editId=@document.Id" class="btn btn-sm btn-outline-primary">Edit</a>
+                                            <form method="post" asp-page-handler="Delete" class="d-inline" onsubmit="return confirm('Delete this document?');">
+                                                <input type="hidden" name="documentId" value="@document.Id" />
+                                                <input type="hidden" name="studentId" value="@document.StudentId" />
+                                                <button class="btn btn-sm btn-outline-danger">Delete</button>
+                                            </form>
+                                        </td>
+                                    </tr>
+                                }
+                                @if (Model.Documents.Count == 0)
+                                {
+                                    <tr><td colspan="4" class="text-center text-muted">No documents uploaded.</td></tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<partial name="_ValidationScriptsPartial" />
+<style>.validation-summary-valid { display: none; }</style>

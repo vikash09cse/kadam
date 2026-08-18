@@ -56,7 +56,8 @@ BEGIN
         + CAST(@Id AS VARCHAR(20));
 
     UPDATE Students
-    SET StudentId = @StudentId
+    SET StudentId = @StudentId,
+        DateEntryPoint = 1
     WHERE Id = @Id
       AND (StudentId IS NULL OR LTRIM(RTRIM(StudentId)) = '');
 END;

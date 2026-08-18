@@ -1,4 +1,4 @@
-CREATE PROCEDURE usp_Student_Status_Update
+CREATE OR ALTER PROCEDURE usp_Student_Status_Update
     @StudentId INT,
     @Status INT,
     @InActiveReason Varchar(100) = NULL,
@@ -13,9 +13,7 @@ BEGIN
         InActiveDate = @InActiveDate,
         Remarks = @Remarks,
         ModifyBy = @UpdatedBy,
-        ModifyDate = GETDATE()
+        ModifyDate = GETDATE(),
+        DateEntryPoint = 1
     WHERE Id = @StudentId;
-END; 
-Alter Table Students
-ADD InActiveReason Varchar(100) NULL,
-    InActiveDate DATETIME NULL;
+END;

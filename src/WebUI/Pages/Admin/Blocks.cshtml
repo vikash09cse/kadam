@@ -14,10 +14,10 @@
                 <div class="page-title-box d-sm-flex align-items-center justify-content-between">
                     <h4 class="mb-sm-0">Blocks</h4>
                     <div class="text-end">
-                        <button type="button" class="btn btn-success me-2" ng-click="openImportModal()">
+                        <button type="button" class="btn btn-success me-2 js-requires-add-edit" ng-click="openImportModal()">
                             <i class="mdi mdi-file-excel"></i> Import Excel
                         </button>
-                        <button type="button" class="btn btn-primary" ng-click="openAddBlockModal()">
+                        <button type="button" class="btn btn-primary js-requires-add-edit" ng-click="openAddBlockModal()">
                             Add Block
                         </button>
                     </div>
@@ -245,12 +245,8 @@
                         render: function (data, type, row) {
                             var buttons = `
                                 <div class="btn-group">
-                                    <button class="btn btn-sm btn-warning" title="Edit" onclick="editBlock(${row.id})">
-                                        <i class="mdi mdi-pencil"></i>
-                                    </button>
-                                    <button class="btn btn-sm btn-danger" title="Remove" onclick="removeBlock(${row.id})">
-                                        <i class="mdi mdi-close-thick"></i>
-                                    </button>
+                                    ${window.canAddEdit() ? `<button class="btn btn-sm btn-warning" title="Edit" onclick="editBlock(${row.id})"><i class="mdi mdi-pencil"></i></button>` : ''}
+                                    ${window.canDelete() ? `<button class="btn btn-sm btn-danger" title="Remove" onclick="removeBlock(${row.id})"><i class="mdi mdi-close-thick"></i></button>` : ''}
                                 </div>
                             `;
                             return buttons;

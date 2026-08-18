@@ -15,5 +15,6 @@ Create Table ThemeActivities
     ModifyDate DATETIME,
     DeletedBy INT,
     DeletedDate DATETIME,
-    IsDeleted BIT DEFAULT 0
+    IsDeleted BIT DEFAULT 0,
+    DateEntryPoint TINYINT NOT NULL DEFAULT (1)
 )

@@ -15,6 +15,7 @@ namespace WebAPI.Controllers
         [HttpPost]
         public async Task<IActionResult> SaveStudentFamilyDetails([FromBody] StudentFamilyDetail familyDetails)
         {
+            familyDetails.DateEntryPoint = 1;
             var response = await _studentFamilyDetailsService.SaveStudentFamilyDetails(familyDetails);
             return StatusCode(response.StatusCode, response);
         }

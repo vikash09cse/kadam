@@ -25,7 +25,7 @@
                             <div class="row g-3">
                                 <div class="col-md-3">
                                     <label asp-for="StateId" class="form-label">State</label>
-                                    <select asp-for="StateId" class="form-select">
+                                    <select asp-for="StateId" id="StateId" class="form-select">
                                         <option value="">All States</option>
                                         @foreach (var state in Model.States)
                                         {
@@ -36,7 +36,7 @@
 
                                 <div class="col-md-3">
                                     <label asp-for="DivisionId" class="form-label">Division</label>
-                                    <select asp-for="DivisionId" class="form-select">
+                                    <select asp-for="DivisionId" id="DivisionId" class="form-select">
                                         <option value="">All Divisions</option>
                                         @foreach (var division in Model.Divisions)
                                         {
@@ -164,6 +164,33 @@
             });
 
             syncStudentTypeFilters();
+
+            const stateSelect = document.getElementById('StateId');
+            const divisionSelect = document.getElementById('DivisionId');
+
+            function escapeHtml(value) {
+                return String(value ?? '')
+                    .replace(/&/g, '&amp;')
+                    .replace(/</g, '&lt;')
+                    .replace(/>/g, '&gt;')
+                    .replace(/"/g, '&quot;');
+            }
+
+            async function loadDivisionsForState() {
+                if (!stateSelect || !divisionSelect) return;
+                const stateId = stateSelect.value || '';
+                const response = await fetch(`?handler=DivisionsByState&stateId=${encodeURIComponent(stateId)}`);
+                if (!response.ok) return;
+                const data = await response.json();
+                const options = ['<option value="">All Divisions</option>']
+                    .concat((data || []).map(function (division) {
+                        return `<option value="${division.value}">${escapeHtml(division.text)}</option>`;
+                    }));
+                divisionSelect.innerHTML = options.join('');
+                divisionSelect.value = '';
+            }
+
+            stateSelect?.addEventListener('change', loadDivisionsForState);
         })();
     </script>
 }

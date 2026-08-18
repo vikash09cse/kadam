@@ -1,0 +1,159 @@
+@page
+@model MainstreamModel
+@{
+    ViewData["Title"] = "Mainstream Student";
+}
+
+<div class="page-content">
+    <div class="container-fluid">
+        <div class="page-title-box d-sm-flex align-items-center justify-content-between">
+            <h4 class="mb-sm-0">Mainstream Student</h4>
+            <a href="/StudentPortal/MyInstitution" class="btn btn-secondary">Back to My Institution</a>
+        </div>
+
+        <form method="post" class="card">
+            <div class="card-header text-center">
+                <h5 class="card-title mb-0">Mainstream Information</h5>
+            </div>
+            <div class="card-body">
+                <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
+                <input asp-for="Mainstream.StudentId" type="hidden" />
+                <input asp-for="Mainstream.EnrolledInstitutionId" type="hidden" />
+
+                <div class="row g-3 mb-4">
+                    <div class="col-md-4">
+                        <label class="form-label">Student</label>
+                        <input class="form-control" value="@Model.Mainstream.StudentName (@Model.Mainstream.StudentCode)" readonly />
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Enrolled Institution</label>
+                        <input class="form-control" value="@Model.Mainstream.EnrolledInstitutionName" readonly />
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Enrolled Grade</label>
+                        <input class="form-control" value="@Model.Mainstream.EnrolledGradeName" readonly />
+                    </div>
+                </div>
+
+                <div class="form-check form-switch mb-3">
+                    <input asp-for="Mainstream.IsMainstreamInstitutionSame" class="form-check-input" />
+                    <label asp-for="Mainstream.IsMainstreamInstitutionSame" class="form-check-label">Mainstream institution is the same as enrolled institution</label>
+                </div>
+
+                <div id="other-institution-fields" class="row g-3 mb-3">
+                    <div class="col-md-4">
+                        <label asp-for="Mainstream.StateId" class="form-label">State</label>
+                        <select asp-for="Mainstream.StateId" id="mainstream-state" class="form-select">
+                            <option value="">Select state</option>
+                            @foreach (var item in Model.States) { <option value="@item.Id">@item.Text</option> }
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label asp-for="Mainstream.DistrictId" class="form-label">District</label>
+                        <select asp-for="Mainstream.DistrictId" id="mainstream-district" class="form-select">
+                            <option value="">Select district</option>
+                            @foreach (var item in Model.Districts) { <option value="@item.Id">@item.Text</option> }
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label asp-for="Mainstream.MainstreamInstitutionId" class="form-label">Institution</label>
+                        <select asp-for="Mainstream.MainstreamInstitutionId" id="mainstream-institution" class="form-select">
+                            <option value="">Select institution</option>
+                            @foreach (var item in Model.Institutions) { <option value="@item.Id">@item.Text</option> }
+                        </select>
+                    </div>
+                </div>
+
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <label asp-for="Mainstream.GradeId" class="form-label">Mainstream Grade <span class="text-danger">*</span></label>
+                        <select asp-for="Mainstream.GradeId" id="mainstream-grade" class="form-select">
+                            <option value="">Select grade</option>
+                            @foreach (var item in Model.GradeSections)
+                            {
+                                <option value="@item.Id" data-sections="@item.Sections">@item.Text</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label asp-for="Mainstream.Section" class="form-label">Section <span class="text-danger">*</span></label>
+                        <select asp-for="Mainstream.Section" id="mainstream-section" class="form-select">
+                            <option value="">Select section</option>
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label asp-for="Mainstream.ChildSRNumber" class="form-label">Child SR Number</label>
+                        <input asp-for="Mainstream.ChildSRNumber" class="form-control" maxlength="100" />
+                    </div>
+                    <div class="col-md-4">
+                        <label asp-for="Mainstream.MainstreamDate" class="form-label">Mainstream Date <span class="text-danger">*</span></label>
+                        <input asp-for="Mainstream.MainstreamDate" type="date" class="form-control"
+                               min="@Model.Mainstream.EnrollmentDate.ToString("yyyy-MM-dd")"
+                               max="@DateTime.Today.ToString("yyyy-MM-dd")" />
+                    </div>
+                </div>
+            </div>
+            <div class="card-footer d-flex justify-content-end gap-2">
+                <button type="submit" class="btn btn-success">Save</button>
+                <a href="/StudentPortal/MyInstitution" class="btn btn-danger">Cancel</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+<partial name="_ValidationScriptsPartial" />
+<script>
+(() => {
+    const same = document.getElementById('Mainstream_IsMainstreamInstitutionSame');
+    const enrolledInstitutionId = document.getElementById('Mainstream_EnrolledInstitutionId').value;
+    const state = document.getElementById('mainstream-state');
+    const district = document.getElementById('mainstream-district');
+    const institution = document.getElementById('mainstream-institution');
+    const grade = document.getElementById('mainstream-grade');
+    const section = document.getElementById('mainstream-section');
+    const selectedSection = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.Mainstream.Section ?? ""));
+
+    const fill = (select, items, placeholder) => {
+        select.innerHTML = `<option value="">${placeholder}</option>` +
+            items.map(x => `<option value="${x.id}" data-sections="${x.sections || ''}">${x.text}</option>`).join('');
+    };
+    const loadGrades = async id => {
+        if (!id) { fill(grade, [], 'Select grade'); fill(section, [], 'Select section'); return; }
+        fill(grade, await (await fetch(`?handler=GradeSections&institutionId=${id}`)).json(), 'Select grade');
+        fill(section, [], 'Select section');
+    };
+    const loadSections = selected => {
+        const sections = (grade.selectedOptions[0]?.dataset.sections || '').split(',').map(x => x.trim()).filter(Boolean);
+        fill(section, sections.map(x => ({id:x,text:x})), 'Select section');
+        if (selected) section.value = selected;
+    };
+    const toggleInstitution = async () => {
+        const isSame = same.checked;
+        document.getElementById('other-institution-fields').classList.toggle('d-none', isSame);
+        [state, district, institution].forEach(x => x.disabled = isSame);
+        if (isSame) await loadGrades(enrolledInstitutionId);
+        else await loadGrades(institution.value);
+    };
+
+    state.addEventListener('change', async () => {
+        fill(district, state.value ? await (await fetch(`?handler=Districts&stateId=${state.value}`)).json() : [], 'Select district');
+        fill(institution, [], 'Select institution');
+        await loadGrades(null);
+    });
+    district.addEventListener('change', async () => {
+        fill(institution, district.value ? await (await fetch(`?handler=Institutions&stateId=${state.value}&districtId=${district.value}`)).json() : [], 'Select institution');
+        await loadGrades(null);
+    });
+    institution.addEventListener('change', () => loadGrades(institution.value));
+    grade.addEventListener('change', () => loadSections(''));
+    same.addEventListener('change', toggleInstitution);
+
+    loadSections(selectedSection);
+    document.getElementById('other-institution-fields').classList.toggle('d-none', same.checked);
+    [state, district, institution].forEach(x => x.disabled = same.checked);
+})();
+</script>
+}
+
+<style>.validation-summary-valid { display: none; }</style>

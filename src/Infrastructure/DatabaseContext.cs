@@ -39,7 +39,15 @@ namespace Infrastructure
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
-            //base.OnModelCreating(modelBuilder);
+            base.OnModelCreating(modelBuilder);
+            modelBuilder.Entity<StudentAttendance>()
+                .HasIndex(x => new { x.StudentId, x.AttendanceDate })
+                .IsUnique();
+            modelBuilder.Entity<ThemeActivityGradeSection>(entity =>
+            {
+                entity.ToTable("ThemeActivityGradeSections");
+                entity.Property(x => x.Section).HasMaxLength(100).IsUnicode(false);
+            });
 
             //// Ensure the table name matches the expected name in the database
             //modelBuilder.Entity<Division>().ToTable("Divisions");
@@ -78,9 +86,13 @@ namespace Infrastructure
         public DbSet<StudentHealth> StudentHealths { get; set; }
         public DbSet<StudentDocument> StudentDocuments { get; set; }
         public DbSet<StudentBaselineDetail> StudentBaselineDetails { get; set; }
+        public DbSet<StudentGradeStartAndEndDetail> StudentGradeStartAndEndDetails { get; set; }
+        public DbSet<StudentProgressStep> StudentProgressSteps { get; set; }
+        public DbSet<StudentGradeTestDetail> StudentGradeTestDetails { get; set; }
         public DbSet<StudentMainstream> StudentMainstreams { get; set; }
         public DbSet<StudentFollowup> StudentFollowups { get; set; }
         public DbSet<ThemeActivity> ThemeActivities { get; set; }
+        public DbSet<ThemeActivityGradeSection> ThemeActivityGradeSections { get; set; }
         public DbSet<StudentAttendance> StudentAttendances { get; set; }
         public DbSet<StudentTrio> StudentTrios { get; set; }
         public DbSet<StudentDeleteLog> StudentDeleteLogs { get; set; }

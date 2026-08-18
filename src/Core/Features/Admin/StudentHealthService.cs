@@ -78,6 +78,7 @@ namespace Core.Features.Admin
                 {
                     // Update the certificate path
                     health.DisabilityCertificatePath = relativePath;
+                    health.DateEntryPoint = 1;
                     
                     // Save the updated record
                     bool isSaved = await _studentHealthRepository.SaveStudentHealth(health);

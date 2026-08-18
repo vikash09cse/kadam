@@ -1,0 +1,197 @@
+@page "{handler?}"
+@model MyInstitutionModel
+@{
+    ViewData["Title"] = "My Institution";
+}
+@Html.AntiForgeryToken()
+
+<div class="page-content">
+    <div class="container-fluid">
+        <div class="page-title-box">
+            <h4 class="mb-sm-0">My Institution</h4>
+        </div>
+        @if (TempData["SuccessMessage"] is string success)
+        {
+            <div class="alert alert-success alert-dismissible fade show" role="alert">
+                @success
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        }
+        @if (TempData["ErrorMessage"] is string error)
+        {
+            <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                @error
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        }
+
+        <div class="card">
+            <div class="card-body">
+                <div class="row g-3 align-items-end mb-3">
+                    <div class="col-lg-3 col-md-4">
+                        <label for="searchText" class="form-label">Search</label>
+                        <input id="searchText" class="form-control" placeholder="Student name, ID or father name" />
+                    </div>
+                    <div class="col-lg-3 col-md-4">
+                        <label for="institutionId" class="form-label">Institution</label>
+                        <select id="institutionId" class="form-select">
+                            <option value="">All Institutions</option>
+                            @foreach (var item in Model.Institutions)
+                            {
+                                <option value="@item.Id">@item.Text</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="col-lg-2 col-md-4">
+                        <label for="gradeId" class="form-label">Grade</label>
+                        <select id="gradeId" class="form-select" disabled>
+                            <option value="">All Grades</option>
+                        </select>
+                    </div>
+                    <div class="col-lg-2 col-md-4">
+                        <label for="section" class="form-label">Section</label>
+                        <select id="section" class="form-select" disabled>
+                            <option value="">All Sections</option>
+                        </select>
+                    </div>
+                    <div class="col-lg-2 col-md-4">
+                        <label for="status" class="form-label">Status</label>
+                        <select id="status" class="form-select">
+                            <option value="1" selected>Active</option>
+                            <option value="2">Inactive</option>
+                            <option value="">All</option>
+                        </select>
+                    </div>
+                    <div class="col-lg-2 col-md-4">
+                        <label for="fromDate" class="form-label">Enrollment From</label>
+                        <input id="fromDate" type="date" class="form-control" value="@Model.DefaultFromDate.ToString("yyyy-MM-dd")" />
+                    </div>
+                    <div class="col-lg-2 col-md-4">
+                        <label for="toDate" class="form-label">Enrollment To</label>
+                        <input id="toDate" type="date" class="form-control" value="@Model.DefaultToDate.ToString("yyyy-MM-dd")" />
+                    </div>
+                    <div class="col-lg-4 col-md-8">
+                        <button id="runFilters" type="button" class="btn btn-primary">Search</button>
+                        <button id="resetFilters" type="button" class="btn btn-secondary">Reset</button>
+                    </div>
+                </div>
+
+                <div class="table-responsive">
+                    <table id="institutionStudentsTable" class="table table-nowrap w-100">
+                        <thead class="table-primary">
+                            <tr>
+                                <th>#</th><th>Student ID</th><th>Name</th><th>Father Name</th>
+                                <th>Institution</th><th>Grade/Section</th><th>Enrollment Date</th>
+                                <th>Age</th><th>Status</th><th>Actions</th>
+                            </tr>
+                        </thead>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+(() => {
+    const defaultFrom = '@Model.DefaultFromDate.ToString("yyyy-MM-dd")';
+    const defaultTo = '@Model.DefaultToDate.ToString("yyyy-MM-dd")';
+    const textRenderer = $.fn.dataTable.render.text();
+    const escapeHtml = value => $('<div>').text(value ?? '').html();
+    let grades = [];
+
+    const fill = (select, items, label) => {
+        select.innerHTML = `<option value="">${label}</option>` +
+            items.map(x => `<option value="${x.id}">${escapeHtml(x.text)}</option>`).join('');
+    };
+    const gradeSelect = document.getElementById('gradeId');
+    const sectionSelect = document.getElementById('section');
+
+    const token = document.querySelector('input[name="__RequestVerificationToken"]').value;
+    const table = $('#institutionStudentsTable').DataTable({
+        serverSide:true, processing:true, searching:false, ordering:false,
+        ajax:{
+            url:'@Url.Page("/MyInstitution", pageHandler: "Students")',
+            type:'POST',
+            method:'POST',
+            headers:{ RequestVerificationToken: token },
+            data:d => {
+            d.searchText = $('#searchText').val();
+            d.institutionId = $('#institutionId').val();
+            d.gradeId = $('#gradeId').val();
+            d.section = $('#section').val();
+            d.fromDate = $('#fromDate').val();
+            d.toDate = $('#toDate').val();
+            d.status = $('#status').val();
+        }},
+        columns:[
+            {data:'rowNumber'},
+            {data:'studentId',render:textRenderer},
+            {data:'studentName',render:textRenderer},
+            {data:'fatherName',render:textRenderer},
+            {data:'institutionName',render:textRenderer},
+            {data:null,render:r => `${escapeHtml(r.gradeName)} / ${escapeHtml(r.section || 'NA')}`},
+            {data:'enrollmentDate',render:value => value ? new Date(value).toLocaleDateString() : ''},
+            {data:'age'},
+            {data:'currentStatus',render:value => ({1:'Active',2:'Inactive',3:'Completed'}[value] || 'Unknown')},
+            {data:null,orderable:false,render:r => `<div class="btn-group btn-group-sm">
+                <a class="btn btn-outline-primary" href="/StudentPortal/Baseline?studentId=${r.id}"
+                   title="${r.isBaselineAdded ? (r.canEditBaseline ? 'Edit baseline' : 'View baseline') : 'Add baseline'}"
+                   aria-label="${r.isBaselineAdded ? (r.canEditBaseline ? 'Edit baseline' : 'View baseline') : 'Add baseline'}">
+                    <i class="ri-bar-chart-box-line"></i>
+                </a>
+                ${r.canOpenProgress
+                    ? `<a class="btn btn-outline-warning" href="/StudentPortal/Progress?studentId=${r.id}" title="Progress" aria-label="Progress"><i class="ri-funds-line"></i></a>`
+                    : `<span class="btn btn-outline-warning disabled" title="Complete baseline first"><i class="ri-funds-line"></i></span>`}
+                ${r.isBaselineCompleted
+                    ? `<a class="btn btn-outline-danger" href="/StudentPortal/Endline?studentId=${r.id}" title="${r.isEndlineAdded ? 'View endline' : 'Add endline'}" aria-label="${r.isEndlineAdded ? 'View endline' : 'Add endline'}"><i class="ri-flag-line"></i></a>`
+                    : `<span class="btn btn-outline-danger disabled" title="Complete baseline first"><i class="ri-flag-line"></i></span>`}
+                ${r.isKadamPlusStudent
+                    ? `<a class="btn btn-outline-success" href="/StudentPortal/Promotion?studentId=${r.id}" title="Promote student" aria-label="Promote student"><i class="ri-arrow-up-circle-line"></i></a>`
+                    : (r.isMainstreamEligible
+                        ? `<a class="btn btn-outline-success" href="/StudentPortal/Mainstream?studentId=${r.id}" title="Mainstream student" aria-label="Mainstream student"><i class="ri-user-follow-line"></i></a>`
+                        : `<span class="btn btn-outline-success disabled" title="Complete baseline and endline first"><i class="ri-user-follow-line"></i></span>`)}
+            </div>`}
+        ]
+    });
+
+    $('#institutionId').on('change', async function() {
+        grades = [];
+        fill(gradeSelect, [], 'All Grades');
+        fill(sectionSelect, [], 'All Sections');
+        gradeSelect.disabled = !this.value;
+        sectionSelect.disabled = true;
+        if (!this.value) return;
+        const response = await fetch('@Url.Page("/MyInstitution", pageHandler: "GradeSections")?institutionId=' + encodeURIComponent(this.value));
+        if (!response.ok) return;
+        grades = await response.json();
+        fill(gradeSelect, grades, 'All Grades');
+    });
+
+    $('#gradeId').on('change', function() {
+        const grade = grades.find(x => String(x.id) === this.value);
+        const sections = (grade?.sections || '').split(',').map(x => x.trim()).filter(Boolean);
+        fill(sectionSelect, sections.map((text,index) => ({id:text,text})), 'All Sections');
+        sectionSelect.disabled = !this.value;
+    });
+
+    $('#runFilters').on('click', () => table.ajax.reload());
+    $('#searchText').on('keydown', event => {
+        if (event.key === 'Enter') { event.preventDefault(); table.ajax.reload(); }
+    });
+    $('#resetFilters').on('click', () => {
+        $('#searchText,#institutionId,#gradeId,#section').val('');
+        $('#status').val('1');
+        $('#fromDate').val(defaultFrom);
+        $('#toDate').val(defaultTo);
+        grades = [];
+        fill(gradeSelect, [], 'All Grades');
+        fill(sectionSelect, [], 'All Sections');
+        gradeSelect.disabled = true;
+        sectionSelect.disabled = true;
+        table.ajax.reload();
+    });
+})();
+</script>
+}

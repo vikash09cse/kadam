@@ -1,0 +1,137 @@
+@page "{handler?}"
+@model DirectoryModel
+@{
+    ViewData["Title"] = "Student List";
+}
+@Html.AntiForgeryToken()
+<div class="page-content">
+    <div class="container-fluid">
+        <div class="page-title-box d-sm-flex align-items-center justify-content-between">
+            <h4 class="mb-sm-0">Student List</h4>
+            <a href="/StudentPortal/Registration" class="btn btn-primary"><i class="ri-user-add-line"></i> Register Student</a>
+        </div>
+        <div class="card"><div class="card-body">
+            <div class="row g-3 align-items-end mb-3">
+                <div class="col-md-2"><label class="form-label" for="studentName">Student Name</label><input id="studentName" class="form-control" /></div>
+                <div class="col-md-2"><label class="form-label" for="studentId">Student ID</label><input id="studentId" class="form-control" /></div>
+                <div class="col-md-2"><label class="form-label" for="aadhaarNumber">Aadhaar Number</label><input id="aadhaarNumber" class="form-control" maxlength="12" /></div>
+                <div class="col-md-2"><label class="form-label" for="status">Status</label><select id="status" class="form-select"><option value="">All</option><option value="1">Active</option><option value="2">Inactive</option><option value="3">Completed</option></select></div>
+                <div class="col-md-4"><button id="search" class="btn btn-primary">Search</button> <button id="clear" class="btn btn-secondary">Clear</button></div>
+            </div>
+            <div class="table-responsive"><table id="studentsTable" class="table table-nowrap w-100">
+                <thead class="table-primary"><tr><th>#</th><th>Student ID</th><th>Name</th><th>Institution</th><th>Grade/Section</th><th>Age</th><th>Status</th><th>Source</th><th>Actions</th></tr></thead>
+            </table></div>
+        </div></div>
+    </div>
+</div>
+@section Scripts {
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script>
+(() => {
+    const token = document.querySelector('input[name="__RequestVerificationToken"]').value;
+    const headers = { RequestVerificationToken: token };
+    const encode = value => encodeURIComponent(value ?? '');
+    const decode = value => decodeURIComponent(value || '');
+    const table = $('#studentsTable').DataTable({
+        serverSide: true, processing: true, searching: false, ordering: false,
+        ajax: {
+            url: '@Url.Page("/Directory", pageHandler: "Students")',
+            type: 'POST',
+            method: 'POST',
+            headers,
+            data: d => {
+                d.studentName = $('#studentName').val(); d.studentId = $('#studentId').val();
+                d.aadhaarNumber = $('#aadhaarNumber').val(); d.status = $('#status').val();
+            }
+        },
+        columns: [
+            {data:'rowNumber'}, {data:'studentId'}, {data:'studentName'}, {data:'institutionName'},
+            {data:null, render:r => `${r.gradeName} / ${r.section}`}, {data:'age'},
+            {data:'currentStatus', render:v => ({1:'Active',2:'Inactive',3:'Completed'}[v] || 'Unknown')},
+            {data:'entryPointText'},
+            {data:null, orderable:false, render:r => `<div class="btn-group btn-group-sm">
+                <a class="btn btn-outline-primary" href="/StudentPortal/Registration?id=${r.id}" title="Edit"><i class="ri-edit-line"></i></a>
+                <a class="btn btn-outline-success" href="/StudentPortal/Health?studentId=${r.id}" title="Health"><i class="ri-heart-pulse-line"></i></a>
+                <a class="btn btn-outline-info" href="/StudentPortal/Documents?studentId=${r.id}" title="Documents"><i class="ri-file-list-line"></i></a>
+                ${r.isBaselineAdded ? `<button class="btn btn-outline-secondary" data-action="trio" data-id="${r.id}" data-value="${r.trioId || ''}" data-name="${encode(r.studentName)}" data-code="${encode(r.studentId)}" title="Assign Trio ID" aria-label="Assign Trio ID"><i class="ri-group-line"></i></button>` : ''}
+                ${r.currentStatus !== 3 ? `<button class="btn btn-outline-warning" data-action="status" data-id="${r.id}" data-status="${r.currentStatus}" data-name="${encode(r.studentName)}" data-code="${encode(r.studentId)}" data-reason="${encode(r.inActiveReason)}" data-date="${encode((r.inActiveDate || '').substring(0,10))}" data-remarks="${encode(r.remarks)}" title="Update status" aria-label="Update status"><i class="ri-toggle-line"></i></button>` : ''}
+            </div>`}
+        ]
+    });
+    $('#search').on('click', () => table.ajax.reload());
+    $('#clear').on('click', () => { $('#studentName,#studentId,#aadhaarNumber,#status').val(''); table.ajax.reload(); });
+    $('#studentsTable').on('click', 'button[data-action]', async function() {
+        const id = Number(this.dataset.id);
+        const studentName = decode(this.dataset.name);
+        const studentCode = decode(this.dataset.code);
+        if (this.dataset.action === 'trio') {
+            const a = await Swal.fire({
+                title:'Assign Trio ID',
+                text:`${studentName} (${studentCode})`,
+                input:'number',
+                inputValue:this.dataset.value,
+                inputAttributes:{min:1,step:1},
+                inputValidator:value => !Number.isInteger(Number(value)) || Number(value) <= 0
+                    ? 'Enter a positive whole-number Trio ID.'
+                    : undefined,
+                showCancelButton:true
+            });
+            if (a.isConfirmed) await send('@Url.Page("/Directory", pageHandler: "Trio")', {studentId:id,trioId:Number(a.value)});
+        } else {
+            const currentStatus = Number(this.dataset.status);
+            const a = await Swal.fire({
+                title:'Update status',
+                text:`${studentName} (${studentCode})`,
+                html:`<label for="s-status" class="form-label d-block text-start">Status</label>
+                    <select id="s-status" class="form-select"><option value="1">Active</option><option value="2">Inactive</option></select>
+                    <div id="inactive-fields">
+                        <label for="s-reason" class="form-label d-block text-start mt-2">Inactive reason</label>
+                        <select id="s-reason" class="form-select"><option value="">Select inactive reason</option><option>Child not comfortable in school environment</option><option>Financial constraint of family</option><option>Migration of family</option><option>Obligation to do household chores</option><option>Death of the child</option><option>Others</option></select>
+                        <label for="s-date" class="form-label d-block text-start mt-2">Inactive date</label>
+                        <input id="s-date" type="date" class="form-control">
+                    </div>
+                    <label for="s-remarks" class="form-label d-block text-start mt-2">Remarks</label>
+                    <input id="s-remarks" class="form-control" maxlength="255" placeholder="Remarks">`,
+                showCancelButton:true,
+                didOpen:() => {
+                    const toggleInactive = () => {
+                        const inactive = Number($('#s-status').val()) === 2;
+                        $('#inactive-fields').toggle(inactive);
+                        $('#s-reason,#s-date').prop('disabled', !inactive);
+                        if (!inactive) $('#s-reason,#s-date').val('');
+                    };
+                    $('#s-status').val(currentStatus).on('change', toggleInactive);
+                    $('#s-reason').val(decode(this.dataset.reason));
+                    $('#s-date').val(decode(this.dataset.date)).attr('max', new Date().toISOString().substring(0,10));
+                    $('#s-remarks').val(decode(this.dataset.remarks));
+                    toggleInactive();
+                },
+                preConfirm:() => {
+                    const status = Number($('#s-status').val());
+                    const reason = $('#s-reason').val();
+                    const date = $('#s-date').val();
+                    if (status === 2 && (!reason || !date)) {
+                        Swal.showValidationMessage('Inactive reason and date are required.');
+                        return false;
+                    }
+                    return {studentId:id,status,inActiveReason:reason||'',inActiveDate:date||null,remarks:$('#s-remarks').val()};
+                }
+            });
+            if (a.isConfirmed) await send('@Url.Page("/Directory", pageHandler: "Status")', a.value);
+        }
+    });
+    async function send(url, body) {
+        try {
+            const options = {method:'POST',headers:{...headers,'Content-Type':'application/json'},body:JSON.stringify(body)};
+            const response = await fetch(url, options);
+            const result = await response.json();
+            const detail = (result.errors || []).length ? result.errors.join('\n') : result.message;
+            await Swal.fire(result.success?'Saved':'Unable to save',detail||'The request could not be completed.',result.success?'success':'error');
+            if (result.success) table.ajax.reload(null,false);
+        } catch {
+            await Swal.fire('Unable to save','The server could not process the request. Please try again.','error');
+        }
+    }
+})();
+</script>
+}

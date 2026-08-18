@@ -8,4 +8,6 @@ CREATE TABLE StudentAttendances (
     DateCreated DATETIME DEFAULT GETDATE(),
     ModifyBy INT,
     ModifyDate DATETIME,
+    DateEntryPoint TINYINT NOT NULL DEFAULT (1),
+    CONSTRAINT UX_StudentAttendances_StudentId_AttendanceDate UNIQUE (StudentId, AttendanceDate)
 );

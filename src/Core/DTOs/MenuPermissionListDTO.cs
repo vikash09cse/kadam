@@ -1,4 +1,5 @@
-﻿using static Core.Utilities.Enums;
+﻿using Core.Utilities;
+using static Core.Utilities.Enums;
 
 namespace Core.DTOs
 {
@@ -17,6 +18,11 @@ namespace Core.DTOs
     {
         public int Id { get; set; }
         public string MenuName { get; set; } = string.Empty;
+        public string? MenuUrl { get; set; }
+        public Core.Utilities.Enums.PortalType PortalType { get; set; } = Core.Utilities.Enums.PortalType.Admin;
         public bool IsSelected { get; set; }
+        public bool CanAddEdit { get; set; }
+        public bool CanDelete { get; set; }
+        public bool HasActions => MenuActionRules.HasActions(MenuUrl);
     }
 }

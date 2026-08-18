@@ -20,5 +20,6 @@ namespace Core.Entities
         public int? ReligionId { get; set; }
         public string? ParentMonthlyIncome { get; set; }
         public string? ParentMontlyExpenditure { get; set; }
+        public byte DateEntryPoint { get; set; } = 1;
     }
 } 

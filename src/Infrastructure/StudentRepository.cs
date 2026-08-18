@@ -354,13 +354,14 @@ namespace Infrastructure
             return null;
         }
 
-        public async Task<IEnumerable<StudentAdminListDTO>> GetStudents(int pageNumber, int pageSize, string? studentName, string? studentId, int userId)
+        public async Task<IEnumerable<StudentAdminListDTO>> GetStudents(int pageNumber, int pageSize, string? studentName, string? studentId, int? status, int userId)
         {
             var parameters = new DynamicParameters();
             parameters.Add("@PageNumber", pageNumber);
             parameters.Add("@PageSize", pageSize);
             parameters.Add("@StudentName", string.IsNullOrWhiteSpace(studentName) ? null : studentName.Trim());
             parameters.Add("@StudentId", string.IsNullOrWhiteSpace(studentId) ? null : studentId.Trim());
+            parameters.Add("@Status", status);
             parameters.Add("@UserId", userId);
 
             return await _db.Connection.QueryAsync<StudentAdminListDTO>(

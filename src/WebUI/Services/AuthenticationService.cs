@@ -27,6 +27,7 @@ public class AuthenticationService
             new Claim(ClaimTypes.Name, $"{userInfo.FirstName} {userInfo.LastName}"),
             new Claim("Email", userInfo.Email),
             new Claim("RoleId", userInfo.RoleId.ToString()),
+            new Claim("PortalType", ((int)userInfo.PortalType).ToString()),
         };
 
         var claimsIdentity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
@@ -75,6 +76,7 @@ public class AuthenticationService
             new Claim(JwtRegisteredClaimNames.Email, userInfo.Email),
             new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
             new Claim("RoleId", userInfo.RoleId.ToString()),
+            new Claim("PortalType", ((int)userInfo.PortalType).ToString()),
             new Claim("FirstName", userInfo.FirstName),
             new Claim("LastName", userInfo.LastName)
         };
@@ -98,8 +100,15 @@ public class AuthenticationService
             {
                 if (ValidateToken(token))
                 {
-                    // Redirect to the admin page if the token is valid
-                    return new RedirectToPageResult("/Admin/Index");
+                    var jwtToken = new JwtSecurityTokenHandler().ReadJwtToken(token);
+                    if (!int.TryParse(jwtToken.Claims.FirstOrDefault(c => c.Type == "PortalType")?.Value, out var portalType))
+                    {
+                        httpContext.Response.Cookies.Delete("RememberMe_Token");
+                        return null;
+                    }
+                    return portalType == (int)Core.Utilities.Enums.PortalType.Student
+                        ? new RedirectResult("/StudentPortal/Dashboard")
+                        : new RedirectToPageResult("/Admin/Index");
                 }
             }
         }
@@ -242,7 +251,11 @@ public class AuthenticationService
                     Email = jwtToken.Claims.FirstOrDefault(c => c.Type == JwtRegisteredClaimNames.Email)?.Value ?? string.Empty,
                     FirstName = jwtToken.Claims.FirstOrDefault(c => c.Type == "FirstName")?.Value ?? string.Empty,
                     LastName = jwtToken.Claims.FirstOrDefault(c => c.Type == "LastName")?.Value ?? string.Empty,
-                    RoleId = int.Parse(jwtToken.Claims.FirstOrDefault(c => c.Type == "RoleId")?.Value ?? "0")
+                    RoleId = int.Parse(jwtToken.Claims.FirstOrDefault(c => c.Type == "RoleId")?.Value ?? "0"),
+                    PortalType = Enum.TryParse<Core.Utilities.Enums.PortalType>(
+                        jwtToken.Claims.FirstOrDefault(c => c.Type == "PortalType")?.Value, out var jwtPortal)
+                        ? jwtPortal
+                        : Core.Utilities.Enums.PortalType.Admin
                 };
             }
             catch (Exception ex)
@@ -262,7 +275,11 @@ public class AuthenticationService
                     Email = httpContext.User.Claims.FirstOrDefault(c => c.Type == "Email")?.Value ?? string.Empty,
                     FirstName = httpContext.User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Name)?.Value.Split(' ')[0] ?? string.Empty,
                     LastName = httpContext.User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Name)?.Value.Split(' ')[1] ?? string.Empty,
-                    RoleId = int.Parse(httpContext.User.Claims.FirstOrDefault(c => c.Type == "RoleId")?.Value ?? "0")
+                    RoleId = int.Parse(httpContext.User.Claims.FirstOrDefault(c => c.Type == "RoleId")?.Value ?? "0"),
+                    PortalType = Enum.TryParse<Core.Utilities.Enums.PortalType>(
+                        httpContext.User.Claims.FirstOrDefault(c => c.Type == "PortalType")?.Value, out var cookiePortal)
+                        ? cookiePortal
+                        : Core.Utilities.Enums.PortalType.Admin
                 };
             }
         }

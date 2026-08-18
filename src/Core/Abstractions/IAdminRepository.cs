@@ -13,6 +13,7 @@ namespace Core.Abstractions
         Task<IEnumerable<UserListDTO>> GetUserList(int pageNumber, int pageSize, string searchTerm);
         Task<IEnumerable<PeopleExportDTO>> GetPeopleExportList();
         Task<bool> CheckUserExist(string email, int id);
+        Task<bool> CheckUserNameExist(string userName, int id);
         Task<Users> GetUser(int id);
         Task<bool> SaveUser(Users user);
         Task<bool> DeleteUser(int id);
@@ -23,6 +24,7 @@ namespace Core.Abstractions
         Task<PeopleInstitution?> GetPeopleInstitution(int userId);
         Task<IEnumerable<PeopleInstitution>> GetPeopleInstitutionAssignments(int userId);
         Task<IEnumerable<DropdownDTO>> GetInstitutionsByIds(IEnumerable<int> institutionIds);
+        Task<IEnumerable<DropdownDTO>> GetInstitutionsFiltered(int? stateId, int? divisionId, IEnumerable<int>? allowedDivisionIds, IEnumerable<int>? allowedInstitutionIds);
         Task<IEnumerable<int>> GetPeopleDivisionIds(int userId);
         Task<bool> SavePeopleDivisions(int userId, IEnumerable<int> divisionIds);
         Task ClearPeopleInstitutions(int userId);
@@ -37,6 +39,9 @@ namespace Core.Abstractions
         Task<bool> CheckDuplicateDivisionName(string divisionName, int id);
         Task<bool> CheckDuplicateDivisionCode(string divisionCode, int id);
         Task<IEnumerable<DropdownDTO>> GetDivisionsByStatus(Enums.Status? currentStatus);
+        Task<IEnumerable<int>> GetDivisionIdsByStateId(int stateId);
+        Task<IEnumerable<int>> GetStateIdsByDivisionIds(IEnumerable<int> divisionIds);
+        Task<IEnumerable<int>> GetStateIdsByInstitutionIds(IEnumerable<int> institutionIds);
         Task<DivisionLocationAssignmentDTO> GetDivisionLocationAssignment(int divisionId);
         Task<bool> SaveDivisionLocation(SaveDivisionLocationDTO assignment, int currentUserId);
         Task<IEnumerable<DropdownDTO>> GetBlocksByDistrictIds(IEnumerable<int> districtIds);
@@ -120,6 +125,7 @@ namespace Core.Abstractions
         Task<IEnumerable<UserMenuPermissionItemDTO>> GetUserMenuPermissions(int userId);
         Task<bool> SaveUserMenuPermissions(UserMenuPermissionsDTO userMenuPermissions, int createdBy);
         Task<IEnumerable<NavigationMenuDTO>> GetUserNavigationMenus(int userId);
+        Task<PageActionPermission> GetPageActionPermission(int userId, string menuUrl);
         Task SeedNavigationMenus();
         Task EnsureNavigationMenusSeeded();
         #endregion

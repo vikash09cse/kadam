@@ -33,17 +33,29 @@ namespace WebUI
                 //options.ExpireTimeSpan = TimeSpan.FromDays(1);
                 //options.SlidingExpiration = true;
 
-                options.Cookie.Name = "LoginCookies";
+                options.Cookie.Name = "LoginCookies.PortalV2";
                 options.Cookie.HttpOnly = true;
                 //options.Cookie.SecurePolicy = CookieSecurePolicy.Always; // Use Always for HTTPS
                 options.LoginPath = "/Login";
                 options.LogoutPath = "/Logout";
                 options.SlidingExpiration = true;
+                options.AccessDeniedPath = "/AccessDenied";
 
 
             });
 
+            builder.Services.AddAuthorization(options =>
+            {
+                options.AddPolicy("AdminPortal", policy =>
+                    policy.RequireAuthenticatedUser()
+                        .RequireClaim("PortalType", ((int)Core.Utilities.Enums.PortalType.Admin).ToString()));
+                options.AddPolicy("StudentPortal", policy =>
+                    policy.RequireAuthenticatedUser()
+                        .RequireClaim("PortalType", ((int)Core.Utilities.Enums.PortalType.Student).ToString()));
+            });
+
             builder.Services.AddScoped<AuthenticationService>();
+            builder.Services.AddScoped<WebUI.Services.PagePermissionGuard>();
             builder.Services.InjectCore();
             builder.Services.InjectInfrastructure();
         }

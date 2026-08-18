@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en" data-layout="vertical" data-sidebar="light" data-sidebar-size="lg">
+<head>
+    <title>KADAM Student Portal - @ViewData["Title"]</title>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="shortcut icon" href="~/assets/images/favicon.ico" />
+    <script src="~/assets/js/layout.js"></script>
+    <link href="~/assets/css/bootstrap.min.css" rel="stylesheet" />
+    <link href="~/assets/css/icons.min.css" rel="stylesheet" />
+    <link href="~/assets/css/app.min.css" rel="stylesheet" />
+    <link href="~/assets/css/custom.min.css" rel="stylesheet" />
+    <link href="~/css/site.css" rel="stylesheet" />
+    <link rel="stylesheet" href="//cdn.datatables.net/1.12.1/css/jquery.dataTables.min.css" />
+    <link rel="stylesheet" href="//cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css" />
+    <script src="https://code.jquery.com/jquery-3.6.0.js"></script>
+</head>
+<body>
+    <div id="layout-wrapper">
+        <header id="page-topbar">
+            <div class="layout-width">
+                <div class="navbar-header">
+                    <div class="d-flex align-items-center">
+                        <a href="/StudentPortal/Dashboard" class="navbar-brand fw-semibold">KADAM STUDENT PORTAL</a>
+                        <button type="button" class="btn btn-sm px-3 fs-16 header-item vertical-menu-btn topnav-hamburger" id="topnav-hamburger-icon">
+                            <span class="hamburger-icon"><span></span><span></span><span></span></span>
+                        </button>
+                    </div>
+                    <div class="dropdown">
+                        <button class="btn btn-icon btn-topbar btn-ghost-secondary rounded-circle" data-bs-toggle="dropdown">
+                            <i class="ri-user-line fs-4"></i>
+                        </button>
+                        <div class="dropdown-menu dropdown-menu-end">
+                            <h6 class="dropdown-header">@await Component.InvokeAsync("UserName")</h6>
+                            <a class="dropdown-item" href="/Logout"><i class="mdi mdi-logout me-1"></i> Logout</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <div class="app-menu navbar-menu">
+            <div class="navbar-brand-box">
+                <a href="/StudentPortal/Dashboard" class="logo logo-dark">
+                    <span class="logo-sm">KADAM</span>
+                    <span class="logo-lg">STUDENT PORTAL</span>
+                </a>
+            </div>
+            <div id="scrollbar">
+                <div class="container-fluid">
+                    <div id="two-column-menu"></div>
+                    @await Component.InvokeAsync("NavigationMenu")
+                </div>
+            </div>
+        </div>
+
+        <div class="vertical-overlay"></div>
+        <div class="main-content">
+            <partial name="_Notification" />
+            @RenderBody()
+        </div>
+        <footer class="footer">
+            <div class="container-fluid text-center">
+                <script>document.write(new Date().getFullYear())</script> © KADAM Student Portal.
+            </div>
+        </footer>
+    </div>
+
+    <button onclick="topFunction()" class="btn btn-secondary btn-icon" id="back-to-top"><i class="ri-arrow-up-line"></i></button>
+    <script src="~/assets/libs/bootstrap/js/bootstrap.bundle.min.js"></script>
+    <script src="~/assets/libs/simplebar/simplebar.min.js"></script>
+    <script src="~/assets/libs/node-waves/waves.min.js"></script>
+    <script src="~/assets/libs/feather-icons/feather.min.js"></script>
+    <script src="~/assets/js/plugins.js"></script>
+    <script src="~/assets/js/app.js"></script>
+    <script src="//cdn.datatables.net/1.12.1/js/jquery.dataTables.min.js"></script>
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

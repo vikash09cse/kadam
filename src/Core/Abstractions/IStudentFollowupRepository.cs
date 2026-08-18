@@ -8,6 +8,7 @@ namespace Core.Abstractions
         Task<bool> SaveStudentFollowup(StudentFollowup studentFollowup);
         Task<StudentFollowup> GetStudentFollowup(int id);
         Task<IEnumerable<StudentFollowupListDTO>> GetStudentFollowupList(int? studentId, int? institutionId, int? gradeId, string section, DateTime? fromDate, DateTime? toDate, int createdBy);
+        Task<IEnumerable<StudentFollowupListDTO>> GetFollowupReport(int userId, StudentFollowupReportFilterDTO filter);
         Task<bool> DeleteStudentFollowup(int id, int deletedBy);
     }
 }

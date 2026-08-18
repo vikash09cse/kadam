@@ -12,5 +12,6 @@ namespace Core.Abstractions
         Task<bool> DeleteStudentBaselineDetail(int id, int deletedBy);
         Task<IEnumerable<StudentBaselineDetailWithSubjectDTO>> GetStudentBaselineDetailWithSubjects(int studentId, string baselineType);
         Task<bool> SaveStudentBaselineDetail(StudentBaselineDetailWithSubjectSaveDTO studentBaselineDetail);
+        Task<(bool Success, string Message)> UpdateBaselineCompletedDate(UpdateBaselineCompletedDateDTO model);
     }
 } 

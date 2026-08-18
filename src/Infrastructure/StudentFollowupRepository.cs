@@ -7,12 +7,14 @@ using System.Data;
 
 namespace Infrastructure
 {
-    public class StudentFollowupRepository(DatabaseContext context) : IStudentFollowupRepository
+    public class StudentFollowupRepository(IDbSession db, DatabaseContext context) : IStudentFollowupRepository
     {
+        private readonly IDbSession _db = db;
         private readonly DatabaseContext _context = context;
 
         public async Task<bool> SaveStudentFollowup(StudentFollowup studentFollowup)
         {
+            studentFollowup.DateEntryPoint = 1;
             if (studentFollowup.Id > 0)
             {
                 _context.StudentFollowups.Update(studentFollowup);
@@ -31,24 +33,39 @@ namespace Infrastructure
 
         public async Task<IEnumerable<StudentFollowupListDTO>> GetStudentFollowupList(int? studentId, int? institutionId, int? gradeId, string section, DateTime? fromDate, DateTime? toDate, int createdBy)
         {
-            using (var connection = _context.Database.GetDbConnection())
-            {
-                var parameters = new DynamicParameters();
-                parameters.Add("@StudentId", studentId);
-                parameters.Add("@InstitutionId", institutionId);
-                parameters.Add("@GradeId", gradeId);
-                parameters.Add("@Section", section);
-                parameters.Add("@FromDate", fromDate);
-                parameters.Add("@ToDate", toDate);
-                parameters.Add("@CreatedBy", createdBy);
+            var parameters = new DynamicParameters();
+            parameters.Add("@StudentId", studentId);
+            parameters.Add("@InstitutionId", institutionId);
+            parameters.Add("@GradeId", gradeId);
+            parameters.Add("@Section", section);
+            parameters.Add("@FromDate", fromDate);
+            parameters.Add("@ToDate", toDate);
+            parameters.Add("@CreatedBy", createdBy);
 
-                var result = await connection.QueryAsync<StudentFollowupListDTO>(
-                    "usp_StudentFollowupList",
-                    parameters,
-                    commandType: CommandType.StoredProcedure);
+            return await _db.Connection.QueryAsync<StudentFollowupListDTO>(
+                "usp_StudentFollowupList",
+                parameters,
+                _db.Transaction,
+                commandType: CommandType.StoredProcedure);
+        }
 
-                return result;
-            }
+        public async Task<IEnumerable<StudentFollowupListDTO>> GetFollowupReport(int userId, StudentFollowupReportFilterDTO filter)
+        {
+            var parameters = new DynamicParameters();
+            parameters.Add("@UserId", userId);
+            parameters.Add("@StateId", filter.StateId);
+            parameters.Add("@DivisionId", filter.DivisionId);
+            parameters.Add("@InstitutionId", filter.InstitutionId);
+            parameters.Add("@GradeId", filter.GradeId);
+            parameters.Add("@Section", filter.Section);
+            parameters.Add("@FromDate", filter.FromDate.Date);
+            parameters.Add("@ToDate", filter.ToDate.Date);
+
+            return await _db.Connection.QueryAsync<StudentFollowupListDTO>(
+                "usp_StudentFollowupReport",
+                parameters,
+                _db.Transaction,
+                commandType: CommandType.StoredProcedure);
         }
 
         public async Task<bool> DeleteStudentFollowup(int id, int deletedBy)
@@ -59,6 +76,7 @@ namespace Infrastructure
                 studentFollowup.IsDeleted = true;
                 studentFollowup.DeletedBy = deletedBy;
                 studentFollowup.DeletedDate = DateTime.UtcNow;
+                studentFollowup.DateEntryPoint = 1;
                 return await _context.SaveChangesAsync() > 0;
             }
             return false;

@@ -24,5 +24,6 @@ namespace Core.DTOs.App
         public float? TotalStudentPercentage { get; set; }
         public DateTime DateCreated { get; set; }
         public int CreatedBy { get; set; }
+        public string CreatedByName { get; set; } = string.Empty;
     }
 }

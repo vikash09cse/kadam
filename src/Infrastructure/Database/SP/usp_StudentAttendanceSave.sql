@@ -35,11 +35,12 @@ BEGIN
                 target.AttendanceStatus = source.AttendanceStatus,
                 target.AttendanceNote = source.AttendanceNote,
                 target.ModifyBy = @CreatedBy,
-                target.ModifyDate = GETDATE()
+                target.ModifyDate = GETDATE(),
+                target.DateEntryPoint = 1
                 
         WHEN NOT MATCHED THEN
-            INSERT (StudentId, AttendanceDate, AttendanceStatus, AttendanceNote, CreatedBy, DateCreated)
-            VALUES (source.StudentId, source.AttendanceDate, source.AttendanceStatus, source.AttendanceNote, @CreatedBy, GETDATE());
+            INSERT (StudentId, AttendanceDate, AttendanceStatus, AttendanceNote, CreatedBy, DateCreated, DateEntryPoint)
+            VALUES (source.StudentId, source.AttendanceDate, source.AttendanceStatus, source.AttendanceNote, @CreatedBy, GETDATE(), 1);
         
         SET @Result = @@ROWCOUNT;
         

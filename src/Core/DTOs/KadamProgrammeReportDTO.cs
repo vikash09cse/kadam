@@ -77,14 +77,19 @@ namespace Core.DTOs
         public string? OngoingStep { get; set; }
         public string? NoOfStepsCompleted { get; set; }
         public string? GradeTest1 { get; set; }
+        public string? GradeTest1Percentage { get; set; }
         public string? GradeTest1Date { get; set; }
         public string? GradeTest2 { get; set; }
+        public string? GradeTest2Percentage { get; set; }
         public string? GradeTest2Date { get; set; }
         public string? GradeTest3 { get; set; }
+        public string? GradeTest3Percentage { get; set; }
         public string? GradeTest3Date { get; set; }
         public string? GradeTest4 { get; set; }
+        public string? GradeTest4Percentage { get; set; }
         public string? GradeTest4Date { get; set; }
         public string? GradeTest5 { get; set; }
+        public string? GradeTest5Percentage { get; set; }
         public string? GradeTest5Date { get; set; }
         public string? ProgressSpeed { get; set; }
         public string? ProgressColor { get; set; }

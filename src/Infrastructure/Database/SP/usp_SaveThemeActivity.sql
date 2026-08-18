@@ -30,7 +30,8 @@ BEGIN
                 TotalParentsAttended = @TotalParentsAttended,
                 ThemeActivityDate = @ThemeActivityDate,
                 ModifyBy = @CreatedBy,
-                ModifyDate = GETDATE()
+                ModifyDate = GETDATE(),
+                DateEntryPoint = 1
             WHERE Id = @Id;
             
             SET @ThemeActivityId = @Id;
@@ -53,7 +54,8 @@ BEGIN
                 CurrentStatus,
                 CreatedBy,
                 DateCreated,
-                IsDeleted
+                IsDeleted,
+                DateEntryPoint
             )
             VALUES (
                 @ThemeId,
@@ -66,7 +68,8 @@ BEGIN
                 1, -- CurrentStatus
                 @CreatedBy,
                 GETDATE(),
-                0 -- IsDeleted
+                0, -- IsDeleted
+                1 -- Mobile
             );
             
             SET @ThemeActivityId = SCOPE_IDENTITY();

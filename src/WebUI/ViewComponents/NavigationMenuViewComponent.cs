@@ -1,6 +1,7 @@
 using Core.DTOs;
 using Core.Features.Admin;
 using Microsoft.AspNetCore.Mvc;
+using Core.Utilities;
 
 namespace WebUI.ViewComponents
 {
@@ -16,8 +17,44 @@ namespace WebUI.ViewComponents
 
             await adminService.EnsureNavigationMenusSeeded();
             var flatMenus = (await adminService.GetUserNavigationMenus(user.Id)).ToList();
+            flatMenus = FilterForPortal(flatMenus, user.PortalType);
             var menuTree = BuildMenuTree(flatMenus);
             return View(menuTree);
+        }
+
+        private static List<NavigationMenuDTO> FilterForPortal(
+            List<NavigationMenuDTO> menus,
+            Enums.PortalType portalType)
+        {
+            var studentMenuIds = menus
+                .Where(IsStudentPortalMenu)
+                .Select(x => x.Id)
+                .ToHashSet();
+
+            foreach (var child in menus.Where(x => x.ParentId.HasValue && studentMenuIds.Contains(x.ParentId.Value)))
+                studentMenuIds.Add(child.Id);
+
+            return portalType == Enums.PortalType.Student
+                ? menus.Where(x => studentMenuIds.Contains(x.Id) && !IsHiddenStudentMenu(x)).ToList()
+                : menus.Where(x => !studentMenuIds.Contains(x.Id)).ToList();
+        }
+
+        private static bool IsHiddenStudentMenu(NavigationMenuDTO menu)
+        {
+            return menu.MenuName.Equals("Student Health", StringComparison.OrdinalIgnoreCase)
+                || menu.MenuName.Equals("Student Documents", StringComparison.OrdinalIgnoreCase);
+        }
+
+        private static bool IsStudentPortalMenu(NavigationMenuDTO menu)
+        {
+            var url = menu.MenuUrl ?? string.Empty;
+            var key = menu.MenuKey ?? string.Empty;
+            return url.StartsWith("/StudentPortal", StringComparison.OrdinalIgnoreCase)
+                || url.StartsWith("/Students", StringComparison.OrdinalIgnoreCase)
+                || key.Equals("studentportal", StringComparison.OrdinalIgnoreCase)
+                || key.Equals("studentoperations", StringComparison.OrdinalIgnoreCase)
+                || menu.MenuName.Equals("Student Portal", StringComparison.OrdinalIgnoreCase)
+                || menu.MenuName.Equals("Student Operations", StringComparison.OrdinalIgnoreCase);
         }
 
         private static List<NavigationMenuDTO> BuildMenuTree(List<NavigationMenuDTO> flatMenus)

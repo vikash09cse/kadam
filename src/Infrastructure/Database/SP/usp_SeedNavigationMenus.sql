@@ -4,13 +4,19 @@ AS
 BEGIN
     SET NOCOUNT ON;
 
+    UPDATE MenuPermissions
+    SET MenuName = N'Student List'
+    WHERE MenuName = N'Student Directory'
+      AND MenuUrl = N'/StudentPortal/Directory';
+
     DECLARE @Menus TABLE (
         SortOrder INT,
         MenuName NVARCHAR(255),
         ParentMenuName NVARCHAR(255) NULL,
         MenuUrl VARCHAR(255) NULL,
         IconClass VARCHAR(100) NULL,
-        MenuKey VARCHAR(100) NULL
+        MenuKey VARCHAR(100) NULL,
+        PortalType TINYINT NOT NULL DEFAULT (1)
     );
 
     INSERT INTO @Menus (SortOrder, MenuName, ParentMenuName, MenuUrl, IconClass, MenuKey) VALUES
@@ -35,14 +41,30 @@ BEGIN
     (19, N'Reports', NULL, N'#reportlist', N'ri-file-edit-line', N'reportlist'),
     (20, N'Kadam Programme Report', N'Reports', N'/Admin/Report', NULL, NULL),
     (21, N'Student Attendance Report', N'Reports', N'/Admin/AttendanceReport', NULL, NULL),
-    (22, N'Students', N'Settings', N'/Admin/Students', NULL, NULL);
+    (22, N'Student Follow-up Report', N'Reports', N'/Admin/FollowupReport', NULL, NULL),
+    (23, N'Theme Activity Report', N'Reports', N'/Admin/ThemeActivityReport', NULL, NULL),
+    (22, N'Students', N'Settings', N'/Admin/Students', NULL, NULL),
+    (23, N'Student Portal', NULL, N'#studentportal', N'ri-graduation-cap-line', N'studentportal'),
+    (24, N'Student Dashboard', N'Student Portal', N'/StudentPortal/Dashboard', N'ri-dashboard-line', NULL),
+    (25, N'Student Registration', N'Student Portal', N'/StudentPortal/Registration', N'ri-user-add-line', NULL),
+    (26, N'Student List', N'Student Portal', N'/StudentPortal/Directory', N'ri-list-check-2', NULL),
+    (27, N'My Institution', N'Student Portal', N'/StudentPortal/MyInstitution', N'ri-building-line', NULL),
+    (28, N'Student Health', N'Student Portal', N'/StudentPortal/Health', NULL, NULL),
+    (29, N'Student Documents', N'Student Portal', N'/StudentPortal/Documents', NULL, NULL),
+    (30, N'Student Attendance', N'Student Portal', N'/StudentPortal/Attendance', N'ri-calendar-check-line', NULL),
+    (31, N'Student Follow-ups', N'Student Portal', N'/StudentPortal/Followups', N'ri-user-follow-line', NULL),
+    (32, N'Theme Activities', N'Student Portal', N'/StudentPortal/ThemeActivities', N'ri-palette-line', NULL);
+
+    UPDATE @Menus
+    SET PortalType = 2
+    WHERE MenuName = N'Student Portal' OR ParentMenuName = N'Student Portal';
 
     ;WITH ParentMenus AS (
         SELECT m.MenuName, m.Id
         FROM MenuPermissions m
         WHERE m.IsDeleted = 0
     )
-    INSERT INTO MenuPermissions (MenuName, ParentId, MenuUrl, IconClass, SortOrder, MenuKey, CurrentStatus, IsDeleted, DateCreated)
+    INSERT INTO MenuPermissions (MenuName, ParentId, MenuUrl, IconClass, SortOrder, MenuKey, PortalType, CurrentStatus, IsDeleted, DateCreated)
     SELECT
         src.MenuName,
         p.Id,
@@ -50,6 +72,7 @@ BEGIN
         src.IconClass,
         src.SortOrder,
         src.MenuKey,
+        src.PortalType,
         1,
         0,
         GETDATE()
@@ -69,10 +92,76 @@ BEGIN
         child.IconClass = src.IconClass,
         child.SortOrder = src.SortOrder,
         child.MenuKey = src.MenuKey,
+        child.PortalType = src.PortalType,
         child.ParentId = parentMenu.Id
     FROM MenuPermissions child
     INNER JOIN @Menus src ON src.MenuName = child.MenuName AND child.IsDeleted = 0
     LEFT JOIN MenuPermissions parentMenu ON parentMenu.MenuName = src.ParentMenuName AND parentMenu.IsDeleted = 0
     WHERE src.ParentMenuName IS NOT NULL;
+
+    DECLARE @FollowupMenuId INT;
+    DECLARE @AttendanceMenuId INT;
+    DECLARE @ThemeActivityReportMenuId INT;
+    SELECT @FollowupMenuId = Id FROM MenuPermissions WHERE IsDeleted = 0 AND MenuUrl = N'/Admin/FollowupReport';
+    SELECT @AttendanceMenuId = Id FROM MenuPermissions WHERE IsDeleted = 0 AND MenuUrl = N'/Admin/AttendanceReport';
+    SELECT @ThemeActivityReportMenuId = Id FROM MenuPermissions WHERE IsDeleted = 0 AND MenuUrl = N'/Admin/ThemeActivityReport';
+
+    IF @FollowupMenuId IS NOT NULL AND @AttendanceMenuId IS NOT NULL
+    BEGIN
+        INSERT INTO RolePermissions (RoleId, MenuId, CurrentStatus, CreatedBy, DateCreated, CanAddEdit, CanDelete)
+        SELECT rp.RoleId, @FollowupMenuId, 1, ISNULL(rp.CreatedBy, 0), GETDATE(), ISNULL(rp.CanAddEdit, 0), ISNULL(rp.CanDelete, 0)
+        FROM RolePermissions rp
+        WHERE rp.MenuId = @AttendanceMenuId
+          AND ISNULL(rp.IsDeleted, 0) = 0
+          AND NOT EXISTS (
+              SELECT 1
+              FROM RolePermissions existing
+              WHERE existing.RoleId = rp.RoleId
+                AND existing.MenuId = @FollowupMenuId
+                AND ISNULL(existing.IsDeleted, 0) = 0
+          );
+
+        INSERT INTO UserMenuPermissions (UserId, MenuId, CurrentStatus, CreatedBy, DateCreated, CanAddEdit, CanDelete)
+        SELECT ump.UserId, @FollowupMenuId, 1, ISNULL(ump.CreatedBy, 0), GETDATE(), ISNULL(ump.CanAddEdit, 0), ISNULL(ump.CanDelete, 0)
+        FROM UserMenuPermissions ump
+        WHERE ump.MenuId = @AttendanceMenuId
+          AND ISNULL(ump.IsDeleted, 0) = 0
+          AND NOT EXISTS (
+              SELECT 1
+              FROM UserMenuPermissions existing
+              WHERE existing.UserId = ump.UserId
+                AND existing.MenuId = @FollowupMenuId
+                AND ISNULL(existing.IsDeleted, 0) = 0
+          );
+    END
+
+    IF @ThemeActivityReportMenuId IS NOT NULL AND @FollowupMenuId IS NOT NULL
+    BEGIN
+        INSERT INTO RolePermissions (RoleId, MenuId, CurrentStatus, CreatedBy, DateCreated, CanAddEdit, CanDelete)
+        SELECT rp.RoleId, @ThemeActivityReportMenuId, 1, ISNULL(rp.CreatedBy, 0), GETDATE(), ISNULL(rp.CanAddEdit, 0), ISNULL(rp.CanDelete, 0)
+        FROM RolePermissions rp
+        WHERE rp.MenuId = @FollowupMenuId
+          AND ISNULL(rp.IsDeleted, 0) = 0
+          AND NOT EXISTS (
+              SELECT 1
+              FROM RolePermissions existing
+              WHERE existing.RoleId = rp.RoleId
+                AND existing.MenuId = @ThemeActivityReportMenuId
+                AND ISNULL(existing.IsDeleted, 0) = 0
+          );
+
+        INSERT INTO UserMenuPermissions (UserId, MenuId, CurrentStatus, CreatedBy, DateCreated, CanAddEdit, CanDelete)
+        SELECT ump.UserId, @ThemeActivityReportMenuId, 1, ISNULL(ump.CreatedBy, 0), GETDATE(), ISNULL(ump.CanAddEdit, 0), ISNULL(ump.CanDelete, 0)
+        FROM UserMenuPermissions ump
+        WHERE ump.MenuId = @FollowupMenuId
+          AND ISNULL(ump.IsDeleted, 0) = 0
+          AND NOT EXISTS (
+              SELECT 1
+              FROM UserMenuPermissions existing
+              WHERE existing.UserId = ump.UserId
+                AND existing.MenuId = @ThemeActivityReportMenuId
+                AND ISNULL(existing.IsDeleted, 0) = 0
+          );
+    END
 END
 GO

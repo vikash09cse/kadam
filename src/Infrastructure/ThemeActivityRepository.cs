@@ -7,8 +7,9 @@ using System.Data;
 
 namespace Infrastructure
 {
-    public class ThemeActivityRepository(DatabaseContext context) : IThemeActivityRepository
+    public class ThemeActivityRepository(IDbSession db, DatabaseContext context) : IThemeActivityRepository
     {
+        private readonly IDbSession _db = db;
         private readonly DatabaseContext _context = context;
 
         public async Task<int> SaveThemeActivity(ThemeActivitySaveDTO themeActivity)
@@ -88,6 +89,26 @@ namespace Infrastructure
             }
         }
 
+        public async Task<IEnumerable<ThemeActivityReportDTO>> GetThemeActivityReport(int userId, ThemeActivityReportFilterDTO filter)
+        {
+            var parameters = new DynamicParameters();
+            parameters.Add("@UserId", userId);
+            parameters.Add("@StateId", filter.StateId);
+            parameters.Add("@DivisionId", filter.DivisionId);
+            parameters.Add("@InstitutionId", filter.InstitutionId);
+            parameters.Add("@ThemeId", filter.ThemeId);
+            parameters.Add("@GradeId", filter.GradeId);
+            parameters.Add("@Section", filter.Section);
+            parameters.Add("@FromDate", filter.FromDate.Date);
+            parameters.Add("@ToDate", filter.ToDate.Date);
+
+            return await _db.Connection.QueryAsync<ThemeActivityReportDTO>(
+                "usp_ThemeActivityReport",
+                parameters,
+                _db.Transaction,
+                commandType: CommandType.StoredProcedure);
+        }
+
         public async Task<bool> DeleteThemeActivity(int id, int deletedBy)
         {
             var themeActivity = await _context.ThemeActivities.FirstOrDefaultAsync(x => x.Id == id);
@@ -96,6 +117,7 @@ namespace Infrastructure
                 themeActivity.IsDeleted = true;
                 themeActivity.DeletedBy = deletedBy;
                 themeActivity.DeletedDate = DateTime.UtcNow;
+                themeActivity.DateEntryPoint = 1;
                 return await _context.SaveChangesAsync() > 0;
             }
             return false;

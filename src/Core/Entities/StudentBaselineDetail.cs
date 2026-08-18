@@ -13,5 +13,6 @@ namespace Core.Entities
         public decimal? PercentageMarks { get; set; }
         public decimal? TotalMarks { get; set; }
         public DateTime? CompletedDate { get; set; }
+        public byte DateEntryPoint { get; set; } = 1;
     }
 } 

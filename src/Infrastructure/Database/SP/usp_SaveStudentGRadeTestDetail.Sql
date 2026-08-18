@@ -33,9 +33,9 @@ BEGIN
             @GradeLevelId,
             JSON_VALUE(t.value, '$.SubjectId'),
             JSON_VALUE(t.value, '$.StudentAge'),
-            JSON_VALUE(t.value, '$.ObtainedMarks'),
-            JSON_VALUE(t.value, '$.PercentageMarks'),
-            JSON_VALUE(t.value, '$.TotalMarks'),
+            TRY_CONVERT(DECIMAL(18,2), JSON_VALUE(t.value, '$.ObtainedMarks')),
+            TRY_CONVERT(DECIMAL(18,2), JSON_VALUE(t.value, '$.PercentageMarks')),
+            TRY_CONVERT(DECIMAL(18,2), JSON_VALUE(t.value, '$.TotalMarks')),
             CASE 
                 WHEN JSON_VALUE(t.value, '$.CompletedDate') IS NOT NULL 
                 THEN TRY_CONVERT(DATETIME2, JSON_VALUE(t.value, '$.CompletedDate'))

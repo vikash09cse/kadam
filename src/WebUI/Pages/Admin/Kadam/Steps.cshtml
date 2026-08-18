@@ -23,7 +23,7 @@
                 <div class="page-title-box d-sm-flex align-items-center justify-content-between">
                     <h4 class="mb-sm-0">Steps</h4>
                     <div class="text-end">
-                        <button type="button" class="btn btn-primary" ng-click="vm.openAddStepModal()">
+                        <button type="button" class="btn btn-primary js-requires-add-edit" ng-click="vm.openAddStepModal()">
                             Add Step
                         </button>
                     </div>
@@ -186,12 +186,8 @@
                                 createdCell: function(td, cellData, rowData, row, col) {
                                     var template = `
                                         <div class="btn-group">
-                                            <button class="btn btn-sm btn-warning" title="Edit" ng-click="vm.editStep(${rowData.id})">
-                                                <i class="mdi mdi-pencil"></i>
-                                            </button>
-                                            <button class="btn btn-sm btn-danger" title="Remove" ng-click="vm.removeStep(${rowData.id})">
-                                                <i class="mdi mdi-trash-can"></i>
-                                            </button>
+                                            ${window.canAddEdit() ? `<button class="btn btn-sm btn-warning" title="Edit" ng-click="vm.editStep(${rowData.id})"><i class="mdi mdi-pencil"></i></button>` : ''}
+                                            ${window.canDelete() ? `<button class="btn btn-sm btn-danger" title="Remove" ng-click="vm.removeStep(${rowData.id})"><i class="mdi mdi-trash-can"></i></button>` : ''}
                                         </div>
                                     `;
                                     var compiledHtml = $compile(template)($scope);

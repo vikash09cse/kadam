@@ -31,6 +31,18 @@ namespace Infrastructure
             return rowCount > 0;
         }
 
+        public async Task<bool> CheckUserNameExist(string userName, int id)
+        {
+            var SP = DBConstant.SP.usp_Users;
+            var P = new DynamicParameters();
+            P.Add(DBConstant.Param.QueryType, 5);
+            P.Add(DBConstant.Param.Id, id);
+            P.Add(DBConstant.Param.UserName, userName);
+            var rowCount = await _db.Connection
+                .ExecuteScalarAsync<int>(SP, P, _db.Transaction, null, CommandType.StoredProcedure);
+            return rowCount > 0;
+        }
+
         public async Task<bool> DeleteUser(int id)
         {
             var SP = DBConstant.SP.usp_Users;
@@ -369,6 +381,52 @@ namespace Infrastructure
                 .ToListAsync();
         }
 
+        public async Task<IEnumerable<DropdownDTO>> GetInstitutionsFiltered(int? stateId, int? divisionId, IEnumerable<int>? allowedDivisionIds, IEnumerable<int>? allowedInstitutionIds)
+        {
+            var query = _context.Institutions.Where(i => !i.IsDeleted && i.CurrentStatus == Enums.Status.Active);
+
+            if (stateId is > 0)
+            {
+                query = query.Where(i => i.StateId == stateId);
+            }
+
+            if (divisionId is > 0)
+            {
+                query = query.Where(i => i.DivisionId == divisionId);
+            }
+
+            if (allowedDivisionIds != null)
+            {
+                var divisionIds = allowedDivisionIds.Distinct().ToList();
+                if (divisionIds.Count == 0)
+                {
+                    return [];
+                }
+
+                query = query.Where(i => divisionIds.Contains(i.DivisionId));
+            }
+
+            if (allowedInstitutionIds != null)
+            {
+                var institutionIds = allowedInstitutionIds.Distinct().ToList();
+                if (institutionIds.Count == 0)
+                {
+                    return [];
+                }
+
+                query = query.Where(i => institutionIds.Contains(i.Id));
+            }
+
+            return await query
+                .OrderBy(i => i.InstitutionName)
+                .Select(i => new DropdownDTO
+                {
+                    Value = i.Id,
+                    Text = i.InstitutionName
+                })
+                .ToListAsync();
+        }
+
         public async Task<IEnumerable<int>> GetPeopleDivisionIds(int userId)
         {
             return await _context.PeopleDivisions
@@ -526,6 +584,60 @@ namespace Infrastructure
             var parameters = new DynamicParameters();
             parameters.Add("@CurrentStatus", currentStatus);
             return await _db.Connection.QueryAsync<DropdownDTO>(storedProcedure, parameters, _db.Transaction, commandType: CommandType.StoredProcedure);
+        }
+
+        public async Task<IEnumerable<int>> GetDivisionIdsByStateId(int stateId)
+        {
+            var fromLocations = await _context.DivisionLocations
+                .Where(x => x.StateId == stateId && !x.IsDeleted)
+                .Select(x => x.DivisionId)
+                .Distinct()
+                .ToListAsync();
+
+            var fromDivisions = await _context.Divisions
+                .Where(x => x.StateId == stateId && !x.IsDeleted)
+                .Select(x => x.Id)
+                .ToListAsync();
+
+            return fromLocations.Union(fromDivisions).Distinct().ToList();
+        }
+
+        public async Task<IEnumerable<int>> GetStateIdsByDivisionIds(IEnumerable<int> divisionIds)
+        {
+            var ids = divisionIds?.Where(id => id > 0).Distinct().ToList() ?? [];
+            if (ids.Count == 0)
+            {
+                return [];
+            }
+
+            var fromLocations = await _context.DivisionLocations
+                .Where(x => ids.Contains(x.DivisionId) && !x.IsDeleted)
+                .Select(x => x.StateId)
+                .Distinct()
+                .ToListAsync();
+
+            var fromDivisions = await _context.Divisions
+                .Where(x => ids.Contains(x.Id) && !x.IsDeleted && x.StateId.HasValue && x.StateId > 0)
+                .Select(x => x.StateId!.Value)
+                .Distinct()
+                .ToListAsync();
+
+            return fromLocations.Union(fromDivisions).Distinct().ToList();
+        }
+
+        public async Task<IEnumerable<int>> GetStateIdsByInstitutionIds(IEnumerable<int> institutionIds)
+        {
+            var ids = institutionIds?.Where(id => id > 0).Distinct().ToList() ?? [];
+            if (ids.Count == 0)
+            {
+                return [];
+            }
+
+            return await _context.Institutions
+                .Where(x => ids.Contains(x.Id) && !x.IsDeleted && x.StateId > 0)
+                .Select(x => x.StateId)
+                .Distinct()
+                .ToListAsync();
         }
 
         public async Task<DivisionLocationAssignmentDTO> GetDivisionLocationAssignment(int divisionId)
@@ -1202,18 +1314,49 @@ namespace Infrastructure
         }
         public async Task<IEnumerable<RolePermission>> GetRolePermissions(int roleId)
         {
-            return await _context.RolePermissions.Where(x => x.RoleId == roleId).ToListAsync();
+            return await _context.RolePermissions
+                .AsNoTracking()
+                .Where(x => x.RoleId == roleId)
+                .Select(x => new RolePermission
+                {
+                    Id = x.Id,
+                    RoleId = x.RoleId,
+                    MenuId = x.MenuId,
+                    CanAddEdit = x.CanAddEdit,
+                    CanDelete = x.CanDelete,
+                    CreatedBy = 0
+                })
+                .ToListAsync();
         }
         public async Task<bool> SaveRolePermissions(RolePermissionsDTO rolePermissions, int createdBy)
         {
-            var rolePermission = await _context.RolePermissions.Where(x => x.RoleId == rolePermissions.RoleId).ToListAsync();
-            _context.RolePermissions.RemoveRange(rolePermission);
-            foreach (var menuId in rolePermissions.PermissionIds)
+            await _context.RolePermissions
+                .Where(x => x.RoleId == rolePermissions.RoleId)
+                .ExecuteDeleteAsync();
+
+            var items = (rolePermissions.Permissions ?? [])
+                .Where(x => x.MenuId > 0)
+                .GroupBy(x => x.MenuId)
+                .Select(g => g.First())
+                .ToList();
+
+            if (items.Count == 0)
+            {
+                items = (rolePermissions.PermissionIds ?? [])
+                    .Where(id => id > 0)
+                    .Distinct()
+                    .Select(id => new RolePermissionItemDTO { MenuId = id, CanAddEdit = true, CanDelete = true })
+                    .ToList();
+            }
+
+            foreach (var item in items)
             {
                 _context.RolePermissions.Add(new RolePermission
                 {
                     RoleId = rolePermissions.RoleId,
-                    MenuId = menuId,
+                    MenuId = item.MenuId,
+                    CanAddEdit = item.CanAddEdit,
+                    CanDelete = item.CanDelete,
                     CreatedBy = createdBy,
                     DateCreated = DateTime.UtcNow
                 });
@@ -1229,6 +1372,8 @@ namespace Infrastructure
                 {
                     Id = x.Id,
                     MenuName = x.MenuName,
+                    MenuUrl = x.MenuUrl,
+                    PortalType = x.PortalType,
                 })
                 .ToListAsync();
         }
@@ -1247,17 +1392,33 @@ namespace Infrastructure
 
         public async Task<bool> SaveUserMenuPermissions(UserMenuPermissionsDTO userMenuPermissions, int createdBy)
         {
-            var existing = await _context.UserMenuPermissions
+            await _context.UserMenuPermissions
                 .Where(x => x.UserId == userMenuPermissions.UserId)
-                .ToListAsync();
-            _context.UserMenuPermissions.RemoveRange(existing);
+                .ExecuteDeleteAsync();
 
-            foreach (var menuId in userMenuPermissions.MenuIds.Distinct())
+            var items = (userMenuPermissions.Permissions ?? [])
+                .Where(x => x.MenuId > 0)
+                .GroupBy(x => x.MenuId)
+                .Select(g => g.First())
+                .ToList();
+
+            if (items.Count == 0)
+            {
+                items = (userMenuPermissions.MenuIds ?? [])
+                    .Where(id => id > 0)
+                    .Distinct()
+                    .Select(id => new UserMenuPermissionSaveItemDTO { MenuId = id, CanAddEdit = true, CanDelete = true })
+                    .ToList();
+            }
+
+            foreach (var item in items)
             {
                 _context.UserMenuPermissions.Add(new UserMenuPermission
                 {
                     UserId = userMenuPermissions.UserId,
-                    MenuId = menuId,
+                    MenuId = item.MenuId,
+                    CanAddEdit = item.CanAddEdit,
+                    CanDelete = item.CanDelete,
                     CreatedBy = createdBy,
                     DateCreated = DateTime.UtcNow,
                     CurrentStatus = Enums.Status.Active
@@ -1278,6 +1439,72 @@ namespace Infrastructure
                 parameters,
                 _db.Transaction,
                 commandType: CommandType.StoredProcedure);
+        }
+
+        public async Task<PageActionPermission> GetPageActionPermission(int userId, string menuUrl)
+        {
+            var user = await GetUser(userId);
+            if (user == null || user.Id == 0)
+            {
+                return PageActionPermission.None;
+            }
+
+            var role = user.RoleId > 0 ? await GetRole(user.RoleId) : null;
+            if (role != null && string.Equals(role.RoleName?.Trim(), RoleNames.Admin, StringComparison.OrdinalIgnoreCase))
+            {
+                return PageActionPermission.Full;
+            }
+
+            var menuId = await _context.MenuPermissions
+                .AsNoTracking()
+                .Where(m =>
+                    !m.IsDeleted
+                    && m.CurrentStatus == Enums.Status.Active
+                    && m.MenuUrl != null
+                    && m.MenuUrl.ToLower() == menuUrl.ToLower())
+                .Select(m => (int?)m.Id)
+                .FirstOrDefaultAsync();
+
+            if (menuId == null)
+            {
+                return PageActionPermission.None;
+            }
+
+            var userGrant = await _context.UserMenuPermissions
+                .AsNoTracking()
+                .Where(x => x.UserId == userId && x.MenuId == menuId.Value && !x.IsDeleted)
+                .Select(x => new { x.CanAddEdit, x.CanDelete })
+                .FirstOrDefaultAsync();
+
+            var roleGrant = role != null && role.Id > 0
+                ? await _context.RolePermissions
+                    .AsNoTracking()
+                    .Where(x => x.RoleId == role.Id && x.MenuId == menuId.Value && !x.IsDeleted && x.CurrentStatus == Enums.Status.Active)
+                    .Select(x => new { x.CanAddEdit, x.CanDelete })
+                    .FirstOrDefaultAsync()
+                : null;
+
+            if (userGrant == null && roleGrant == null)
+            {
+                return PageActionPermission.None;
+            }
+
+            if (userGrant != null)
+            {
+                return new PageActionPermission
+                {
+                    CanView = true,
+                    CanAddEdit = userGrant.CanAddEdit,
+                    CanDelete = userGrant.CanDelete
+                };
+            }
+
+            return new PageActionPermission
+            {
+                CanView = true,
+                CanAddEdit = roleGrant!.CanAddEdit,
+                CanDelete = roleGrant.CanDelete
+            };
         }
 
         public async Task SeedNavigationMenus()

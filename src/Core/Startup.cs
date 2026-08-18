@@ -1,4 +1,5 @@
 ﻿using Core.Features.Admin;
+using Core.Features.StudentsWeb;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Core;
@@ -11,6 +12,7 @@ public static class DependencyInject
     public static void InjectCore(this IServiceCollection services)
     {
         services.AddScoped<AdminService>();
+        services.AddScoped<PagePermissionService>();
         services.AddScoped<InstitutionService>();
         services.AddScoped<StudentService>();
         services.AddScoped<StudentFamilyDetailsService>();
@@ -22,5 +24,7 @@ public static class DependencyInject
         services.AddScoped<StudentFollowupService>();
         services.AddScoped<StudentAttendanceService>();
         services.AddScoped<StudentTrioService>();
+        services.AddScoped<StudentsWebValidator>();
+        services.AddScoped<StudentsWebService>();
     }
 }

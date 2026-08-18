@@ -65,6 +65,18 @@ namespace WebUI.Pages.Admin
             return Page();
         }
 
+        public async Task<IActionResult> OnGetDivisionsByState(int? stateId)
+        {
+            var userId = authenticationService.GetCurrentUserId();
+            if (userId <= 0)
+            {
+                return Unauthorized();
+            }
+
+            var divisions = await adminService.GetDivisionsForUser(userId, stateId > 0 ? stateId : null);
+            return new JsonResult(divisions);
+        }
+
         private KadamProgrammeReportFilterDTO BuildFilter()
         {
             var includeAll = IncludeAll || (!IncludeKadam && !IncludeKadamPlus);
@@ -83,8 +95,24 @@ namespace WebUI.Pages.Admin
 
         private async Task LoadDropdownsAsync(int userId)
         {
-            States = await adminService.GetStatesByStatus(Enums.Status.Active);
-            Divisions = await adminService.GetDivisionsForUser(userId);
+            States = await adminService.GetStatesForUser(userId);
+            ClampStateId();
+            Divisions = await adminService.GetDivisionsForUser(userId, StateId > 0 ? StateId : null);
+        }
+
+        private void ClampStateId()
+        {
+            if (!StateId.HasValue || StateId.Value <= 0)
+            {
+                StateId = null;
+                return;
+            }
+
+            var allowedIds = States.Select(s => s.Value).ToHashSet();
+            if (!allowedIds.Contains(StateId.Value))
+            {
+                StateId = null;
+            }
         }
 
         private void ClampDivisionId()

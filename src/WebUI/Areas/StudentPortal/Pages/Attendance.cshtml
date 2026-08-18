@@ -1,0 +1,314 @@
+@page
+@model AttendanceModel
+@{
+    ViewData["Title"] = "Student Attendance";
+}
+
+<div class="page-content">
+    <div class="container-fluid">
+        <div class="page-title-box">
+            <h4 class="mb-sm-0">Student Attendance</h4>
+        </div>
+
+        <form id="antiforgery-form" method="post">@Html.AntiForgeryToken()</form>
+        <div id="attendance-message" class="alert d-none" role="alert"></div>
+
+        <div class="card">
+            <div class="card-body">
+                <div class="row g-3 align-items-end">
+                    <div class="col-lg-3 col-md-6">
+                        <label for="institutionId" class="form-label">Institution <span class="text-danger">*</span></label>
+                        <select id="institutionId" class="form-select">
+                            <option value="">Select institution</option>
+                            @foreach (var item in Model.Institutions)
+                            {
+                                <option value="@item.Id">@item.Text</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="col-lg-2 col-md-6">
+                        <label for="gradeId" class="form-label">Grade <span class="text-danger">*</span></label>
+                        <select id="gradeId" class="form-select" disabled><option value="">Select grade</option></select>
+                    </div>
+                    <div class="col-lg-2 col-md-6">
+                        <label for="section" class="form-label">Section <span class="text-danger">*</span></label>
+                        <select id="section" class="form-select" disabled><option value="">Select section</option></select>
+                    </div>
+                    <div class="col-lg-2 col-md-6">
+                        <label for="attendanceDate" class="form-label">Date <span class="text-danger">*</span></label>
+                        <input id="attendanceDate" type="date" class="form-control"
+                               value="@Model.Today.ToString("yyyy-MM-dd")"
+                               max="@Model.Today.ToString("yyyy-MM-dd")" />
+                    </div>
+                    <div class="col-lg-2 col-md-6">
+                        <label for="dayType" class="form-label">Day type <span class="text-danger">*</span></label>
+                        <select id="dayType" class="form-select">
+                            <option value="1">Working</option>
+                            <option value="2">Holiday</option>
+                        </select>
+                    </div>
+                    <div class="col-lg-1 col-md-6">
+                        <button id="loadRoster" type="button" class="btn btn-primary w-100">Load</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="attendance-card" class="card d-none">
+            <div class="card-header">
+                <div class="d-flex flex-wrap align-items-center justify-content-between gap-2">
+                    <div class="d-flex flex-wrap gap-2">
+                        <span class="badge bg-secondary">Roster <span id="rosterCount">0</span></span>
+                        <span class="badge bg-info">Marked <span id="markedCount">0</span></span>
+                        <span class="badge bg-success">Present <span id="presentCount">0</span></span>
+                        <span class="badge bg-danger">Absent <span id="absentCount">0</span></span>
+                        <span class="badge bg-warning text-dark">Holiday <span id="holidayCount">0</span></span>
+                        <span class="badge bg-dark">Unmarked <span id="unmarkedCount">0</span></span>
+                    </div>
+                    <div id="working-bulk" class="d-flex flex-wrap gap-2">
+                        <button id="markAllPresent" type="button" class="btn btn-sm btn-outline-success">Mark all Present</button>
+                        <select id="bulkReason" class="form-select form-select-sm attendance-reason">
+                            <option value="">Absence reason</option>
+                            @foreach (var reason in Model.AbsenceReasons)
+                            {
+                                <option value="@reason">@reason</option>
+                            }
+                        </select>
+                        <button id="markAllAbsent" type="button" class="btn btn-sm btn-outline-danger">Mark all Absent</button>
+                    </div>
+                    <button id="markAllHoliday" type="button" class="btn btn-sm btn-outline-warning d-none">Mark all Holiday</button>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-nowrap align-middle">
+                        <thead class="table-primary">
+                            <tr>
+                                <th>#</th><th>Student ID</th><th>Name</th><th>Father Name</th>
+                                <th>Enrollment Date</th><th>Status</th><th>Absence Reason</th><th>Source</th>
+                            </tr>
+                        </thead>
+                        <tbody id="attendanceRows"></tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="card-footer d-flex justify-content-end">
+                <button id="saveAttendance" type="button" class="btn btn-success">Save marked changes</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+(() => {
+    const reasons = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.AbsenceReasons));
+    const status = { present: 1, absent: 2, holiday: 3 };
+    const controls = Object.fromEntries([
+        'institutionId','gradeId','section','attendanceDate','dayType','attendanceRows',
+        'attendance-card','attendance-message','working-bulk','markAllHoliday','bulkReason',
+        'saveAttendance'
+    ].map(id => [id, document.getElementById(id)]));
+    let grades = [];
+    let rows = [];
+
+    const showMessage = (message, success = false) => {
+        const box = controls['attendance-message'];
+        box.textContent = message;
+        box.className = `alert alert-${success ? 'success' : 'danger'}`;
+    };
+    const hideMessage = () => controls['attendance-message'].className = 'alert d-none';
+    const option = (value, text) => {
+        const element = document.createElement('option');
+        element.value = value;
+        element.textContent = text;
+        return element;
+    };
+    const resetSelect = (select, label) => {
+        select.replaceChildren(option('', label));
+        select.disabled = true;
+    };
+    const selectedDayType = () => Number(controls.dayType.value);
+    const allowedStatuses = () => selectedDayType() === 2
+        ? [[status.holiday, 'Holiday']]
+        : [[status.present, 'Present'], [status.absent, 'Absent']];
+
+    const updateCounters = () => {
+        const values = rows.map(x => Number(x.statusSelect.value || 0));
+        const count = value => values.filter(x => x === value).length;
+        document.getElementById('rosterCount').textContent = rows.length;
+        document.getElementById('markedCount').textContent = values.filter(Boolean).length;
+        document.getElementById('presentCount').textContent = count(status.present);
+        document.getElementById('absentCount').textContent = count(status.absent);
+        document.getElementById('holidayCount').textContent = count(status.holiday);
+        document.getElementById('unmarkedCount').textContent = values.filter(x => !x).length;
+    };
+
+    const setReasonState = row => {
+        const absent = Number(row.statusSelect.value) === status.absent;
+        row.reasonSelect.disabled = !absent;
+        row.reasonSelect.required = absent;
+        if (!absent) row.reasonSelect.value = '';
+    };
+
+    const renderRows = data => {
+        rows = [];
+        controls.attendanceRows.replaceChildren();
+        data.forEach((student, index) => {
+            const tr = document.createElement('tr');
+            const addText = value => {
+                const td = document.createElement('td');
+                td.textContent = value ?? '';
+                tr.append(td);
+            };
+            addText(index + 1);
+            addText(student.studentCode);
+            addText(student.studentName);
+            addText(student.fatherName);
+            addText(student.enrollmentDate ? new Date(student.enrollmentDate).toLocaleDateString() : '');
+
+            const statusCell = document.createElement('td');
+            const statusSelect = document.createElement('select');
+            statusSelect.className = 'form-select form-select-sm';
+            statusSelect.append(option('', 'Not marked'));
+            allowedStatuses().forEach(x => statusSelect.append(option(x[0], x[1])));
+            if (allowedStatuses().some(x => x[0] === Number(student.attendanceStatus)))
+                statusSelect.value = student.attendanceStatus;
+            statusCell.append(statusSelect);
+            tr.append(statusCell);
+
+            const reasonCell = document.createElement('td');
+            const reasonSelect = document.createElement('select');
+            reasonSelect.className = 'form-select form-select-sm attendance-reason';
+            reasonSelect.append(option('', 'Select reason'));
+            reasons.forEach(reason => reasonSelect.append(option(reason, reason)));
+            reasonSelect.value = student.attendanceNote || '';
+            reasonCell.append(reasonSelect);
+            tr.append(reasonCell);
+            addText(student.dateEntryPoint === 2 ? 'Web' : (student.dateEntryPoint === 1 ? 'Mobile' : ''));
+
+            const row = { studentId: student.studentId, statusSelect, reasonSelect, dirty: false };
+            setReasonState(row);
+            statusSelect.addEventListener('change', () => {
+                row.dirty = true;
+                setReasonState(row);
+                updateCounters();
+            });
+            reasonSelect.addEventListener('change', () => row.dirty = true);
+            rows.push(row);
+            controls.attendanceRows.append(tr);
+        });
+        controls['attendance-card'].classList.remove('d-none');
+        updateCounters();
+    };
+
+    controls.institutionId.addEventListener('change', async () => {
+        grades = [];
+        resetSelect(controls.gradeId, 'Select grade');
+        resetSelect(controls.section, 'Select section');
+        controls['attendance-card'].classList.add('d-none');
+        if (!controls.institutionId.value) return;
+        const response = await fetch(`?handler=GradeSections&institutionId=${encodeURIComponent(controls.institutionId.value)}`);
+        if (!response.ok) return showMessage('Unable to load grades for this institution.');
+        grades = await response.json();
+        grades.forEach(grade => controls.gradeId.append(option(grade.id, grade.text)));
+        controls.gradeId.disabled = false;
+    });
+
+    controls.gradeId.addEventListener('change', () => {
+        resetSelect(controls.section, 'Select section');
+        const grade = grades.find(x => String(x.id) === controls.gradeId.value);
+        const sections = (grade?.sections || '').split(',').map(x => x.trim()).filter(Boolean);
+        sections.forEach(section => controls.section.append(option(section, section)));
+        controls.section.disabled = !grade;
+    });
+
+    controls.dayType.addEventListener('change', () => {
+        controls['working-bulk'].classList.toggle('d-none', selectedDayType() === 2);
+        controls.markAllHoliday.classList.toggle('d-none', selectedDayType() !== 2);
+        if (rows.length) renderRows([]);
+        controls['attendance-card'].classList.add('d-none');
+        hideMessage();
+    });
+
+    document.getElementById('loadRoster').addEventListener('click', async () => {
+        hideMessage();
+        if (!controls.institutionId.value || !controls.gradeId.value || !controls.section.value || !controls.attendanceDate.value)
+            return showMessage('Select institution, grade, section, and date.');
+        const query = new URLSearchParams({
+            handler: 'Roster',
+            institutionId: controls.institutionId.value,
+            gradeId: controls.gradeId.value,
+            section: controls.section.value,
+            attendanceDate: controls.attendanceDate.value
+        });
+        const response = await fetch(`?${query}`);
+        const result = await response.json();
+        if (!response.ok) return showMessage(result.error || 'Unable to load attendance roster.');
+        renderRows(result);
+        if (!result.length) showMessage('No active enrolled students were found for this selection.');
+    });
+
+    const markAll = (value, reason = '') => {
+        rows.forEach(row => {
+            row.statusSelect.value = value;
+            row.reasonSelect.value = reason;
+            row.dirty = true;
+            setReasonState(row);
+        });
+        updateCounters();
+    };
+    document.getElementById('markAllPresent').addEventListener('click', () => markAll(status.present));
+    document.getElementById('markAllAbsent').addEventListener('click', () => {
+        if (!controls.bulkReason.value) return showMessage('Select an absence reason before marking all Absent.');
+        hideMessage();
+        markAll(status.absent, controls.bulkReason.value);
+    });
+    controls.markAllHoliday.addEventListener('click', () => markAll(status.holiday));
+
+    controls.saveAttendance.addEventListener('click', async () => {
+        hideMessage();
+        const changed = rows.filter(row => row.dirty && row.statusSelect.value);
+        if (!changed.length) return showMessage('Mark or change at least one student before saving.');
+        if (changed.some(row => Number(row.statusSelect.value) === status.absent && !row.reasonSelect.value))
+            return showMessage('Select an absence reason for every absent student.');
+
+        controls.saveAttendance.disabled = true;
+        try {
+            const response = await fetch('?handler=Save', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'RequestVerificationToken': document.querySelector('#antiforgery-form input[name="__RequestVerificationToken"]').value
+                },
+                body: JSON.stringify({
+                    institutionId: Number(controls.institutionId.value),
+                    gradeId: Number(controls.gradeId.value),
+                    section: controls.section.value,
+                    attendanceDate: controls.attendanceDate.value,
+                    dayType: selectedDayType(),
+                    entries: changed.map(row => ({
+                        studentId: row.studentId,
+                        attendanceStatus: Number(row.statusSelect.value),
+                        attendanceNote: row.reasonSelect.value || null
+                    }))
+                })
+            });
+            const result = await response.json();
+            if (!response.ok) return showMessage((result.errors || [result.message || 'Attendance could not be saved.']).join(' '));
+            showMessage(result.message, true);
+            rows.forEach(row => row.dirty = false);
+        } catch {
+            showMessage('Attendance could not be saved. Try again.');
+        } finally {
+            controls.saveAttendance.disabled = false;
+        }
+    });
+})();
+</script>
+}
+
+<style>
+    .attendance-reason { min-width: 180px; }
+    #antiforgery-form { display: none; }
+</style>

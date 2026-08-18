@@ -5,10 +5,11 @@ using Core.Features.Admin;
 using Core.Utilities;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
+using WebUI.Services;
 
 namespace WebUI.Pages.Admin
 {
-    public class BlocksModel(AdminService adminService, AuthenticationService authenticationService) : PageModel
+    public class BlocksModel(AdminService adminService, AuthenticationService authenticationService, PagePermissionGuard pagePermissions) : PageModel
     {
         public async Task<IActionResult> OnGetBlockList(int draw, int start, int length, string searchValue)
         {
@@ -18,6 +19,8 @@ namespace WebUI.Pages.Admin
 
         public async Task<IActionResult> OnPostSaveBlock([FromBody] Block block)
         {
+            var denied = await pagePermissions.ForbidAddEditAsync();
+            if (denied != null) return denied;
             if (block == null)
             {
                 return new JsonResult(new { success = false, message = MessageError.InvalidData });
@@ -29,6 +32,8 @@ namespace WebUI.Pages.Admin
 
         public async Task<IActionResult> OnPostDeleteBlock(int id)
         {
+            var denied = await pagePermissions.ForbidDeleteAsync();
+            if (denied != null) return denied;
             var response = await adminService.DeleteBlock(id, authenticationService.GetCurrentUserId());
             return new JsonResult(response);
         }
@@ -53,6 +58,8 @@ namespace WebUI.Pages.Admin
 
         public async Task<IActionResult> OnPostBulkImportBlocks(IFormFile excelFile)
         {
+            var denied = await pagePermissions.ForbidAddEditAsync();
+            if (denied != null) return denied;
             if (excelFile == null || excelFile.Length == 0)
                 return new JsonResult(new { success = false, message = "Please select a valid Excel file." });
 

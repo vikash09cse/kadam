@@ -1,5 +1,7 @@
 ﻿using Core.Abstractions;
 using Core.DTOs;
+using Core.Features.StudentsWeb;
+using Infrastructure.StudentsWeb;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -28,6 +30,7 @@ public static class DependencyInject
         services.AddScoped<IStudentFollowupRepository, StudentFollowupRepository>();
         services.AddScoped<IStudentAttendanceRepository, StudentAttendanceRepository>();
         services.AddScoped<IStudentTrioRepository, StudentTrioRepository>();
+        services.AddScoped<IStudentsWebRepository, StudentsWebRepository>();
         services.AddScoped<IDbSession, DbSession>();
         services.AddScoped<IUnitOfWork, UnitOfWork>();
         services.AddDbContext<DatabaseContext>((serviceProvider, options) =>

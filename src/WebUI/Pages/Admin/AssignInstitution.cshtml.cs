@@ -5,6 +5,7 @@ using Core.Utilities;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using System.Text.Json;
+using WebUI.Services;
 
 namespace WebUI.Pages.Admin
 {
@@ -13,6 +14,7 @@ namespace WebUI.Pages.Admin
         private readonly AdminService _adminService;
         private readonly AuthenticationService _authenticationService;
         private readonly InstitutionService _institutionService;
+        private readonly PagePermissionGuard _pagePermissions;
 
         private static readonly JsonSerializerOptions JsonOptions = new()
         {
@@ -22,11 +24,13 @@ namespace WebUI.Pages.Admin
         public AssignInstitutionModel(
             AdminService adminService,
             AuthenticationService authenticationService,
-            InstitutionService institutionService)
+            InstitutionService institutionService,
+            PagePermissionGuard pagePermissions)
         {
             _adminService = adminService;
             _authenticationService = authenticationService;
             _institutionService = institutionService;
+            _pagePermissions = pagePermissions;
         }
 
         [BindProperty(SupportsGet = true)]
@@ -81,6 +85,13 @@ namespace WebUI.Pages.Admin
             if (Id <= 0)
             {
                 return RedirectToPage("/Admin/Peoples");
+            }
+
+            if (!await _pagePermissions.CanAddEditAsync())
+            {
+                TempData["ErrorMessage"] = MessageError.NoPermission;
+                await LoadPageDataAsync();
+                return Page();
             }
 
             var assignments = DeserializeAssignments(AssignmentsJson);

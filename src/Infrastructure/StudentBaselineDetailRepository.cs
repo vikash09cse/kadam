@@ -92,5 +92,45 @@ namespace Infrastructure
             }
         }
 
+        public async Task<(bool Success, string Message)> UpdateBaselineCompletedDate(UpdateBaselineCompletedDateDTO model)
+        {
+            var student = await _context.Students.FirstOrDefaultAsync(x => x.Id == model.StudentId && !x.IsDeleted);
+            if (student is null)
+                return (false, "Student was not found.");
+            if (student.CurrentStatus == Core.Utilities.Enums.Status.Closed)
+                return (false, "Completed students are read-only.");
+
+            var date = model.CompletedDate.Date;
+            if (date < student.EnrollmentDate.Date)
+                return (false, "Baseline date cannot be before enrollment.");
+            if (date > DateTime.Today)
+                return (false, "Baseline date cannot be in the future.");
+
+            var details = await _context.StudentBaselineDetails
+                .Where(x => x.StudentId == model.StudentId && !x.IsDeleted &&
+                            x.BaselineType == "baselinepreAssessment")
+                .ToListAsync();
+            if (details.Count == 0)
+                return (false, "Baseline has not been saved yet.");
+
+            var endlineDates = await _context.StudentBaselineDetails
+                .Where(x => x.StudentId == model.StudentId && !x.IsDeleted &&
+                            x.BaselineType == "endlinepreAssessment" && x.CompletedDate.HasValue)
+                .Select(x => x.CompletedDate!.Value)
+                .ToListAsync();
+            if (endlineDates.Count > 0 && date > endlineDates.Max().Date)
+                return (false, "Baseline date cannot be after the endline date.");
+
+            foreach (var detail in details)
+            {
+                detail.CompletedDate = date;
+                detail.ModifyBy = model.CreatedBy;
+                detail.ModifyDate = DateTime.UtcNow;
+            }
+
+            await _context.SaveChangesAsync();
+            return (true, "Baseline date updated successfully.");
+        }
+
     }
 } 

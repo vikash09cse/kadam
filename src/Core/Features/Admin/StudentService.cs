@@ -216,6 +216,7 @@ namespace Core.Features.Admin
             int pageSize,
             string? studentName,
             string? studentId,
+            int? status,
             int userId)
         {
             var students = await _studentRepository.GetStudents(
@@ -223,6 +224,7 @@ namespace Core.Features.Admin
                 pageSize,
                 studentName,
                 studentId,
+                status,
                 userId);
 
             return new DataTableResponseDTO<StudentAdminListDTO>

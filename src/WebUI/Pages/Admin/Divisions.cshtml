@@ -14,7 +14,7 @@
                 <div class="page-title-box d-sm-flex align-items-center justify-content-between">
                     <h4 class="mb-sm-0">Divisions</h4>
                     <div class="text-end">
-                        <button type="button" class="btn btn-primary" ng-click="openAddDivisionModal()">
+                        <button type="button" class="btn btn-primary js-requires-add-edit" ng-click="openAddDivisionModal()">
                             Add Division
                         </button>
                     </div>
@@ -265,15 +265,9 @@
                         render: function (data, type, row) {
                             var buttons = `
                                 <div class="btn-group">
-                                    <button class="btn btn-sm btn-info" title="Assign Location" onclick="assignLocation(${row.id})">
-                                        <i class="mdi mdi-map-marker"></i>
-                                    </button>
-                                    <button class="btn btn-sm btn-warning" title="Edit" onclick="editDivision(${row.id})">
-                                        <i class="mdi mdi-pencil"></i>
-                                    </button>
-                                    <button class="btn btn-sm btn-danger" title="Remove" onclick="removeDivision(${row.id})">
-                                        <i class="mdi mdi-close-thick"></i>
-                                    </button>
+                                    ${window.canAddEdit() ? `<button class="btn btn-sm btn-info" title="Assign Location" onclick="assignLocation(${row.id})"><i class="mdi mdi-map-marker"></i></button>` : ''}
+                                    ${window.canAddEdit() ? `<button class="btn btn-sm btn-warning" title="Edit" onclick="editDivision(${row.id})"><i class="mdi mdi-pencil"></i></button>` : ''}
+                                    ${window.canDelete() ? `<button class="btn btn-sm btn-danger" title="Remove" onclick="removeDivision(${row.id})"><i class="mdi mdi-close-thick"></i></button>` : ''}
                                 </div>
                             `;
                             return buttons;

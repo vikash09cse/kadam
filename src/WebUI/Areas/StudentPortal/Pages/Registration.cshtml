@@ -1,0 +1,315 @@
+@page
+@model RegistrationModel
+@{
+    ViewData["Title"] = Model.Student.Id > 0 ? "Edit Student" : "Register Student";
+}
+
+<div class="page-content">
+    <div class="container-fluid">
+        <div class="page-title-box d-sm-flex align-items-center justify-content-between">
+            <h4 class="mb-sm-0">@ViewData["Title"]</h4>
+            <a href="/StudentPortal/Directory" class="btn btn-outline-secondary">Student List</a>
+        </div>
+
+        @if (TempData["SuccessMessage"] is string message)
+        {
+            <div class="alert alert-success">@message</div>
+        }
+
+        <form method="post" enctype="multipart/form-data" class="card">
+            <div class="card-body">
+                <input asp-for="Student.Id" type="hidden" />
+                <input asp-for="Student.StudentId" type="hidden" />
+                <input asp-for="Student.ProfilePicturePath" type="hidden" />
+                <input asp-for="Student.IsBaselineAdded" type="hidden" />
+                <input asp-for="Student.IsKadamPlusStudent" type="hidden" />
+                <div asp-validation-summary="All" class="alert alert-danger"></div>
+
+                <ul class="nav nav-tabs mb-3" role="tablist">
+                    <li class="nav-item"><button class="nav-link active" id="personal-tab" data-bs-toggle="tab" data-bs-target="#personal" type="button">Personal</button></li>
+                    <li class="nav-item"><button class="nav-link" id="family-tab" data-bs-toggle="tab" data-bs-target="#family" type="button">Family</button></li>
+                    <li class="nav-item"><button class="nav-link" id="profile-tab" data-bs-toggle="tab" data-bs-target="#profile" type="button">Profile Picture</button></li>
+                </ul>
+
+                <div class="tab-content">
+                    <div id="personal" class="tab-pane fade show active">
+                        <div class="row g-3">
+                            @if (!string.IsNullOrWhiteSpace(Model.Student.StudentId))
+                            {
+                                <div class="col-md-4"><label class="form-label">Student ID</label><input value="@Model.Student.StudentId" class="form-control" disabled /></div>
+                            }
+                            <div class="col-md-4"><label asp-for="Student.EnrollmentDate" class="form-label">Enrollment Date</label><input asp-for="Student.EnrollmentDate" id="enrollmentDate" type="date" class="form-control" readonly="@Model.Student.IsBaselineAdded" /></div>
+                            <div class="col-md-4"><label asp-for="Student.FirstName" class="form-label">First Name</label><input asp-for="Student.FirstName" class="form-control" maxlength="50" /></div>
+                            <div class="col-md-4"><label asp-for="Student.LastName" class="form-label">Last Name</label><input asp-for="Student.LastName" class="form-control" maxlength="50" /></div>
+                            <div class="col-md-4"><label asp-for="Student.GenderId" class="form-label">Gender</label><select asp-for="Student.GenderId" asp-items="Model.Genders" class="form-select"><option value="0">Select</option></select></div>
+                            <div class="col-md-4"><label asp-for="Student.DateOfBirth" class="form-label">Date of Birth</label><input asp-for="Student.DateOfBirth" id="dateOfBirth" type="date" class="form-control" readonly="@Model.Student.IsBaselineAdded" /></div>
+                            <div class="col-md-4"><label asp-for="Student.Age" class="form-label">Age</label><input asp-for="Student.Age" id="studentAge" class="form-control" readonly /></div>
+
+                            <div class="col-md-4">
+                                <label class="form-label d-block">Do you have Aadhaar Card?</label>
+                                <div class="d-flex gap-4 pt-2">
+                                    <div class="form-check"><input asp-for="Student.DoYouHaveAadhaarCard" type="radio" value="true" class="form-check-input aadhaar-option" id="aadhaarYes" /><label class="form-check-label" for="aadhaarYes">Yes</label></div>
+                                    <div class="form-check"><input asp-for="Student.DoYouHaveAadhaarCard" type="radio" value="false" class="form-check-input aadhaar-option" id="aadhaarNo" /><label class="form-check-label" for="aadhaarNo">No</label></div>
+                                </div>
+                            </div>
+                            <div class="col-md-4" id="aadhaarGroup"><label asp-for="Student.AadhaarCardNumber" class="form-label">Aadhaar Card Number</label><input asp-for="Student.AadhaarCardNumber" class="form-control" maxlength="12" inputmode="numeric" /></div>
+
+                            <div class="col-md-4">
+                                <label asp-for="Student.InstitutionId" class="form-label">Institution</label>
+                                <select asp-for="Student.InstitutionId" id="institution" class="form-select" disabled="@Model.Student.IsBaselineAdded">
+                                    <option value="0">Select</option>
+                                    @foreach (var item in Model.Institutions) { <option value="@item.Id">@item.Text</option> }
+                                </select>
+                                @if (Model.Student.IsBaselineAdded) { <input asp-for="Student.InstitutionId" type="hidden" /> }
+                            </div>
+                            <div class="col-md-4">
+                                <label asp-for="Student.GradeId" class="form-label">Grade</label>
+                                <select asp-for="Student.GradeId" id="grade" class="form-select" disabled="@Model.Student.IsBaselineAdded">
+                                    <option value="0">Select</option>
+                                    @foreach (var item in Model.GradeSections) { <option value="@item.Id" data-sections="@item.Sections">@item.Text</option> }
+                                </select>
+                                @if (Model.Student.IsBaselineAdded) { <input asp-for="Student.GradeId" type="hidden" /> }
+                            </div>
+                            <div class="col-md-4" id="sectionGroup"><label asp-for="Student.Section" class="form-label">Section</label><select asp-for="Student.Section" id="section" class="form-select"><option value="@Model.Student.Section">@(!string.IsNullOrWhiteSpace(Model.Student.Section) ? Model.Student.Section : "Select")</option></select></div>
+                            <div class="col-md-4" id="registrationNumberGroup"><label asp-for="Student.StudentRegistratioNumber" class="form-label">Student Registration Number</label><input asp-for="Student.StudentRegistratioNumber" class="form-control" maxlength="50" /></div>
+
+                            <div id="kadamFields" class="col-12">
+                                <div class="row g-3">
+                                    <div class="col-md-4"><label asp-for="Student.ChildStatudBeforeKadamSTC" class="form-label">Child Status before Kadam STC</label><select asp-for="Student.ChildStatudBeforeKadamSTC" id="childStatus" asp-items="Model.ChildStatuses" class="form-select"><option value="0">Select</option></select></div>
+                                    <div class="col-md-4" id="lastClassGroup"><label asp-for="Student.Class" class="form-label">Last Class</label><input asp-for="Student.Class" type="number" min="0" max="8" class="form-control" /></div>
+                                    <div class="col-md-4"><label asp-for="Student.HowLongPlaningToStayThisArea" class="form-label">How long are you planning to stay?</label><select asp-for="Student.HowLongPlaningToStayThisArea" asp-items="Model.StayDurations" class="form-select"><option value="0">Select</option></select></div>
+                                    <div id="droppedOutFields" class="col-12">
+                                        <div class="row g-3">
+                                            <div class="col-md-4"><label asp-for="Student.ReasonId" class="form-label">Reason</label><select asp-for="Student.ReasonId" asp-items="Model.Reasons" class="form-select"><option value="0">Select</option></select></div>
+                                            <div class="col-md-4"><label asp-for="Student.DropoutClass" class="form-label">Dropped-out Class</label><input asp-for="Student.DropoutClass" class="form-control" /></div>
+                                            <div class="col-md-4"><label asp-for="Student.DropoutYear" class="form-label">Dropped-out Year</label><input asp-for="Student.DropoutYear" type="number" min="1900" max="9999" class="form-control" /></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="d-flex justify-content-end gap-2 mt-4">
+                            <a href="/StudentPortal/Directory" class="btn btn-secondary">Cancel</a>
+                            <button type="button" class="btn btn-primary next-tab" data-target="#family-tab">Save &amp; Next</button>
+                        </div>
+                    </div>
+
+                    <div id="family" class="tab-pane fade">
+                        <h5 class="text-primary mb-3">Father's Information</h5>
+                        <div class="row g-3">
+                            <div class="col-md-4"><label asp-for="Student.FatherName" class="form-label">Name</label><input asp-for="Student.FatherName" class="form-control" maxlength="50" /></div>
+                            <div class="col-md-2">
+                                <label asp-for="Student.FatherAge" class="form-label">Age *</label>
+                                <input asp-for="Student.FatherAge" type="number" min="0" max="98" class="form-control parent-age" data-parent="Father" />
+                                <div class="form-text">Enter 0 if unknown. Otherwise more than 20 and less than 99.</div>
+                            </div>
+                            <div class="col-md-3"><label asp-for="Student.FatherOccupationId" class="form-label">Occupation</label><select asp-for="Student.FatherOccupationId" asp-items="Model.FatherOccupations" class="form-select"><option value="">Select</option></select></div>
+                            <div class="col-md-3"><label asp-for="Student.FatherEducationId" class="form-label">Education</label><select asp-for="Student.FatherEducationId" asp-items="Model.Educations" class="form-select"><option value="">Select</option></select></div>
+                        </div>
+
+                        <h5 class="text-primary mt-4 mb-3">Mother's Information</h5>
+                        <div class="row g-3">
+                            <div class="col-md-4"><label asp-for="Student.MotherName" class="form-label">Name</label><input asp-for="Student.MotherName" class="form-control" maxlength="50" /></div>
+                            <div class="col-md-2">
+                                <label asp-for="Student.MotherAge" class="form-label">Age *</label>
+                                <input asp-for="Student.MotherAge" type="number" min="0" max="98" class="form-control parent-age" data-parent="Mother" />
+                                <div class="form-text">Enter 0 if unknown. Otherwise more than 20 and less than 99.</div>
+                            </div>
+                            <div class="col-md-3"><label asp-for="Student.MotherOccupationId" class="form-label">Occupation</label><select asp-for="Student.MotherOccupationId" asp-items="Model.Occupations" class="form-select"><option value="">Select</option></select></div>
+                            <div class="col-md-3"><label asp-for="Student.MotherEducationId" class="form-label">Education</label><select asp-for="Student.MotherEducationId" asp-items="Model.Educations" class="form-select"><option value="">Select</option></select></div>
+                        </div>
+
+                        <h5 class="text-primary mt-4 mb-3">Contact Information</h5>
+                        <div class="row g-3">
+                            <div class="col-md-4"><label asp-for="Student.PrimaryContactNumber" class="form-label">Primary Number</label><input asp-for="Student.PrimaryContactNumber" class="form-control" maxlength="10" inputmode="numeric" /></div>
+                            <div class="col-md-4"><label asp-for="Student.AlternateContactNumber" class="form-label">Alternate Number</label><input asp-for="Student.AlternateContactNumber" class="form-control" maxlength="10" inputmode="numeric" /></div>
+                        </div>
+
+                        <h5 class="text-primary mt-4 mb-3">Address Information</h5>
+                        <div class="row g-3">
+                            <div class="col-md-8"><label asp-for="Student.HouseAddress" class="form-label">House Address</label><textarea asp-for="Student.HouseAddress" class="form-control" maxlength="200" rows="3"></textarea></div>
+                            <div class="col-md-4"><label asp-for="Student.PinCode" class="form-label">PIN Code</label><input asp-for="Student.PinCode" class="form-control" maxlength="6" inputmode="numeric" /></div>
+                        </div>
+
+                        <h5 class="text-primary mt-4 mb-3">Additional Information</h5>
+                        <div class="row g-3">
+                            <div class="col-md-4"><label asp-for="Student.PeopleInHouseId" class="form-label">Number of People in House</label><select asp-for="Student.PeopleInHouseId" asp-items="Model.PeopleCounts" class="form-select"><option value="">Select</option></select></div>
+                            <div class="col-md-4"><label asp-for="Student.CasteId" class="form-label">Caste</label><select asp-for="Student.CasteId" asp-items="Model.Castes" class="form-select"><option value="">Select</option></select></div>
+                            <div class="col-md-4"><label asp-for="Student.ReligionId" class="form-label">Religion</label><select asp-for="Student.ReligionId" asp-items="Model.Religions" class="form-select"><option value="">Select</option></select></div>
+                            <div class="col-md-4"><label asp-for="Student.ParentMonthlyIncome" class="form-label">Parents Monthly Income (₹)</label><select asp-for="Student.ParentMonthlyIncome" asp-items="Model.Incomes" class="form-select"><option value="">Select</option></select></div>
+                            <div class="col-md-4"><label asp-for="Student.ParentMontlyExpenditure" class="form-label">Parents Monthly Expenditure (₹)</label><select asp-for="Student.ParentMontlyExpenditure" asp-items="Model.Incomes" class="form-select"><option value="">Select</option></select></div>
+                        </div>
+                        <div class="d-flex justify-content-end gap-2 mt-4">
+                            <button type="button" class="btn btn-secondary next-tab" data-target="#personal-tab">Previous</button>
+                            <button type="button" class="btn btn-primary next-tab" data-target="#profile-tab">Save &amp; Next</button>
+                        </div>
+                    </div>
+
+                    <div id="profile" class="tab-pane fade">
+                        <h5 class="text-primary mb-3">Student Profile Picture</h5>
+                        <div class="text-center">
+                            <div class="mb-3">
+                                @if (!string.IsNullOrWhiteSpace(Model.Student.ProfilePicturePath))
+                                {
+                                    <img id="profilePreview" src="@Model.ProfilePictureUrl" alt="Student profile" class="rounded-circle border p-1" style="height:250px;width:250px;object-fit:cover" />
+                                }
+                                else
+                                {
+                                    <img id="profilePreview" src="/assets/images/users/user-dummy-img.jpg" alt="Student profile" class="rounded-circle border p-1" style="height:250px;width:250px;object-fit:cover" />
+                                }
+                            </div>
+                            <div class="d-flex justify-content-center gap-2">
+                                <button type="button" class="btn btn-primary" id="takePhotoButton">Take Photo</button>
+                                <button type="button" class="btn btn-primary" id="pickPhotoButton">Pick from Gallery</button>
+                                <input name="ProfilePicture" id="cameraPicture" type="file" accept="image/*" capture="environment" class="d-none" />
+                                <input asp-for="ProfilePicture" id="profilePicture" type="file" accept=".jpg,.jpeg,.png,.webp" class="d-none" />
+                            </div>
+                        </div>
+                        <div class="mt-4">
+                            <h6>Notes:</h6>
+                            <ul class="text-muted">
+                                <li>Please ensure good lighting when taking a profile photo.</li>
+                                <li>The photo should clearly show the student's face.</li>
+                                <li>The photo will be used for identification purposes.</li>
+                            </ul>
+                        </div>
+                        <div class="d-flex justify-content-end gap-2 mt-4">
+                            <button type="button" class="btn btn-secondary next-tab" data-target="#family-tab">Previous</button>
+                            <button type="submit" class="btn btn-primary">Save</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<partial name="_ValidationScriptsPartial" />
+<style>
+    .validation-summary-valid { display: none; }
+</style>
+<script>
+    (() => {
+        const institution = document.getElementById('institution');
+        const grade = document.getElementById('grade');
+        const section = document.getElementById('section');
+        const childStatus = document.getElementById('childStatus');
+        const kadamFields = document.getElementById('kadamFields');
+        const registrationNumberGroup = document.getElementById('registrationNumberGroup');
+        const lastClassGroup = document.getElementById('lastClassGroup');
+        const droppedOutFields = document.getElementById('droppedOutFields');
+        const isKadamPlus = document.getElementById('Student_IsKadamPlusStudent');
+
+        institution?.addEventListener('change', async () => {
+            grade.innerHTML = '<option value="">Select</option>';
+            section.innerHTML = '<option value="">Select</option>';
+            if (!institution.value) return;
+            const response = await fetch(`?handler=GradeSections&institutionId=${institution.value}`);
+            for (const item of await response.json()) {
+                const option = new Option(item.text, item.id);
+                option.dataset.sections = item.sections || '';
+                grade.add(option);
+            }
+            updateStudentFields();
+        });
+
+        function loadSections() {
+            const selected = grade.options[grade.selectedIndex];
+            const current = '@Model.Student.Section';
+            section.innerHTML = '<option value="">Select</option>';
+            for (const value of (selected?.dataset.sections || '').split(',').map(x => x.trim()).filter(Boolean)) {
+                section.add(new Option(value, value, value === current, value === current));
+            }
+        }
+
+        function updateStudentFields() {
+            const isKadamStc = grade.options[grade.selectedIndex]?.text?.trim().toLowerCase() === 'kadam stc';
+            kadamFields.classList.toggle('d-none', !isKadamStc);
+            registrationNumberGroup.classList.toggle('d-none', isKadamStc);
+            isKadamPlus.value = (!isKadamStc).toString();
+            updateStatusFields();
+        }
+
+        function updateStatusFields() {
+            const status = childStatus.options[childStatus.selectedIndex]?.text?.trim().toLowerCase() || '';
+            lastClassGroup.classList.toggle('d-none', status !== 'enrolled but not attending' || kadamFields.classList.contains('d-none'));
+            droppedOutFields.classList.toggle('d-none', status !== 'dropped-out');
+        }
+
+        grade?.addEventListener('change', () => {
+            loadSections();
+            updateStudentFields();
+        });
+        childStatus?.addEventListener('change', updateStatusFields);
+        loadSections();
+        updateStudentFields();
+
+        function toggleAadhaar() {
+            const hasAadhaar = document.getElementById('aadhaarYes').checked;
+            document.getElementById('aadhaarGroup').classList.toggle('d-none', !hasAadhaar);
+            if (!hasAadhaar) document.getElementById('Student_AadhaarCardNumber').value = '';
+        }
+        document.querySelectorAll('.aadhaar-option').forEach(x => x.addEventListener('change', toggleAadhaar));
+        toggleAadhaar();
+
+        function calculateAge() {
+            const dob = new Date(document.getElementById('dateOfBirth').value);
+            const enrollment = new Date(document.getElementById('enrollmentDate').value);
+            if (Number.isNaN(dob.getTime()) || Number.isNaN(enrollment.getTime())) return;
+            let years = enrollment.getFullYear() - dob.getFullYear();
+            let months = enrollment.getMonth() - dob.getMonth();
+            if (enrollment.getDate() < dob.getDate()) months--;
+            if (months < 0) {
+                years--;
+                months += 12;
+            }
+            const effectiveAge = months >= 5 ? years + 1 : years;
+            document.getElementById('studentAge').value = Math.max(0, effectiveAge);
+        }
+        document.getElementById('dateOfBirth')?.addEventListener('change', calculateAge);
+        document.getElementById('enrollmentDate')?.addEventListener('change', calculateAge);
+        calculateAge();
+
+        document.querySelectorAll('.next-tab').forEach(button => button.addEventListener('click', () => {
+            bootstrap.Tab.getOrCreateInstance(document.querySelector(button.dataset.target)).show();
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }));
+
+        const cameraPicture = document.getElementById('cameraPicture');
+        const profilePicture = document.getElementById('profilePicture');
+        const previewPicture = event => {
+            const file = event.target.files[0];
+            if (file) document.getElementById('profilePreview').src = URL.createObjectURL(file);
+        };
+        document.getElementById('takePhotoButton')?.addEventListener('click', () => cameraPicture.click());
+        document.getElementById('pickPhotoButton')?.addEventListener('click', () => profilePicture.click());
+        cameraPicture?.addEventListener('change', event => {
+            profilePicture.value = '';
+            previewPicture(event);
+        });
+        profilePicture?.addEventListener('change', event => {
+            cameraPicture.value = '';
+            previewPicture(event);
+        });
+
+        function isValidParentAge(value) {
+            if (value === '' || value == null) return false;
+            const age = Number(value);
+            if (!Number.isInteger(age)) return false;
+            return age === 0 || (age > 20 && age < 99);
+        }
+
+        document.querySelector('form')?.addEventListener('submit', event => {
+            for (const input of document.querySelectorAll('.parent-age')) {
+                if (!isValidParentAge(input.value)) {
+                    event.preventDefault();
+                    const parent = input.dataset.parent || 'Parent';
+                    alert(`${parent}'s age must be 0 if unknown, or more than 20 and less than 99.`);
+                    bootstrap.Tab.getOrCreateInstance(document.querySelector('#family-tab')).show();
+                    input.focus();
+                    return;
+                }
+            }
+        });
+    })();
+</script>

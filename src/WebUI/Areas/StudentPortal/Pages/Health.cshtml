@@ -1,0 +1,76 @@
+@page
+@model HealthModel
+@{
+    ViewData["Title"] = "Student Health";
+}
+
+<div class="page-content">
+    <div class="container-fluid">
+        <div class="page-title-box d-sm-flex align-items-center justify-content-between">
+            <h4 class="mb-sm-0">Health: @Model.Health.StudentName</h4>
+            <a href="/StudentPortal/Directory" class="btn btn-outline-secondary">Student List</a>
+        </div>
+        @if (TempData["SuccessMessage"] is string message) { <div class="alert alert-success">@message</div> }
+
+        <form method="post" enctype="multipart/form-data" class="card">
+            <div class="card-header text-center"><h5 class="card-title mb-0">Physical Challenge Information</h5></div>
+            <div class="card-body">
+                <div asp-validation-summary="All" class="alert alert-danger"></div>
+                <input asp-for="Health.Id" type="hidden" />
+                <input asp-for="Health.StudentId" type="hidden" />
+                <input asp-for="Health.StudentName" type="hidden" />
+                <input asp-for="Health.DisabilityCertificatePath" type="hidden" />
+                <input asp-for="Health.DisabilityCertificateFileName" type="hidden" />
+
+                <div class="mb-3">
+                    <label class="form-label d-block">Is child physically challenged?</label>
+                    <div class="d-flex gap-4">
+                        <div class="form-check"><input asp-for="Health.PhysicallyChallenged" type="radio" value="true" id="challengedYes" class="form-check-input challenged-option" /><label for="challengedYes" class="form-check-label">Yes</label></div>
+                        <div class="form-check"><input asp-for="Health.PhysicallyChallenged" type="radio" value="false" id="challengedNo" class="form-check-input challenged-option" /><label for="challengedNo" class="form-check-label">No</label></div>
+                    </div>
+                </div>
+                <div id="challengeFields" class="row g-3">
+                    <div class="col-md-4">
+                        <label asp-for="Health.PhysicallyChallengedType" class="form-label">Challenge Type</label>
+                        <select asp-for="Health.PhysicallyChallengedType" asp-items="Model.ChallengeTypes" class="form-select"><option value="">Select</option></select>
+                    </div>
+                    <div class="col-md-4">
+                        <label asp-for="Health.PercentagePhysicallyChallenged" class="form-label">% of Physically Challenged</label>
+                        <input asp-for="Health.PercentagePhysicallyChallenged" type="number" min="1" max="100" step="0.01" class="form-control" />
+                    </div>
+                    <div class="col-md-4">
+                        <label asp-for="Certificate" class="form-label">Disability Certificate</label>
+                        <input asp-for="Certificate" type="file" accept=".pdf,.jpg,.jpeg,.png" class="form-control" />
+                        @if (!string.IsNullOrWhiteSpace(Model.Health.DisabilityCertificatePath))
+                        {
+                            <div class="mt-2">
+                                <span class="text-muted">Uploaded Certificate:</span>
+                                <a href="@Model.CertificateUrl" target="_blank" rel="noopener">@Model.Health.DisabilityCertificateFileName</a>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+            <div class="card-footer d-flex justify-content-end gap-2">
+                <button type="submit" class="btn btn-success">Save</button>
+                <a href="/StudentPortal/Directory" class="btn btn-danger">Cancel</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<partial name="_ValidationScriptsPartial" />
+<style>.validation-summary-valid { display: none; }</style>
+<script>
+    const toggleFields = () => {
+        const challenged = document.getElementById('challengedYes').checked;
+        document.getElementById('challengeFields').classList.toggle('d-none', !challenged);
+        if (!challenged) {
+            document.getElementById('Health_PhysicallyChallengedType').value = '';
+            document.getElementById('Health_PercentagePhysicallyChallenged').value = '';
+            document.getElementById('Certificate').value = '';
+        }
+    };
+    document.querySelectorAll('.challenged-option').forEach(x => x.addEventListener('change', toggleFields));
+    toggleFields();
+</script>

@@ -44,6 +44,7 @@ namespace Infrastructure
                 document.IsDeleted = true;
                 document.DeletedBy = deletedBy;
                 document.DeletedDate = DateTime.UtcNow;
+                document.DateEntryPoint = 1;
                 return await _context.SaveChangesAsync() > 0;
             }
             return false;

@@ -17,5 +17,6 @@ namespace Core.Entities
         public DateTime? MainstreamDate { get; set; }
         public int? CreatedBy { get; set; }
         public DateTime? DateCreated { get; set; }
+        public byte DateEntryPoint { get; set; } = 1;
     }
 }

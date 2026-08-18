@@ -37,6 +37,11 @@ namespace Core.Features.Admin
             return response;
         }
 
+        public async Task<IEnumerable<ThemeActivityReportDTO>> GetThemeActivityReport(int userId, ThemeActivityReportFilterDTO filter)
+        {
+            return await _themeActivityRepository.GetThemeActivityReport(userId, filter);
+        }
+
         public async Task<ServiceResponseDTO> DeleteThemeActivity(int id, int userId)
         {
             var isDeleted = await _themeActivityRepository.DeleteThemeActivity(id, userId);

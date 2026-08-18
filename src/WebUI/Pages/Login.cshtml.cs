@@ -55,7 +55,9 @@ namespace WebUI.Pages
             {
                 var userInfo = (UserLoginValidateDTO)response.Result;
                 await _authenticationService.SignInUser(userInfo, RememberMe);
-                return RedirectToPage("/Admin/Index");
+                return userInfo.PortalType == Core.Utilities.Enums.PortalType.Student
+                    ? Redirect("/StudentPortal/Dashboard")
+                    : RedirectToPage("/Admin/Index");
             }
 
             ModelState.AddModelError(string.Empty, response.Message);

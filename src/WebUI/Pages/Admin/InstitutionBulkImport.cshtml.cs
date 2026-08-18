@@ -4,10 +4,11 @@ using Core.Features.Admin;
 using Core.Utilities;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
+using WebUI.Services;
 
 namespace WebUI.Pages.Admin
 {
-    public class InstitutionBulkImportModel(InstitutionService institutionService, AuthenticationService authenticationService) : PageModel
+    public class InstitutionBulkImportModel(InstitutionService institutionService, AuthenticationService authenticationService, PagePermissionGuard pagePermissions) : PageModel
     {
         public List<InstitutionImportErrorDTO> ImportErrors { get; set; } = [];
         public string? SuccessMessage { get; set; }
@@ -80,6 +81,12 @@ namespace WebUI.Pages.Admin
 
         public async Task<IActionResult> OnPostImportAsync(IFormFile excelFile)
         {
+            if (!await pagePermissions.CanAddEditAsync())
+            {
+                ErrorMessage = MessageError.NoPermission;
+                return Page();
+            }
+
             if (excelFile == null || excelFile.Length == 0)
             {
                 ErrorMessage = "Please select a valid Excel file.";

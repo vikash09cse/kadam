@@ -10,5 +10,7 @@ CREATE TABLE UserMenuPermissions (
     DeletedBy INT,
     DeletedDate DATETIME,
     IsDeleted BIT DEFAULT 0,
+    CanAddEdit BIT NOT NULL DEFAULT 1,
+    CanDelete BIT NOT NULL DEFAULT 1,
     CONSTRAINT UQ_UserMenuPermissions_User_Menu UNIQUE (UserId, MenuId)
 );
