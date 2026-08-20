@@ -97,6 +97,14 @@ public sealed class StudentsWebRepository(IDbSession db, DatabaseContext context
         return result.AsList();
     }
 
+    public async Task<IReadOnlyList<StudentsWebLookupDTO>> GetMainstreamGrades()
+    {
+        var result = await db.Connection.QueryAsync<StudentsWebLookupDTO>(
+            "dbo.usp_GetMainstreamGrades", null, db.Transaction,
+            commandType: CommandType.StoredProcedure);
+        return result.AsList();
+    }
+
     public async Task<IReadOnlyList<StudentsWebAttendanceRowDTO>> GetAttendanceRoster(
         int userId, int institutionId, int gradeId, string section, DateTime attendanceDate)
     {
@@ -1297,9 +1305,8 @@ public sealed class StudentsWebRepository(IDbSession db, DatabaseContext context
                  (institution.StateId != model.StateId || institution.DistrictId != model.DistrictId)))
                 return StudentsWebMainstreamSaveStatus.InvalidInstitution;
 
-            var gradeSection = (await GetGradeSections(institutionId))
-                .FirstOrDefault(x => x.Id == model.GradeId &&
-                                     !x.Text.Equals("Kadam STC", StringComparison.OrdinalIgnoreCase));
+            var gradeSection = (await GetMainstreamGrades())
+                .FirstOrDefault(x => x.Id == model.GradeId);
             var validSections = (gradeSection?.Sections ?? string.Empty)
                 .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
             if (gradeSection is null || !validSections.Contains(model.Section!.Trim(), StringComparer.OrdinalIgnoreCase))

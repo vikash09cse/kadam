@@ -149,9 +149,7 @@
                     : `<span class="btn btn-outline-danger disabled" title="Complete baseline first"><i class="ri-flag-line"></i></span>`}
                 ${r.isKadamPlusStudent
                     ? `<a class="btn btn-outline-success" href="/StudentPortal/Promotion?studentId=${r.id}" title="Promote student" aria-label="Promote student"><i class="ri-arrow-up-circle-line"></i></a>`
-                    : (r.isMainstreamEligible
-                        ? `<a class="btn btn-outline-success" href="/StudentPortal/Mainstream?studentId=${r.id}" title="Mainstream student" aria-label="Mainstream student"><i class="ri-user-follow-line"></i></a>`
-                        : `<span class="btn btn-outline-success disabled" title="Complete baseline and endline first"><i class="ri-user-follow-line"></i></span>`)}
+                    : `<a class="btn btn-outline-success" href="/StudentPortal/Mainstream?studentId=${r.id}" title="Mainstream student" aria-label="Mainstream student"><i class="ri-user-follow-line"></i></a>`}
             </div>`}
         ]
     });

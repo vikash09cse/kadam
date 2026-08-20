@@ -189,6 +189,13 @@ namespace WebAPI.Controllers
             return StatusCode(response.StatusCode, response);
         }
 
+        [HttpGet("mainstream-grades")]
+        public async Task<IActionResult> GetMainstreamGrades()
+        {
+            var response = await _StudentService.GetMainstreamGrades();
+            return StatusCode(response.StatusCode, response);
+        }
+
         [HttpPost("save-student-mainstream")]
         public async Task<IActionResult> SaveStudentMainstream([FromBody] StudentMainstream studentMainstream)
         {

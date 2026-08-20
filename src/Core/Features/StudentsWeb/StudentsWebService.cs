@@ -29,6 +29,9 @@ public sealed class StudentsWebService(
     public Task<IReadOnlyList<StudentsWebLookupDTO>> GetGradeSections(int institutionId) =>
         repository.GetGradeSections(institutionId);
 
+    public Task<IReadOnlyList<StudentsWebLookupDTO>> GetMainstreamGrades() =>
+        repository.GetMainstreamGrades();
+
     public Task<IReadOnlyList<StudentsWebAttendanceRowDTO>> GetAttendanceRoster(
         int userId, int institutionId, int gradeId, string section, DateTime attendanceDate) =>
         repository.GetAttendanceRoster(userId, institutionId, gradeId, section, attendanceDate.Date);
@@ -714,7 +717,7 @@ public sealed class StudentsWebService(
             StudentsWebMainstreamSaveStatus.InvalidInstitution =>
                 new StudentsWebSaveResult { Message = "The selected mainstream institution is invalid or inaccessible." },
             StudentsWebMainstreamSaveStatus.InvalidGradeOrSection =>
-                new StudentsWebSaveResult { Message = "The selected grade or section is not available for this institution." },
+                new StudentsWebSaveResult { Message = "The selected grade or section is invalid." },
             _ => new StudentsWebSaveResult { Message = "Student was not found or access was denied." }
         };
     }

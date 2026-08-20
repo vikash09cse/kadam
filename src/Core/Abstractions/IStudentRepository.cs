@@ -26,6 +26,7 @@ namespace Core.Abstractions
         Task<DashboardDTO> GetAdminDashboardCount(int userId, KadamProgrammeReportFilterDTO? filter = null);
         Task<bool> UpdateStudentStatus(StudentStatusUpdateDTO model);
         Task<StudentMainstreamDetailDTO> GetStudentDetailForMainstream(int id);
+        Task<IEnumerable<AppGradeSectionDTO>> GetMainstreamGrades();
         Task<bool> SaveStudentMainstream(StudentMainstream studentMainstream);
         Task<bool> HasBaselineDetails(int studentId);
         Task<IEnumerable<KadamProgrammeReportDTO>> GetKadamProgrammeReport(int? userId, KadamProgrammeReportFilterDTO? filter = null);

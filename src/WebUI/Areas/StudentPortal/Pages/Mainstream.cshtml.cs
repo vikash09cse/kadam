@@ -57,8 +57,7 @@ public sealed class MainstreamModel(
     {
         var denied = await RequirePageAsync("/StudentPortal/MyInstitution");
         if (denied is not null) return new JsonResult(Array.Empty<object>()) { StatusCode = 403 };
-        var items = await StudentsService.GetGradeSections(institutionId);
-        return new JsonResult(items.Where(x => !x.Text.Equals("Kadam STC", StringComparison.OrdinalIgnoreCase)));
+        return new JsonResult(await StudentsService.GetMainstreamGrades());
     }
 
     public async Task<IActionResult> OnPostAsync()
@@ -97,15 +96,6 @@ public sealed class MainstreamModel(
             Institutions = await StudentsService.GetMainstreamInstitutions(
                 CurrentUserId, Mainstream.StateId.Value, Mainstream.DistrictId.Value);
 
-        var institutionId = Mainstream.IsMainstreamInstitutionSame
-            ? Mainstream.EnrolledInstitutionId
-            : Mainstream.MainstreamInstitutionId.GetValueOrDefault();
-        if (institutionId > 0)
-        {
-            var items = await StudentsService.GetGradeSections(institutionId);
-            GradeSections = items
-                .Where(x => !x.Text.Equals("Kadam STC", StringComparison.OrdinalIgnoreCase))
-                .ToList();
-        }
+        GradeSections = await StudentsService.GetMainstreamGrades();
     }
 }

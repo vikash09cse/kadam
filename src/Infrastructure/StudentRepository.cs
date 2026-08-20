@@ -289,6 +289,15 @@ namespace Infrastructure
             return result ?? new StudentMainstreamDetailDTO();
         }
 
+        public async Task<IEnumerable<AppGradeSectionDTO>> GetMainstreamGrades()
+        {
+            return await _db.Connection.QueryAsync<AppGradeSectionDTO>(
+                "dbo.usp_GetMainstreamGrades",
+                null,
+                _db.Transaction,
+                commandType: CommandType.StoredProcedure);
+        }
+
         public async Task<bool> SaveStudentMainstream(StudentMainstream studentMainstream)
         {
             int _Id = studentMainstream.Id;

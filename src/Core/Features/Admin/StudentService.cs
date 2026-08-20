@@ -204,6 +204,12 @@ namespace Core.Features.Admin
             return response;
         }
 
+        public async Task<ServiceResponseDTO> GetMainstreamGrades()
+        {
+            var grades = await _studentRepository.GetMainstreamGrades();
+            return new ServiceResponseDTO(true, AppStatusCodes.Success, grades, MessageSuccess.Found);
+        }
+
         public async Task<ServiceResponseDTO> SaveStudentMainstream(StudentMainstream studentMainstream)
         {
             bool isSaved = await _studentRepository.SaveStudentMainstream(studentMainstream);

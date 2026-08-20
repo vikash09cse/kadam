@@ -12,6 +12,7 @@ public interface IStudentsWebRepository
     Task<StudentsWebEditDTO?> GetStudent(int id, int userId);
     Task<IReadOnlyList<StudentsWebLookupDTO>> GetInstitutions(int userId);
     Task<IReadOnlyList<StudentsWebLookupDTO>> GetGradeSections(int institutionId);
+    Task<IReadOnlyList<StudentsWebLookupDTO>> GetMainstreamGrades();
     Task<IReadOnlyList<StudentsWebAttendanceRowDTO>> GetAttendanceRoster(
         int userId, int institutionId, int gradeId, string section, DateTime attendanceDate);
     Task<StudentsWebAttendanceSaveStatus> SaveAttendance(

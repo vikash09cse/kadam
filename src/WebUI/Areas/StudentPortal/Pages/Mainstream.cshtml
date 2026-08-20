@@ -106,7 +106,6 @@
 <script>
 (() => {
     const same = document.getElementById('Mainstream_IsMainstreamInstitutionSame');
-    const enrolledInstitutionId = document.getElementById('Mainstream_EnrolledInstitutionId').value;
     const state = document.getElementById('mainstream-state');
     const district = document.getElementById('mainstream-district');
     const institution = document.getElementById('mainstream-institution');
@@ -118,34 +117,24 @@
         select.innerHTML = `<option value="">${placeholder}</option>` +
             items.map(x => `<option value="${x.id}" data-sections="${x.sections || ''}">${x.text}</option>`).join('');
     };
-    const loadGrades = async id => {
-        if (!id) { fill(grade, [], 'Select grade'); fill(section, [], 'Select section'); return; }
-        fill(grade, await (await fetch(`?handler=GradeSections&institutionId=${id}`)).json(), 'Select grade');
-        fill(section, [], 'Select section');
-    };
     const loadSections = selected => {
         const sections = (grade.selectedOptions[0]?.dataset.sections || '').split(',').map(x => x.trim()).filter(Boolean);
         fill(section, sections.map(x => ({id:x,text:x})), 'Select section');
         if (selected) section.value = selected;
     };
-    const toggleInstitution = async () => {
+    const toggleInstitution = () => {
         const isSame = same.checked;
         document.getElementById('other-institution-fields').classList.toggle('d-none', isSame);
         [state, district, institution].forEach(x => x.disabled = isSame);
-        if (isSame) await loadGrades(enrolledInstitutionId);
-        else await loadGrades(institution.value);
     };
 
     state.addEventListener('change', async () => {
         fill(district, state.value ? await (await fetch(`?handler=Districts&stateId=${state.value}`)).json() : [], 'Select district');
         fill(institution, [], 'Select institution');
-        await loadGrades(null);
     });
     district.addEventListener('change', async () => {
         fill(institution, district.value ? await (await fetch(`?handler=Institutions&stateId=${state.value}&districtId=${district.value}`)).json() : [], 'Select institution');
-        await loadGrades(null);
     });
-    institution.addEventListener('change', () => loadGrades(institution.value));
     grade.addEventListener('change', () => loadSections(''));
     same.addEventListener('change', toggleInstitution);
 
