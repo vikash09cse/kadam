@@ -29,7 +29,7 @@ BEGIN
     LEFT JOIN Roles r ON u.RoleId = r.Id
     LEFT JOIN Roles rr ON u.ReporteeRoleId = rr.Id
     OUTER APPLY (
-        SELECT STRING_AGG(x.InstitutionName, ', ') WITHIN GROUP (ORDER BY x.InstitutionName) AS AssignedInstitutions
+        SELECT STRING_AGG(CONVERT(NVARCHAR(MAX), x.InstitutionName), ', ') WITHIN GROUP (ORDER BY x.InstitutionName) AS AssignedInstitutions
         FROM (
             SELECT DISTINCT i.InstitutionName
             FROM dbo.PeopleInstitutions pi
@@ -42,7 +42,7 @@ BEGIN
         ) x
     ) inst
     OUTER APPLY (
-        SELECT STRING_AGG(x.DivisionName, ', ') WITHIN GROUP (ORDER BY x.DivisionName) AS AssignedDivisions
+        SELECT STRING_AGG(CONVERT(NVARCHAR(MAX), x.DivisionName), ', ') WITHIN GROUP (ORDER BY x.DivisionName) AS AssignedDivisions
         FROM (
             SELECT DISTINCT d.DivisionName
             FROM dbo.PeopleDivisions pd

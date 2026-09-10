@@ -18,14 +18,16 @@ BEGIN
         t.ThemeName AS ThemeName,
         ta.InstitutionId,
         i.InstitutionName AS InstitutionName,
-        ISNULL(STRING_AGG(CAST(tags.GradeId AS VARCHAR(10)), ','), '') AS GradeId,
-        ISNULL(STRING_AGG(g.GradeName, ','), '') AS GradeName,
+        ISNULL(STRING_AGG(CAST(tags.GradeId AS NVARCHAR(MAX)), ','), '') AS GradeId,
+        ISNULL(STRING_AGG(CONVERT(NVARCHAR(MAX), g.GradeName), ','), '') AS GradeName,
         ISNULL(STRING_AGG(
-            CASE 
-                WHEN tags.Section IS NULL OR tags.Section = '' 
-                THEN g.GradeName 
-                ELSE g.GradeName + ' - ' + tags.Section 
-            END, 
+            CONVERT(NVARCHAR(MAX),
+                CASE 
+                    WHEN tags.Section IS NULL OR tags.Section = '' 
+                    THEN g.GradeName 
+                    ELSE g.GradeName + ' - ' + tags.Section 
+                END
+            ), 
             ', '
         ), '') AS Section,
         ta.TotalStudents,

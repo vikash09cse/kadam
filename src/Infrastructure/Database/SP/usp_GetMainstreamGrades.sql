@@ -3,9 +3,9 @@ AS
 BEGIN
     SET NOCOUNT ON;
 
-    DECLARE @Sections NVARCHAR(200) = N'';
+    DECLARE @Sections NVARCHAR(MAX) = N'';
 
-    SELECT @Sections = ISNULL(STRING_AGG(s.SectionName, ',') WITHIN GROUP (ORDER BY s.Id), N'')
+    SELECT @Sections = ISNULL(STRING_AGG(CONVERT(NVARCHAR(MAX), s.SectionName), ',') WITHIN GROUP (ORDER BY s.Id), N'')
     FROM dbo.Sections s
     WHERE ISNULL(s.IsDeleted, 0) = 0;
 

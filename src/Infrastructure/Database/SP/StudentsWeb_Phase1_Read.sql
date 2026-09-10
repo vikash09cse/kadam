@@ -112,36 +112,64 @@ CREATE OR ALTER PROCEDURE dbo.usp_WebStudents_GetDashboard
 AS
 BEGIN
     SET NOCOUNT ON;
-    ;WITH AllowedStudents AS (
-        SELECT s.CurrentStatus
-        FROM dbo.Students s
-        INNER JOIN dbo.Institutions i ON i.Id = s.InstitutionId AND i.IsDeleted = 0
-        WHERE s.IsDeleted = 0
-          AND (
-              EXISTS (
-                  SELECT 1 FROM dbo.Users u
-                  INNER JOIN dbo.Roles r ON r.Id = u.RoleId AND r.IsDeleted = 0
-                  WHERE u.Id = @UserId AND u.IsDeleted = 0
-                    AND LOWER(LTRIM(RTRIM(r.RoleName))) = 'admin'
-              )
-              OR EXISTS (SELECT 1 FROM dbo.PeopleDivisions pd WHERE pd.UserId = @UserId AND pd.DivisionId = i.DivisionId)
-              OR EXISTS (
-                  SELECT 1 FROM dbo.PeopleInstitutions pi
-                  CROSS APPLY dbo.SplitString(pi.InstitutionIds, ',') split
-                  WHERE pi.UserId = @UserId AND TRY_CAST(LTRIM(RTRIM(split.Item)) AS INT) = s.InstitutionId
-              )
-              OR (
-                  NOT EXISTS (SELECT 1 FROM dbo.PeopleDivisions pd WHERE pd.UserId = @UserId)
-                  AND NOT EXISTS (SELECT 1 FROM dbo.PeopleInstitutions pi WHERE pi.UserId = @UserId)
-                  AND s.CreatedBy = @UserId
-              )
-          )
-    )
+
+    DECLARE @IsAdmin BIT = 0;
+    DECLARE @HasExplicitScope BIT = 0;
+
+    SELECT @IsAdmin = CASE WHEN LOWER(LTRIM(RTRIM(r.RoleName))) = 'admin' THEN 1 ELSE 0 END
+    FROM dbo.Users u
+    INNER JOIN dbo.Roles r ON r.Id = u.RoleId AND r.IsDeleted = 0
+    WHERE u.Id = @UserId AND u.IsDeleted = 0;
+
+    IF EXISTS (SELECT 1 FROM dbo.PeopleDivisions WHERE UserId = @UserId)
+       OR EXISTS (SELECT 1 FROM dbo.PeopleInstitutions WHERE UserId = @UserId)
+        SET @HasExplicitScope = 1;
+
+    CREATE TABLE #AllowedInstitutions
+    (
+        InstitutionId INT NOT NULL PRIMARY KEY
+    );
+
+    IF @IsAdmin = 0 AND @HasExplicitScope = 1
+    BEGIN
+        INSERT INTO #AllowedInstitutions (InstitutionId)
+        SELECT DISTINCT i.Id
+        FROM dbo.Institutions i
+        INNER JOIN dbo.PeopleDivisions pd
+            ON pd.DivisionId = i.DivisionId AND pd.UserId = @UserId
+        WHERE i.IsDeleted = 0;
+
+        INSERT INTO #AllowedInstitutions (InstitutionId)
+        SELECT DISTINCT parsed.InstitutionId
+        FROM dbo.PeopleInstitutions pi
+        CROSS APPLY dbo.SplitString(pi.InstitutionIds, ',') split
+        CROSS APPLY (VALUES (TRY_CAST(LTRIM(RTRIM(split.Item)) AS INT))) parsed(InstitutionId)
+        WHERE pi.UserId = @UserId
+          AND parsed.InstitutionId IS NOT NULL
+          AND NOT EXISTS (
+              SELECT 1
+              FROM #AllowedInstitutions allowed
+              WHERE allowed.InstitutionId = parsed.InstitutionId
+          );
+    END;
+
     SELECT
-        ISNULL(SUM(CASE WHEN CurrentStatus = 1 THEN 1 ELSE 0 END), 0) ActiveCount,
-        ISNULL(SUM(CASE WHEN CurrentStatus = 2 THEN 1 ELSE 0 END), 0) InactiveCount,
-        ISNULL(SUM(CASE WHEN CurrentStatus = 3 THEN 1 ELSE 0 END), 0) CompletedCount
-    FROM AllowedStudents;
+        ISNULL(SUM(CASE WHEN s.CurrentStatus = 1 THEN 1 ELSE 0 END), 0) ActiveCount,
+        ISNULL(SUM(CASE WHEN s.CurrentStatus = 2 THEN 1 ELSE 0 END), 0) InactiveCount,
+        ISNULL(SUM(CASE WHEN s.CurrentStatus = 3 THEN 1 ELSE 0 END), 0) CompletedCount
+    FROM dbo.Students s
+    INNER JOIN dbo.Institutions i ON i.Id = s.InstitutionId AND i.IsDeleted = 0
+    WHERE s.IsDeleted = 0
+      AND (
+          @IsAdmin = 1
+          OR EXISTS (
+              SELECT 1
+              FROM #AllowedInstitutions allowed
+              WHERE allowed.InstitutionId = s.InstitutionId
+          )
+          OR (@HasExplicitScope = 0 AND s.CreatedBy = @UserId)
+      )
+    OPTION (RECOMPILE);
 END;
 GO
 

@@ -38,7 +38,7 @@ BEGIN
         ELSE
         BEGIN
             SET @FilterByInstitution = 1;
-            SELECT @InstitutionIds = STRING_AGG(CAST(LTRIM(RTRIM(s.Item)) AS VARCHAR(20)), ',')
+            SELECT @InstitutionIds = STRING_AGG(CAST(LTRIM(RTRIM(s.Item)) AS VARCHAR(MAX)), ',')
             FROM dbo.PeopleInstitutions pi
             CROSS APPLY dbo.SplitString(pi.InstitutionIds, ',') s
             WHERE pi.UserId = @UserId
@@ -106,7 +106,7 @@ BEGIN
         '' AS TypeOfDocument,
         '' AS DocumentNumber,
         '' AS DocumentAvailable,
-        '' AS TrioNo,
+        CAST(studentTrio.TrioId AS VARCHAR) AS TrioNo,
         CAST(baselineMath.ObtainedMarks AS VARCHAR) AS BaselineMath,
         CAST(baselineEng.ObtainedMarks AS VARCHAR) AS BaselineEnglish,
         CAST(baselineEVS.ObtainedMarks AS VARCHAR) AS BaselineEVS,
@@ -186,6 +186,12 @@ BEGIN
     LEFT JOIN Grades g ON s.GradeId = g.Id
     LEFT JOIN Grades ge ON s.GradeId = ge.Id
     LEFT JOIN StudentFamilyDetails sf ON s.Id = sf.StudentId AND sf.IsDeleted = 0
+    LEFT JOIN (
+        SELECT StudentId, MAX(TrioId) AS TrioId
+        FROM dbo.StudentTrios
+        WHERE IsDeleted = 0
+        GROUP BY StudentId
+    ) studentTrio ON s.Id = studentTrio.StudentId
     LEFT JOIN StudentGradeStartAndEndDetails sge ON s.Id = sge.StudentId
     LEFT JOIN (
         SELECT StudentId, MAX(StepId) AS LastStepId, COUNT(*) AS StepCount

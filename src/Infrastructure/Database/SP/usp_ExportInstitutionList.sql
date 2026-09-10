@@ -52,7 +52,7 @@ BEGIN
     LEFT JOIN dbo.Blocks b ON inst.BlockId = b.Id
     LEFT JOIN dbo.Villages v ON inst.VillageId = v.Id
     OUTER APPLY (
-        SELECT STRING_AGG(CONCAT(g.GradeName, ' (', igs.Sections, ')'), ', ') WITHIN GROUP (ORDER BY g.GradeName) AS GradeSections
+        SELECT STRING_AGG(CONVERT(NVARCHAR(MAX), CONCAT(g.GradeName, ' (', igs.Sections, ')')), ', ') WITHIN GROUP (ORDER BY g.GradeName) AS GradeSections
         FROM dbo.InstitutionGradeSections igs
         INNER JOIN dbo.Grades g ON g.Id = igs.GradeId
         WHERE igs.InstitutionId = inst.Id

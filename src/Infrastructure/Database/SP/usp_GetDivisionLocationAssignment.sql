@@ -22,7 +22,7 @@ BEGIN
     END
 
     SELECT @DistrictIdsJson =
-        '[' + ISNULL(STRING_AGG(CAST(DistrictId AS NVARCHAR(20)), ','), '') + ']'
+        '[' + ISNULL(STRING_AGG(CAST(DistrictId AS NVARCHAR(MAX)), ','), '') + ']'
     FROM (
         SELECT DISTINCT DistrictId
         FROM dbo.DivisionLocations
@@ -30,7 +30,7 @@ BEGIN
     ) d;
 
     SELECT @BlockIdsJson =
-        '[' + ISNULL(STRING_AGG(CAST(BlockId AS NVARCHAR(20)), ','), '') + ']'
+        '[' + ISNULL(STRING_AGG(CAST(BlockId AS NVARCHAR(MAX)), ','), '') + ']'
     FROM (
         SELECT DISTINCT BlockId
         FROM dbo.DivisionLocations
@@ -38,7 +38,7 @@ BEGIN
     ) b;
 
     SELECT @VillageIdsJson =
-        '[' + ISNULL(STRING_AGG(CAST(VillageId AS NVARCHAR(20)), ','), '') + ']'
+        '[' + ISNULL(STRING_AGG(CAST(VillageId AS NVARCHAR(MAX)), ','), '') + ']'
     FROM (
         SELECT DISTINCT VillageId
         FROM dbo.DivisionLocations

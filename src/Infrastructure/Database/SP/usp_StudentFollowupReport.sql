@@ -36,7 +36,7 @@ BEGIN
         ELSE
         BEGIN
             SET @FilterByInstitution = 1;
-            SELECT @InstitutionIds = STRING_AGG(CAST(LTRIM(RTRIM(s.Item)) AS VARCHAR(20)), ',')
+            SELECT @InstitutionIds = STRING_AGG(CAST(LTRIM(RTRIM(s.Item)) AS VARCHAR(MAX)), ',')
             FROM dbo.PeopleInstitutions pi
             CROSS APPLY dbo.SplitString(pi.InstitutionIds, ',') s
             WHERE pi.UserId = @UserId

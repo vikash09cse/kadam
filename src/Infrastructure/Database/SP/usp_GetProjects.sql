@@ -11,7 +11,7 @@ BEGIN
     SELECT 
         ROW_NUMBER() OVER(ORDER BY P.Id) AS RowNumber,
         P.Id, P.ProjectName, P.StartDate, P.EndDate, P.CurrentStatus,
-        STRING_AGG(PP.ProgramId, ',') AS ProjectPrograms,
+        STRING_AGG(CAST(PP.ProgramId AS NVARCHAR(MAX)), ',') AS ProjectPrograms,
         COUNT(*) OVER() AS TotalCount
     FROM dbo.Projects P
     LEFT JOIN dbo.ProjectPrograms PP ON P.Id = PP.ProjectId
