@@ -45,8 +45,8 @@ BEGIN
             BEGIN
                 SET @OverallPercentage = (@TotalObtainedMarks / @TotalMarks) * 100;
                 
-                -- Check if student obtained 80% or more
-                IF @OverallPercentage >= 80
+                -- Check if student obtained 60% or more
+                IF @OverallPercentage >= 60
                 BEGIN
                     SET @HasPassed80Percent = 1;
                     SET @Message = 'Student has passed with ' + CAST(@OverallPercentage AS NVARCHAR(10)) + '% in previous grade';
@@ -54,7 +54,7 @@ BEGIN
                 ELSE
                 BEGIN
                     SET @HasPassed80Percent = 0;
-                    SET @Message = 'Student has not achieved 80% in previous grade. Obtained: ' + CAST(@OverallPercentage AS NVARCHAR(10)) + '%';
+                    SET @Message = 'Student has not achieved 60% in previous grade. Obtained: ' + CAST(@OverallPercentage AS NVARCHAR(10)) + '%';
                 END
             END
             ELSE

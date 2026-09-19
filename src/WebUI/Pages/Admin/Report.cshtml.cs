@@ -226,17 +226,17 @@ namespace WebUI.Pages.Admin
                 ("Document Number", x => x.DocumentNumber),
                 ("Document Available", x => x.DocumentAvailable),
                 ("Trio No.", x => x.TrioNo),
-                ("Baseline Math", x => x.BaselineMath),
-                ("Baseline English", x => x.BaselineEnglish),
-                ("Baseline EVS", x => x.BaselineEVS),
-                ("Baseline Hindi", x => x.BaselineHindi),
+                ("Baseline Math", x => FormatSubjectValue(x.BaselineMath, HasBaseline(x))),
+                ("Baseline English", x => FormatSubjectValue(x.BaselineEnglish, HasBaseline(x))),
+                ("Baseline EVS", x => FormatSubjectValue(x.BaselineEVS, HasBaseline(x))),
+                ("Baseline Hindi", x => FormatSubjectValue(x.BaselineHindi, HasBaseline(x))),
                 ("Baseline Total", x => x.BaselineTotal),
                 ("Total Marks", x => x.BaselineTotalMarks),
                 ("Baseline Percentage", x => x.BaselinePercentage),
                 ("Baseline Date", x => x.BaselineDate),
                 ("Entry-Level Step", x => x.EntryLevelStep),
                 ("Exit Level Step", x => x.ExitLevelStep),
-                ("Ongoing Step", x => x.OngoingStep),
+                ("Ongoing Step", x => FormatOngoingStep(x.OngoingStep, x.ExitLevelStep)),
                 ("No. of Steps Completed", x => x.NoOfStepsCompleted),
                 ("Grade Test 1", x => x.GradeTest1),
                 ("Grade Test 1 %", x => x.GradeTest1Percentage),
@@ -263,10 +263,10 @@ namespace WebUI.Pages.Admin
                 ("Attendance %", x => x.AttendancePercent),
                 ("Mid-Day-Meal %", x => x.MidDayMealPercent),
                 ("Student's Status", x => x.StudentsStatus),
-                ("Endline Math", x => x.EndlineMath),
-                ("Endline English", x => x.EndlineEnglish),
-                ("Endline EVS", x => x.EndlineEVS),
-                ("Endline Hindi", x => x.EndlineHindi),
+                ("Endline Math", x => FormatSubjectValue(x.EndlineMath, HasEndline(x))),
+                ("Endline English", x => FormatSubjectValue(x.EndlineEnglish, HasEndline(x))),
+                ("Endline EVS", x => FormatSubjectValue(x.EndlineEVS, HasEndline(x))),
+                ("Endline Hindi", x => FormatSubjectValue(x.EndlineHindi, HasEndline(x))),
                 ("Endline Total", x => x.EndlineTotal),
                 ("Endline Total Marks", x => x.EndlineTotalMarks),
                 ("Endline Percentage", x => x.EndlinePercentage),
@@ -295,6 +295,64 @@ namespace WebUI.Pages.Admin
                 ("Student Attendance % Last Month", x => x.StudentAttendancePercentLastMonth),
                 ("Last Exam % (If Any)", x => x.LastExamPercent)
             ];
+        }
+
+        private static bool HasBaseline(KadamProgrammeReportDTO item) =>
+            HasAssessment(
+                item.BaselineDate,
+                item.BaselineTotal,
+                item.BaselineTotalMarks,
+                item.BaselinePercentage,
+                item.BaselineMath,
+                item.BaselineEnglish,
+                item.BaselineEVS,
+                item.BaselineHindi);
+
+        private static bool HasEndline(KadamProgrammeReportDTO item) =>
+            HasAssessment(
+                item.EndlineDate,
+                item.EndlineTotal,
+                item.EndlineTotalMarks,
+                item.EndlinePercentage,
+                item.EndlineMath,
+                item.EndlineEnglish,
+                item.EndlineEVS,
+                item.EndlineHindi);
+
+        private static bool HasAssessment(params string?[] values) =>
+            values.Any(value => !string.IsNullOrWhiteSpace(value));
+
+        private static string? FormatSubjectValue(string? value, bool assessmentSubmitted)
+        {
+            if (!assessmentSubmitted)
+            {
+                return string.Empty;
+            }
+
+            if (string.IsNullOrWhiteSpace(value) ||
+                (decimal.TryParse(value, out var marks) && marks == 0))
+            {
+                return "0";
+            }
+
+            return value;
+        }
+
+        private static string? FormatOngoingStep(string? ongoingStep, string? exitLevelStep)
+        {
+            if (string.IsNullOrWhiteSpace(ongoingStep) || string.IsNullOrWhiteSpace(exitLevelStep))
+            {
+                return ongoingStep;
+            }
+
+            if (int.TryParse(ongoingStep, out var ongoing) &&
+                int.TryParse(exitLevelStep, out var exitLevel) &&
+                ongoing == exitLevel)
+            {
+                return "Completed";
+            }
+
+            return ongoingStep;
         }
     }
 }

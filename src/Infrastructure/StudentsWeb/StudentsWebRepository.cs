@@ -912,7 +912,7 @@ public sealed class StudentsWebRepository(IDbSession db, DatabaseContext context
             if (completedSteps < 2)
                 return StudentsWebGradeTestSaveStatus.StepsIncomplete;
             if (model.GradeLevelId > level.GradeEntryLevelId &&
-                (!gradeTest.PreviousGradePercentage.HasValue || gradeTest.PreviousGradePercentage < 80))
+                (!gradeTest.PreviousGradePercentage.HasValue || gradeTest.PreviousGradePercentage < 60))
                 return StudentsWebGradeTestSaveStatus.PreviousGradeScoreRequired;
 
             var subjectIds = await context.Subjects

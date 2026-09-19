@@ -556,7 +556,7 @@ public sealed class StudentsWebService(
             StudentsWebGradeTestSaveStatus.StepsIncomplete =>
                 new StudentsWebSaveResult { Message = "Complete both grade steps before the grade test." },
             StudentsWebGradeTestSaveStatus.PreviousGradeScoreRequired =>
-                new StudentsWebSaveResult { Message = "The previous grade test requires at least 80%." },
+                new StudentsWebSaveResult { Message = "The previous grade test requires at least 60%." },
             StudentsWebGradeTestSaveStatus.InvalidSubjects =>
                 new StudentsWebSaveResult { Message = "Subject information changed. Reload and try again." },
             _ => new StudentsWebSaveResult { Message = "Student was not found or access was denied." }
