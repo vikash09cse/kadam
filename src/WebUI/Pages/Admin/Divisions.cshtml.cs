@@ -12,8 +12,7 @@ namespace WebUI.Pages.Admin
     {
         public async Task<IActionResult> OnGetDivisionList(int draw, int start, int length, string searchValue)
         {
-            int pageNumber = (start / length) + 1;
-            var result = await adminService.GetDivisions(draw, pageNumber, length, searchValue);
+            var result = await adminService.GetDivisions(draw, start, length, searchValue);
             return new JsonResult(result);
         }
 

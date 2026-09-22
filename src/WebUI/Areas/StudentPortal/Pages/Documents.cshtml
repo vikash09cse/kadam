@@ -24,16 +24,16 @@
                         <input asp-for="Document.DocumentPath" type="hidden" />
                         <input asp-for="Document.DocumentFileName" type="hidden" />
                         <div class="mb-3">
-                            <label asp-for="Document.DocumentTypeId" class="form-label">Document Type</label>
-                            <select asp-for="Document.DocumentTypeId" asp-items="Model.DocumentTypes" class="form-select"><option value="0">Select</option></select>
+                            <label asp-for="Document.DocumentTypeId" class="form-label">Document Type <span class="text-danger">*</span></label>
+                            <select asp-for="Document.DocumentTypeId" id="documentType" asp-items="Model.DocumentTypes" class="form-select" required><option value="0">Select</option></select>
                         </div>
                         <div class="mb-3">
-                            <label asp-for="Document.DocumentNumber" class="form-label">Document Number</label>
-                            <input asp-for="Document.DocumentNumber" class="form-control" minlength="5" maxlength="25" pattern="[A-Za-z0-9]+" placeholder="Enter document number" />
+                            <label asp-for="Document.DocumentNumber" class="form-label">Document Number <span class="text-danger">*</span></label>
+                            <input asp-for="Document.DocumentNumber" id="documentNumber" class="form-control" minlength="5" maxlength="25" pattern="[A-Za-z0-9]+" placeholder="Enter document number" required />
                         </div>
                         <div class="mb-3">
-                            <label asp-for="DocumentFile" class="form-label">File</label>
-                            <input asp-for="DocumentFile" type="file" accept=".pdf,.jpg,.jpeg,.png" class="form-control" />
+                            <label asp-for="DocumentFile" class="form-label">File <span class="text-danger">*</span></label>
+                            <input asp-for="DocumentFile" id="documentFile" type="file" accept=".pdf,.jpg,.jpeg,.png" class="form-control" />
                             @if (!string.IsNullOrWhiteSpace(Model.Document.DocumentPath))
                             {
                                 <div class="mt-2">
@@ -88,3 +88,30 @@
 
 <partial name="_ValidationScriptsPartial" />
 <style>.validation-summary-valid { display: none; }</style>
+<script>
+(() => {
+    const hasExistingFile = @(!string.IsNullOrWhiteSpace(Model.Document.DocumentPath) ? "true" : "false");
+    document.querySelector('form')?.addEventListener('submit', event => {
+        const typeId = Number(document.getElementById('documentType')?.value || 0);
+        const number = document.getElementById('documentNumber')?.value?.trim() || '';
+        const file = document.getElementById('documentFile');
+        if (typeId <= 0) {
+            event.preventDefault();
+            alert('Document type is required.');
+            document.getElementById('documentType')?.focus();
+            return;
+        }
+        if (!/^[A-Za-z0-9]{5,25}$/.test(number)) {
+            event.preventDefault();
+            alert('Document number must contain 5 to 25 alphanumeric characters.');
+            document.getElementById('documentNumber')?.focus();
+            return;
+        }
+        if (!hasExistingFile && (!file?.files || file.files.length === 0)) {
+            event.preventDefault();
+            alert('Please upload a document file when entering a document number.');
+            file?.focus();
+        }
+    });
+})();
+</script>

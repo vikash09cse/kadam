@@ -380,9 +380,11 @@ public sealed class StudentsWebService(
             errors.Add("Scores are required for every active subject.");
         foreach (var score in model.Scores.Where(x => subjectMap.ContainsKey(x.SubjectId)))
         {
-            if (score.ObtainedMarks is decimal marks &&
-                (marks < 0 || marks > subjectMap[score.SubjectId].TotalMarks))
-                errors.Add($"{subjectMap[score.SubjectId].SubjectName} marks must be between 0 and {subjectMap[score.SubjectId].TotalMarks:0.##}.");
+            var subject = subjectMap[score.SubjectId];
+            if (!score.ObtainedMarks.HasValue)
+                errors.Add($"{subject.SubjectName} marks are required.");
+            else if (score.ObtainedMarks < 0 || score.ObtainedMarks > subject.TotalMarks)
+                errors.Add($"{subject.SubjectName} marks must be between 0 and {subject.TotalMarks:0.##}.");
         }
         if (errors.Count > 0)
             return new StudentsWebSaveResult { Errors = errors, Message = "Baseline information is invalid." };
@@ -467,9 +469,11 @@ public sealed class StudentsWebService(
             errors.Add("All active subjects must be submitted.");
         foreach (var score in model.Scores.Where(x => subjectMap.ContainsKey(x.SubjectId)))
         {
-            if (score.ObtainedMarks is decimal marks &&
-                (marks < 0 || marks > subjectMap[score.SubjectId].TotalMarks))
-                errors.Add($"{subjectMap[score.SubjectId].SubjectName} marks must be between 0 and {subjectMap[score.SubjectId].TotalMarks:0.##}.");
+            var subject = subjectMap[score.SubjectId];
+            if (!score.ObtainedMarks.HasValue)
+                errors.Add($"{subject.SubjectName} marks are required.");
+            else if (score.ObtainedMarks < 0 || score.ObtainedMarks > subject.TotalMarks)
+                errors.Add($"{subject.SubjectName} marks must be between 0 and {subject.TotalMarks:0.##}.");
         }
         if (errors.Count > 0)
             return new StudentsWebSaveResult { Errors = errors, Message = "Endline information is invalid." };

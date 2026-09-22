@@ -16,7 +16,7 @@
             <div class="alert alert-success">@message</div>
         }
 
-        <form method="post" enctype="multipart/form-data" class="card">
+        <form method="post" enctype="multipart/form-data" class="card" novalidate>
             <div class="card-body">
                 <input asp-for="Student.Id" type="hidden" />
                 <input asp-for="Student.StudentId" type="hidden" />
@@ -25,11 +25,33 @@
                 <input asp-for="Student.IsKadamPlusStudent" type="hidden" />
                 <div asp-validation-summary="All" class="alert alert-danger"></div>
 
-                <ul class="nav nav-tabs mb-3" role="tablist">
+                @{
+                    var isNewStudent = Model.Student.Id <= 0;
+                }
+                <ul class="nav nav-tabs mb-3" role="tablist" id="registrationTabs">
                     <li class="nav-item"><button class="nav-link active" id="personal-tab" data-bs-toggle="tab" data-bs-target="#personal" type="button">Personal</button></li>
-                    <li class="nav-item"><button class="nav-link" id="family-tab" data-bs-toggle="tab" data-bs-target="#family" type="button">Family</button></li>
-                    <li class="nav-item"><button class="nav-link" id="profile-tab" data-bs-toggle="tab" data-bs-target="#profile" type="button">Profile Picture</button></li>
+                    <li class="nav-item">
+                        @if (isNewStudent)
+                        {
+                            <button class="nav-link disabled" id="family-tab" data-bs-target="#family" type="button" disabled aria-disabled="true" tabindex="-1">Family</button>
+                        }
+                        else
+                        {
+                            <button class="nav-link" id="family-tab" data-bs-toggle="tab" data-bs-target="#family" type="button">Family</button>
+                        }
+                    </li>
+                    <li class="nav-item">
+                        @if (isNewStudent)
+                        {
+                            <button class="nav-link disabled" id="profile-tab" data-bs-target="#profile" type="button" disabled aria-disabled="true" tabindex="-1">Profile Picture</button>
+                        }
+                        else
+                        {
+                            <button class="nav-link" id="profile-tab" data-bs-toggle="tab" data-bs-target="#profile" type="button">Profile Picture</button>
+                        }
+                    </li>
                 </ul>
+                <input type="hidden" id="isNewRegistration" value="@(isNewStudent ? "true" : "false")" />
 
                 <div class="tab-content">
                     <div id="personal" class="tab-pane fade show active">
@@ -38,11 +60,11 @@
                             {
                                 <div class="col-md-4"><label class="form-label">Student ID</label><input value="@Model.Student.StudentId" class="form-control" disabled /></div>
                             }
-                            <div class="col-md-4"><label asp-for="Student.EnrollmentDate" class="form-label">Enrollment Date</label><input asp-for="Student.EnrollmentDate" id="enrollmentDate" type="date" class="form-control" readonly="@Model.Student.IsBaselineAdded" /></div>
-                            <div class="col-md-4"><label asp-for="Student.FirstName" class="form-label">First Name</label><input asp-for="Student.FirstName" class="form-control" maxlength="50" /></div>
-                            <div class="col-md-4"><label asp-for="Student.LastName" class="form-label">Last Name</label><input asp-for="Student.LastName" class="form-control" maxlength="50" /></div>
-                            <div class="col-md-4"><label asp-for="Student.GenderId" class="form-label">Gender</label><select asp-for="Student.GenderId" asp-items="Model.Genders" class="form-select"><option value="0">Select</option></select></div>
-                            <div class="col-md-4"><label asp-for="Student.DateOfBirth" class="form-label">Date of Birth</label><input asp-for="Student.DateOfBirth" id="dateOfBirth" type="date" class="form-control" readonly="@Model.Student.IsBaselineAdded" /></div>
+                            <div class="col-md-4"><label asp-for="Student.EnrollmentDate" class="form-label">Enrollment Date <span class="text-danger">*</span></label><input asp-for="Student.EnrollmentDate" id="enrollmentDate" type="date" class="form-control" required readonly="@Model.Student.IsBaselineAdded" /></div>
+                            <div class="col-md-4"><label asp-for="Student.FirstName" class="form-label">First Name <span class="text-danger">*</span></label><input asp-for="Student.FirstName" id="firstName" class="form-control" maxlength="24" required /></div>
+                            <div class="col-md-4"><label asp-for="Student.LastName" class="form-label">Last Name <span class="text-danger">*</span></label><input asp-for="Student.LastName" id="lastName" class="form-control" maxlength="24" required /></div>
+                            <div class="col-md-4"><label asp-for="Student.GenderId" class="form-label">Gender <span class="text-danger">*</span></label><select asp-for="Student.GenderId" id="genderId" asp-items="Model.Genders" class="form-select" required><option value="0">Select</option></select></div>
+                            <div class="col-md-4"><label asp-for="Student.DateOfBirth" class="form-label">Date of Birth <span class="text-danger">*</span></label><input asp-for="Student.DateOfBirth" id="dateOfBirth" type="date" class="form-control" required readonly="@Model.Student.IsBaselineAdded" /></div>
                             <div class="col-md-4"><label asp-for="Student.Age" class="form-label">Age</label><input asp-for="Student.Age" id="studentAge" class="form-control" readonly /></div>
 
                             <div class="col-md-4">
@@ -52,26 +74,26 @@
                                     <div class="form-check"><input asp-for="Student.DoYouHaveAadhaarCard" type="radio" value="false" class="form-check-input aadhaar-option" id="aadhaarNo" /><label class="form-check-label" for="aadhaarNo">No</label></div>
                                 </div>
                             </div>
-                            <div class="col-md-4" id="aadhaarGroup"><label asp-for="Student.AadhaarCardNumber" class="form-label">Aadhaar Card Number</label><input asp-for="Student.AadhaarCardNumber" class="form-control" maxlength="12" inputmode="numeric" /></div>
+                            <div class="col-md-4" id="aadhaarGroup"><label asp-for="Student.AadhaarCardNumber" class="form-label">Aadhaar Card Number</label><input asp-for="Student.AadhaarCardNumber" id="aadhaarNumber" class="form-control" maxlength="12" inputmode="numeric" pattern="[0-9]{12}" title="Exactly 12 digits" /></div>
 
                             <div class="col-md-4">
-                                <label asp-for="Student.InstitutionId" class="form-label">Institution</label>
-                                <select asp-for="Student.InstitutionId" id="institution" class="form-select" disabled="@Model.Student.IsBaselineAdded">
+                                <label asp-for="Student.InstitutionId" class="form-label">Institution <span class="text-danger">*</span></label>
+                                <select asp-for="Student.InstitutionId" id="institution" class="form-select" required disabled="@Model.Student.IsBaselineAdded">
                                     <option value="0">Select</option>
                                     @foreach (var item in Model.Institutions) { <option value="@item.Id">@item.Text</option> }
                                 </select>
                                 @if (Model.Student.IsBaselineAdded) { <input asp-for="Student.InstitutionId" type="hidden" /> }
                             </div>
                             <div class="col-md-4">
-                                <label asp-for="Student.GradeId" class="form-label">Grade</label>
-                                <select asp-for="Student.GradeId" id="grade" class="form-select" disabled="@Model.Student.IsBaselineAdded">
+                                <label asp-for="Student.GradeId" class="form-label">Grade <span class="text-danger">*</span></label>
+                                <select asp-for="Student.GradeId" id="grade" class="form-select" required disabled="@Model.Student.IsBaselineAdded">
                                     <option value="0">Select</option>
                                     @foreach (var item in Model.GradeSections) { <option value="@item.Id" data-sections="@item.Sections">@item.Text</option> }
                                 </select>
                                 @if (Model.Student.IsBaselineAdded) { <input asp-for="Student.GradeId" type="hidden" /> }
                             </div>
-                            <div class="col-md-4" id="sectionGroup"><label asp-for="Student.Section" class="form-label">Section</label><select asp-for="Student.Section" id="section" class="form-select"><option value="@Model.Student.Section">@(!string.IsNullOrWhiteSpace(Model.Student.Section) ? Model.Student.Section : "Select")</option></select></div>
-                            <div class="col-md-4" id="registrationNumberGroup"><label asp-for="Student.StudentRegistratioNumber" class="form-label">Student Registration Number</label><input asp-for="Student.StudentRegistratioNumber" class="form-control" maxlength="50" /></div>
+                            <div class="col-md-4" id="sectionGroup"><label asp-for="Student.Section" class="form-label">Section <span class="text-danger">*</span></label><select asp-for="Student.Section" id="section" class="form-select" required><option value="@Model.Student.Section">@(!string.IsNullOrWhiteSpace(Model.Student.Section) ? Model.Student.Section : "Select")</option></select></div>
+                            <div class="col-md-4" id="registrationNumberGroup"><label asp-for="Student.StudentRegistratioNumber" class="form-label">Student Registration Number</label><input asp-for="Student.StudentRegistratioNumber" id="registrationNumber" class="form-control" maxlength="50" /></div>
 
                             <div id="kadamFields" class="col-12">
                                 <div class="row g-3">
@@ -97,47 +119,47 @@
                     <div id="family" class="tab-pane fade">
                         <h5 class="text-primary mb-3">Father's Information</h5>
                         <div class="row g-3">
-                            <div class="col-md-4"><label asp-for="Student.FatherName" class="form-label">Name</label><input asp-for="Student.FatherName" class="form-control" maxlength="50" /></div>
+                            <div class="col-md-4"><label asp-for="Student.FatherName" class="form-label">Name <span class="text-danger">*</span></label><input asp-for="Student.FatherName" id="fatherName" class="form-control" maxlength="24" required /></div>
                             <div class="col-md-2">
-                                <label asp-for="Student.FatherAge" class="form-label">Age *</label>
+                                <label asp-for="Student.FatherAge" class="form-label">Age <span class="text-danger">*</span></label>
                                 <input asp-for="Student.FatherAge" type="number" min="0" max="98" class="form-control parent-age" data-parent="Father" />
                                 <div class="form-text">Enter 0 if unknown. Otherwise more than 20 and less than 99.</div>
                             </div>
-                            <div class="col-md-3"><label asp-for="Student.FatherOccupationId" class="form-label">Occupation</label><select asp-for="Student.FatherOccupationId" asp-items="Model.FatherOccupations" class="form-select"><option value="">Select</option></select></div>
-                            <div class="col-md-3"><label asp-for="Student.FatherEducationId" class="form-label">Education</label><select asp-for="Student.FatherEducationId" asp-items="Model.Educations" class="form-select"><option value="">Select</option></select></div>
+                            <div class="col-md-3"><label asp-for="Student.FatherOccupationId" class="form-label">Occupation <span class="text-danger">*</span></label><select asp-for="Student.FatherOccupationId" id="fatherOccupation" asp-items="Model.FatherOccupations" class="form-select" required><option value="">Select</option></select></div>
+                            <div class="col-md-3"><label asp-for="Student.FatherEducationId" class="form-label">Education <span class="text-danger">*</span></label><select asp-for="Student.FatherEducationId" id="fatherEducation" asp-items="Model.Educations" class="form-select" required><option value="">Select</option></select></div>
                         </div>
 
                         <h5 class="text-primary mt-4 mb-3">Mother's Information</h5>
                         <div class="row g-3">
-                            <div class="col-md-4"><label asp-for="Student.MotherName" class="form-label">Name</label><input asp-for="Student.MotherName" class="form-control" maxlength="50" /></div>
+                            <div class="col-md-4"><label asp-for="Student.MotherName" class="form-label">Name <span class="text-danger">*</span></label><input asp-for="Student.MotherName" id="motherName" class="form-control" maxlength="24" required /></div>
                             <div class="col-md-2">
-                                <label asp-for="Student.MotherAge" class="form-label">Age *</label>
+                                <label asp-for="Student.MotherAge" class="form-label">Age <span class="text-danger">*</span></label>
                                 <input asp-for="Student.MotherAge" type="number" min="0" max="98" class="form-control parent-age" data-parent="Mother" />
                                 <div class="form-text">Enter 0 if unknown. Otherwise more than 20 and less than 99.</div>
                             </div>
-                            <div class="col-md-3"><label asp-for="Student.MotherOccupationId" class="form-label">Occupation</label><select asp-for="Student.MotherOccupationId" asp-items="Model.Occupations" class="form-select"><option value="">Select</option></select></div>
-                            <div class="col-md-3"><label asp-for="Student.MotherEducationId" class="form-label">Education</label><select asp-for="Student.MotherEducationId" asp-items="Model.Educations" class="form-select"><option value="">Select</option></select></div>
+                            <div class="col-md-3"><label asp-for="Student.MotherOccupationId" class="form-label">Occupation <span class="text-danger">*</span></label><select asp-for="Student.MotherOccupationId" id="motherOccupation" asp-items="Model.Occupations" class="form-select" required><option value="">Select</option></select></div>
+                            <div class="col-md-3"><label asp-for="Student.MotherEducationId" class="form-label">Education <span class="text-danger">*</span></label><select asp-for="Student.MotherEducationId" id="motherEducation" asp-items="Model.Educations" class="form-select" required><option value="">Select</option></select></div>
                         </div>
 
                         <h5 class="text-primary mt-4 mb-3">Contact Information</h5>
                         <div class="row g-3">
-                            <div class="col-md-4"><label asp-for="Student.PrimaryContactNumber" class="form-label">Primary Number</label><input asp-for="Student.PrimaryContactNumber" class="form-control" maxlength="10" inputmode="numeric" /></div>
-                            <div class="col-md-4"><label asp-for="Student.AlternateContactNumber" class="form-label">Alternate Number</label><input asp-for="Student.AlternateContactNumber" class="form-control" maxlength="10" inputmode="numeric" /></div>
+                            <div class="col-md-4"><label asp-for="Student.PrimaryContactNumber" class="form-label">Primary Number <span class="text-danger">*</span></label><input asp-for="Student.PrimaryContactNumber" id="primaryContact" class="form-control" maxlength="10" inputmode="numeric" required pattern="[0-9]{10}" title="Exactly 10 digits" /></div>
+                            <div class="col-md-4"><label asp-for="Student.AlternateContactNumber" class="form-label">Alternate Number</label><input asp-for="Student.AlternateContactNumber" id="alternateContact" class="form-control" maxlength="10" inputmode="numeric" pattern="[0-9]{10}" title="Exactly 10 digits if provided" /></div>
                         </div>
 
                         <h5 class="text-primary mt-4 mb-3">Address Information</h5>
                         <div class="row g-3">
-                            <div class="col-md-8"><label asp-for="Student.HouseAddress" class="form-label">House Address</label><textarea asp-for="Student.HouseAddress" class="form-control" maxlength="200" rows="3"></textarea></div>
-                            <div class="col-md-4"><label asp-for="Student.PinCode" class="form-label">PIN Code</label><input asp-for="Student.PinCode" class="form-control" maxlength="6" inputmode="numeric" /></div>
+                            <div class="col-md-8"><label asp-for="Student.HouseAddress" class="form-label">House Address <span class="text-danger">*</span></label><textarea asp-for="Student.HouseAddress" id="houseAddress" class="form-control" maxlength="200" minlength="10" rows="3" required></textarea></div>
+                            <div class="col-md-4"><label asp-for="Student.PinCode" class="form-label">PIN Code <span class="text-danger">*</span></label><input asp-for="Student.PinCode" id="pinCode" class="form-control" maxlength="6" inputmode="numeric" required pattern="[0-9]{6}" title="Exactly 6 digits" /></div>
                         </div>
 
                         <h5 class="text-primary mt-4 mb-3">Additional Information</h5>
                         <div class="row g-3">
-                            <div class="col-md-4"><label asp-for="Student.PeopleInHouseId" class="form-label">Number of People in House</label><select asp-for="Student.PeopleInHouseId" asp-items="Model.PeopleCounts" class="form-select"><option value="">Select</option></select></div>
-                            <div class="col-md-4"><label asp-for="Student.CasteId" class="form-label">Caste</label><select asp-for="Student.CasteId" asp-items="Model.Castes" class="form-select"><option value="">Select</option></select></div>
-                            <div class="col-md-4"><label asp-for="Student.ReligionId" class="form-label">Religion</label><select asp-for="Student.ReligionId" asp-items="Model.Religions" class="form-select"><option value="">Select</option></select></div>
-                            <div class="col-md-4"><label asp-for="Student.ParentMonthlyIncome" class="form-label">Parents Monthly Income (₹)</label><select asp-for="Student.ParentMonthlyIncome" asp-items="Model.Incomes" class="form-select"><option value="">Select</option></select></div>
-                            <div class="col-md-4"><label asp-for="Student.ParentMontlyExpenditure" class="form-label">Parents Monthly Expenditure (₹)</label><select asp-for="Student.ParentMontlyExpenditure" asp-items="Model.Incomes" class="form-select"><option value="">Select</option></select></div>
+                            <div class="col-md-4"><label asp-for="Student.PeopleInHouseId" class="form-label">Number of People in House <span class="text-danger">*</span></label><select asp-for="Student.PeopleInHouseId" id="peopleInHouse" asp-items="Model.PeopleCounts" class="form-select" required><option value="">Select</option></select></div>
+                            <div class="col-md-4"><label asp-for="Student.CasteId" class="form-label">Caste <span class="text-danger">*</span></label><select asp-for="Student.CasteId" id="casteId" asp-items="Model.Castes" class="form-select" required><option value="">Select</option></select></div>
+                            <div class="col-md-4"><label asp-for="Student.ReligionId" class="form-label">Religion <span class="text-danger">*</span></label><select asp-for="Student.ReligionId" id="religionId" asp-items="Model.Religions" class="form-select" required><option value="">Select</option></select></div>
+                            <div class="col-md-4"><label asp-for="Student.ParentMonthlyIncome" class="form-label">Parents Monthly Income (₹) <span class="text-danger">*</span></label><select asp-for="Student.ParentMonthlyIncome" id="monthlyIncome" asp-items="Model.Incomes" class="form-select" required><option value="">Select</option></select></div>
+                            <div class="col-md-4"><label asp-for="Student.ParentMontlyExpenditure" class="form-label">Parents Monthly Expenditure (₹) <span class="text-danger">*</span></label><select asp-for="Student.ParentMontlyExpenditure" id="monthlyExpenditure" asp-items="Model.Incomes" class="form-select" required><option value="">Select</option></select></div>
                         </div>
                         <div class="d-flex justify-content-end gap-2 mt-4">
                             <button type="button" class="btn btn-secondary next-tab" data-target="#personal-tab">Previous</button>
@@ -187,6 +209,13 @@
 <partial name="_ValidationScriptsPartial" />
 <style>
     .validation-summary-valid { display: none; }
+    .field-validation-error { display: block; margin-top: 0.25rem; font-size: 0.875em; color: #dc3545; }
+    .is-invalid { border-color: #dc3545 !important; }
+    #registrationTabs .nav-link.disabled {
+        opacity: 0.45;
+        pointer-events: none;
+        cursor: not-allowed;
+    }
 </style>
 <script>
     (() => {
@@ -198,12 +227,12 @@
         const registrationNumberGroup = document.getElementById('registrationNumberGroup');
         const lastClassGroup = document.getElementById('lastClassGroup');
         const droppedOutFields = document.getElementById('droppedOutFields');
-        const isKadamPlus = document.getElementById('Student_IsKadamPlusStudent');
+        const isKadamPlusEl = document.getElementById('Student_IsKadamPlusStudent');
 
         institution?.addEventListener('change', async () => {
             grade.innerHTML = '<option value="">Select</option>';
             section.innerHTML = '<option value="">Select</option>';
-            if (!institution.value) return;
+            if (!institution.value || institution.value === '0') return;
             const response = await fetch(`?handler=GradeSections&institutionId=${institution.value}`);
             for (const item of await response.json()) {
                 const option = new Option(item.text, item.id);
@@ -226,7 +255,7 @@
             const isKadamStc = grade.options[grade.selectedIndex]?.text?.trim().toLowerCase() === 'kadam stc';
             kadamFields.classList.toggle('d-none', !isKadamStc);
             registrationNumberGroup.classList.toggle('d-none', isKadamStc);
-            isKadamPlus.value = (!isKadamStc).toString();
+            if (isKadamPlusEl) isKadamPlusEl.value = (!isKadamStc).toString();
             updateStatusFields();
         }
 
@@ -247,14 +276,20 @@
         function toggleAadhaar() {
             const hasAadhaar = document.getElementById('aadhaarYes').checked;
             document.getElementById('aadhaarGroup').classList.toggle('d-none', !hasAadhaar);
-            if (!hasAadhaar) document.getElementById('Student_AadhaarCardNumber').value = '';
+            if (!hasAadhaar) {
+                const aadhaar = document.getElementById('aadhaarNumber') || document.getElementById('Student_AadhaarCardNumber');
+                if (aadhaar) aadhaar.value = '';
+            }
         }
         document.querySelectorAll('.aadhaar-option').forEach(x => x.addEventListener('change', toggleAadhaar));
         toggleAadhaar();
 
         function calculateAge() {
-            const dob = new Date(document.getElementById('dateOfBirth').value);
-            const enrollment = new Date(document.getElementById('enrollmentDate').value);
+            const dobValue = document.getElementById('dateOfBirth')?.value;
+            const enrollmentValue = document.getElementById('enrollmentDate')?.value;
+            if (!dobValue || !enrollmentValue) return;
+            const dob = new Date(dobValue + 'T00:00:00');
+            const enrollment = new Date(enrollmentValue + 'T00:00:00');
             if (Number.isNaN(dob.getTime()) || Number.isNaN(enrollment.getTime())) return;
             let years = enrollment.getFullYear() - dob.getFullYear();
             let months = enrollment.getMonth() - dob.getMonth();
@@ -269,11 +304,6 @@
         document.getElementById('dateOfBirth')?.addEventListener('change', calculateAge);
         document.getElementById('enrollmentDate')?.addEventListener('change', calculateAge);
         calculateAge();
-
-        document.querySelectorAll('.next-tab').forEach(button => button.addEventListener('click', () => {
-            bootstrap.Tab.getOrCreateInstance(document.querySelector(button.dataset.target)).show();
-            window.scrollTo({ top: 0, behavior: 'smooth' });
-        }));
 
         const cameraPicture = document.getElementById('cameraPicture');
         const profilePicture = document.getElementById('profilePicture');
@@ -292,6 +322,42 @@
             previewPicture(event);
         });
 
+        function clearFieldError(element) {
+            if (!element) return;
+            element.classList.remove('is-invalid');
+            const next = element.parentElement?.querySelector('.field-validation-error');
+            if (next) next.remove();
+        }
+
+        function setFieldError(element, message) {
+            if (!element) return;
+            clearFieldError(element);
+            element.classList.add('is-invalid');
+            const error = document.createElement('div');
+            error.className = 'field-validation-error';
+            error.textContent = message;
+            element.insertAdjacentElement('afterend', error);
+        }
+
+        function clearAllFieldErrors() {
+            document.querySelectorAll('.is-invalid').forEach(el => el.classList.remove('is-invalid'));
+            document.querySelectorAll('.field-validation-error').forEach(el => el.remove());
+        }
+
+        function isBlank(value) {
+            return value == null || String(value).trim() === '';
+        }
+
+        function isEmptySelect(value) {
+            return isBlank(value) || value === '0';
+        }
+
+        function isValidName(value) {
+            if (isBlank(value) || value.length > 24) return false;
+            // Letters (Latin + common extended) and spaces only — avoid \\p{L} for broader browser support
+            return /^[A-Za-z\u00C0-\u024F\u1E00-\u1EFF\s]+$/.test(value.trim());
+        }
+
         function isValidParentAge(value) {
             if (value === '' || value == null) return false;
             const age = Number(value);
@@ -299,17 +365,288 @@
             return age === 0 || (age > 20 && age < 99);
         }
 
-        document.querySelector('form')?.addEventListener('submit', event => {
-            for (const input of document.querySelectorAll('.parent-age')) {
-                if (!isValidParentAge(input.value)) {
-                    event.preventDefault();
-                    const parent = input.dataset.parent || 'Parent';
-                    alert(`${parent}'s age must be 0 if unknown, or more than 20 and less than 99.`);
-                    bootstrap.Tab.getOrCreateInstance(document.querySelector('#family-tab')).show();
-                    input.focus();
-                    return;
+        function parseLocalDate(value) {
+            if (!value) return null;
+            const parts = value.split('-').map(Number);
+            if (parts.length !== 3) return null;
+            return new Date(parts[0], parts[1] - 1, parts[2]);
+        }
+
+        function calculateAgeParts(dob, enrollment) {
+            let years = enrollment.getFullYear() - dob.getFullYear();
+            let months = enrollment.getMonth() - dob.getMonth();
+            if (enrollment.getDate() < dob.getDate()) months--;
+            if (months < 0) {
+                years--;
+                months += 12;
+            }
+            return { years, months, effectiveYears: months >= 5 ? years + 1 : years };
+        }
+
+        function requireField(element, message) {
+            if (!element) return false;
+            const value = element.tagName === 'SELECT' ? element.value : element.value;
+            const empty = element.tagName === 'SELECT' ? isEmptySelect(value) : isBlank(value);
+            if (empty) {
+                setFieldError(element, message || 'Required');
+                return false;
+            }
+            clearFieldError(element);
+            return true;
+        }
+
+        function validatePersonal() {
+            clearAllFieldErrors();
+            let ok = true;
+            let firstInvalid = null;
+
+            const mark = (element, message) => {
+                setFieldError(element, message);
+                if (!firstInvalid) firstInvalid = element;
+                ok = false;
+            };
+
+            const enrollmentEl = document.getElementById('enrollmentDate');
+            const firstNameEl = document.getElementById('firstName');
+            const lastNameEl = document.getElementById('lastName');
+            const genderEl = document.getElementById('genderId');
+            const dobEl = document.getElementById('dateOfBirth');
+            const institutionEl = document.getElementById('institution');
+            const gradeEl = document.getElementById('grade');
+            const sectionEl = document.getElementById('section');
+
+            if (!requireField(enrollmentEl, 'Required')) { firstInvalid ??= enrollmentEl; ok = false; }
+            if (!requireField(firstNameEl, 'Required')) { firstInvalid ??= firstNameEl; ok = false; }
+            else if (!isValidName(firstNameEl.value)) mark(firstNameEl, 'Letters and spaces only, up to 24 characters.');
+
+            if (!requireField(lastNameEl, 'Required')) { firstInvalid ??= lastNameEl; ok = false; }
+            else if (!isValidName(lastNameEl.value)) mark(lastNameEl, 'Letters and spaces only, up to 24 characters.');
+
+            if (!requireField(genderEl, 'Required')) { firstInvalid ??= genderEl; ok = false; }
+            if (!requireField(dobEl, 'Required')) { firstInvalid ??= dobEl; ok = false; }
+            if (!requireField(institutionEl, 'Required')) { firstInvalid ??= institutionEl; ok = false; }
+            if (!requireField(gradeEl, 'Required')) { firstInvalid ??= gradeEl; ok = false; }
+            if (!requireField(sectionEl, 'Required')) { firstInvalid ??= sectionEl; ok = false; }
+
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            const enrollment = parseLocalDate(enrollmentEl?.value);
+            const dob = parseLocalDate(dobEl?.value);
+            const twoYearsAgo = new Date(today);
+            twoYearsAgo.setFullYear(twoYearsAgo.getFullYear() - 2);
+
+            if (enrollment) {
+                if (enrollment > today) mark(enrollmentEl, 'Enrollment date cannot be in the future');
+                else if (enrollment < twoYearsAgo) mark(enrollmentEl, 'Enrollment date cannot be more than 2 years in the past');
+            }
+            if (dob && dob > today) mark(dobEl, 'Date of birth cannot be in the future');
+
+            const isKadamPlus = isKadamPlusEl?.value === 'True' || isKadamPlusEl?.value === 'true';
+            if (dob && enrollment) {
+                const age = calculateAgeParts(dob, enrollment);
+                if (isKadamPlus) {
+                    if (age.years < 5 || (age.years === 5 && age.months < 5) || age.years > 14 || (age.years === 14 && age.months >= 5))
+                        mark(dobEl, 'Kadam Plus students must be between 5 years 5 months and 14 years 4 months old at enrollment.');
+                } else if (age.effectiveYears < 7 || age.effectiveYears > 14) {
+                    mark(dobEl, 'Kadam students must be between 6 years 5 months and 14 years 4 months old at enrollment.');
                 }
             }
+
+            if (document.getElementById('aadhaarYes')?.checked) {
+                const aadhaarEl = document.getElementById('aadhaarNumber');
+                const aadhaar = aadhaarEl?.value?.trim() || '';
+                if (!aadhaar) mark(aadhaarEl, 'Required');
+                else if (!/^\d{12}$/.test(aadhaar)) mark(aadhaarEl, 'Aadhaar must be exactly 12 digits');
+            }
+
+            if (isKadamPlus) {
+                const regEl = document.getElementById('registrationNumber');
+                const regNo = regEl?.value?.trim() || '';
+                if (!regNo) mark(regEl, 'Required');
+                else if (regNo.length > 50) mark(regEl, 'Cannot exceed 50 characters');
+            } else if (!kadamFields.classList.contains('d-none')) {
+                if (!requireField(childStatus, 'Required')) { firstInvalid ??= childStatus; ok = false; }
+                const stayEl = document.querySelector('[name="Student.HowLongPlaningToStayThisArea"]');
+                if (!requireField(stayEl, 'Required')) { firstInvalid ??= stayEl; ok = false; }
+
+                const statusText = childStatus?.options[childStatus.selectedIndex]?.text?.trim().toLowerCase() || '';
+                if (statusText === 'enrolled but not attending') {
+                    const classEl = document.querySelector('[name="Student.Class"]');
+                    const lastClass = Number(classEl?.value || 0);
+                    if (!classEl?.value || lastClass < 1 || lastClass > 8) mark(classEl, 'Required (1–8)');
+                }
+                if (statusText === 'dropped-out') {
+                    const reasonEl = document.querySelector('[name="Student.ReasonId"]');
+                    const dropoutClassEl = document.querySelector('[name="Student.DropoutClass"]');
+                    const dropoutYearEl = document.querySelector('[name="Student.DropoutYear"]');
+                    if (!requireField(reasonEl, 'Required')) { firstInvalid ??= reasonEl; ok = false; }
+                    if (!requireField(dropoutClassEl, 'Required')) { firstInvalid ??= dropoutClassEl; ok = false; }
+                    if (!requireField(dropoutYearEl, 'Required')) { firstInvalid ??= dropoutYearEl; ok = false; }
+                    else if (dob && enrollment) {
+                        const year = Number(dropoutYearEl.value);
+                        if (year < dob.getFullYear() || year > enrollment.getFullYear())
+                            mark(dropoutYearEl, 'Must be between birth year and enrollment year');
+                    }
+                }
+            }
+
+            if (!ok || firstInvalid) {
+                bootstrap.Tab.getOrCreateInstance(document.querySelector('#personal-tab')).show();
+                firstInvalid?.focus();
+                return false;
+            }
+            return true;
+        }
+
+        function validateFamily() {
+            clearAllFieldErrors();
+            let ok = true;
+            let firstInvalid = null;
+            const mark = (element, message) => {
+                setFieldError(element, message);
+                if (!firstInvalid) firstInvalid = element;
+                ok = false;
+            };
+
+            const fatherNameEl = document.getElementById('fatherName');
+            const motherNameEl = document.getElementById('motherName');
+            if (!requireField(fatherNameEl, 'Required')) { firstInvalid ??= fatherNameEl; ok = false; }
+            else if (!isValidName(fatherNameEl.value)) mark(fatherNameEl, 'Letters and spaces only, up to 24 characters.');
+            if (!requireField(motherNameEl, 'Required')) { firstInvalid ??= motherNameEl; ok = false; }
+            else if (!isValidName(motherNameEl.value)) mark(motherNameEl, 'Letters and spaces only, up to 24 characters.');
+
+            for (const input of document.querySelectorAll('.parent-age')) {
+                if (!isValidParentAge(input.value)) {
+                    mark(input, 'Required (0 if unknown, or 21–98)');
+                }
+            }
+
+            const fatherOcc = document.getElementById('fatherOccupation');
+            const fatherEdu = document.getElementById('fatherEducation');
+            const motherOcc = document.getElementById('motherOccupation');
+            const motherEdu = document.getElementById('motherEducation');
+            if (!requireField(fatherOcc, 'Required')) { firstInvalid ??= fatherOcc; ok = false; }
+            if (!requireField(fatherEdu, 'Required')) { firstInvalid ??= fatherEdu; ok = false; }
+            if (!requireField(motherOcc, 'Required')) { firstInvalid ??= motherOcc; ok = false; }
+            if (!requireField(motherEdu, 'Required')) { firstInvalid ??= motherEdu; ok = false; }
+
+            const primary = document.getElementById('primaryContact');
+            if (!requireField(primary, 'Required')) { firstInvalid ??= primary; ok = false; }
+            else if (!/^\d{10}$/.test(primary.value.trim())) mark(primary, 'Must be exactly 10 digits');
+
+            const alternate = document.getElementById('alternateContact');
+            if (alternate?.value?.trim() && !/^\d{10}$/.test(alternate.value.trim()))
+                mark(alternate, 'Must be exactly 10 digits');
+
+            const address = document.getElementById('houseAddress');
+            if (!requireField(address, 'Required')) { firstInvalid ??= address; ok = false; }
+            else if (address.value.trim().length < 10 || address.value.trim().length > 200)
+                mark(address, 'Must be between 10 and 200 characters');
+
+            const pin = document.getElementById('pinCode');
+            if (!requireField(pin, 'Required')) { firstInvalid ??= pin; ok = false; }
+            else if (!/^\d{6}$/.test(pin.value.trim())) mark(pin, 'Must be exactly 6 digits');
+
+            const people = document.getElementById('peopleInHouse');
+            const caste = document.getElementById('casteId');
+            const religion = document.getElementById('religionId');
+            const income = document.getElementById('monthlyIncome');
+            const expenditure = document.getElementById('monthlyExpenditure');
+            if (isEmptySelect(people?.value) || Number(people?.value || 0) < 2) mark(people, 'Required');
+            if (!requireField(caste, 'Required')) { firstInvalid ??= caste; ok = false; }
+            if (!requireField(religion, 'Required')) { firstInvalid ??= religion; ok = false; }
+            if (!requireField(income, 'Required')) { firstInvalid ??= income; ok = false; }
+            if (!requireField(expenditure, 'Required')) { firstInvalid ??= expenditure; ok = false; }
+
+            if (!ok || document.querySelector('#family .field-validation-error')) {
+                bootstrap.Tab.getOrCreateInstance(document.querySelector('#family-tab')).show();
+                (firstInvalid || document.querySelector('#family .is-invalid'))?.focus();
+                return false;
+            }
+            return true;
+        }
+
+        function setTabEnabled(tabButton, enabled) {
+            if (!tabButton) return;
+            if (enabled) {
+                tabButton.classList.remove('disabled');
+                tabButton.removeAttribute('disabled');
+                tabButton.removeAttribute('aria-disabled');
+                tabButton.removeAttribute('tabindex');
+                tabButton.setAttribute('data-bs-toggle', 'tab');
+            } else {
+                tabButton.classList.add('disabled');
+                tabButton.setAttribute('disabled', 'disabled');
+                tabButton.setAttribute('aria-disabled', 'true');
+                tabButton.setAttribute('tabindex', '-1');
+                tabButton.removeAttribute('data-bs-toggle');
+            }
+        }
+
+        function unlockFamilyTab() {
+            setTabEnabled(document.getElementById('family-tab'), true);
+        }
+
+        function unlockProfileTab() {
+            setTabEnabled(document.getElementById('profile-tab'), true);
+        }
+
+        const isNewRegistration = document.getElementById('isNewRegistration')?.value === 'true';
+
+        // Block direct tab clicks while locked (defense if disabled attribute is bypassed)
+        document.getElementById('family-tab')?.addEventListener('click', event => {
+            if (event.currentTarget.classList.contains('disabled') || event.currentTarget.hasAttribute('disabled')) {
+                event.preventDefault();
+                event.stopPropagation();
+            }
+        });
+        document.getElementById('profile-tab')?.addEventListener('click', event => {
+            if (event.currentTarget.classList.contains('disabled') || event.currentTarget.hasAttribute('disabled')) {
+                event.preventDefault();
+                event.stopPropagation();
+            }
+        });
+
+        document.querySelectorAll('.next-tab').forEach(button => button.addEventListener('click', () => {
+            const target = button.dataset.target;
+            const personalActive = document.getElementById('personal')?.classList.contains('active')
+                || document.getElementById('personal')?.classList.contains('show');
+            const familyActive = document.getElementById('family')?.classList.contains('active')
+                || document.getElementById('family')?.classList.contains('show');
+
+            // Advance Personal → Family: require personal, then unlock Family
+            if (target === '#family-tab' && personalActive) {
+                if (!validatePersonal()) return;
+                unlockFamilyTab();
+            }
+            // Advance Family → Profile: require personal + family, then unlock Profile
+            if (target === '#profile-tab' && (familyActive || personalActive)) {
+                if (!validatePersonal() || !validateFamily()) return;
+                unlockFamilyTab();
+                unlockProfileTab();
+            }
+            // Previous / already-unlocked tab switches skip forward validation
+            bootstrap.Tab.getOrCreateInstance(document.querySelector(target)).show();
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }));
+
+        document.querySelector('form')?.addEventListener('submit', event => {
+            if (!validatePersonal() || !validateFamily()) {
+                event.preventDefault();
+                return;
+            }
+            if (isNewRegistration) {
+                unlockFamilyTab();
+                unlockProfileTab();
+            }
+        });
+
+        // Clear error when user edits a field
+        document.querySelector('form')?.addEventListener('input', event => {
+            if (event.target.matches('input, select, textarea')) clearFieldError(event.target);
+        });
+        document.querySelector('form')?.addEventListener('change', event => {
+            if (event.target.matches('input, select, textarea')) clearFieldError(event.target);
         });
     })();
 </script>

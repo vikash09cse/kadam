@@ -124,6 +124,8 @@ namespace Infrastructure
             foreach (var detail in details)
             {
                 detail.CompletedDate = date;
+                if (!detail.CreatedBy.HasValue || detail.CreatedBy == 0)
+                    detail.CreatedBy = model.CreatedBy;
                 detail.ModifyBy = model.CreatedBy;
                 detail.ModifyDate = DateTime.UtcNow;
             }

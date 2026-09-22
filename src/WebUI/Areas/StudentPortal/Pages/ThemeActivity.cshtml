@@ -217,9 +217,10 @@
     childrensDay.addEventListener('change', calculateParticipants);
     students.addEventListener('input', calculateParticipants);
     parents.addEventListener('input', calculateParticipants);
-    document.getElementById('activityForm').addEventListener('submit', () => {
+    document.getElementById('activityForm').addEventListener('submit', event => {
         hiddenContainer.replaceChildren();
-        getSelections().forEach((selection, index) => {
+        const selections = getSelections();
+        selections.forEach((selection, index) => {
             [['GradeId', selection.gradeId], ['Section', selection.section]].forEach(([name, value]) => {
                 const input = document.createElement('input');
                 input.type = 'hidden';
@@ -228,6 +229,62 @@
                 hiddenContainer.append(input);
             });
         });
+
+        if (isView) return;
+
+        const activityDate = document.querySelector('[name="Input.ActivityDate"]');
+        if (!activityDate?.value) {
+            event.preventDefault();
+            alert('Activity date is required.');
+            activityDate?.focus();
+            return;
+        }
+        if (!institution.value) {
+            event.preventDefault();
+            alert('Please select an institution.');
+            institution.focus();
+            return;
+        }
+        const theme = document.querySelector('[name="Input.ThemeId"]');
+        if (!theme?.value || theme.value === '0') {
+            event.preventDefault();
+            alert('Please select a theme.');
+            theme?.focus();
+            return;
+        }
+        if (selections.length === 0) {
+            event.preventDefault();
+            alert('Please select at least one grade and section.');
+            return;
+        }
+        const studentCount = Number(students.value);
+        if (Number.isNaN(studentCount) || studentCount < 0) {
+            event.preventDefault();
+            alert('Please enter a valid number of total students.');
+            students.focus();
+            return;
+        }
+        const eligible = Number(document.getElementById('eligibleStudents')?.value || 0);
+        if (eligible > 0 && studentCount > eligible) {
+            event.preventDefault();
+            alert('Students attendance should be between 0 and total students.');
+            students.focus();
+            return;
+        }
+        if (childrensDay.value === 'true') {
+            if (parents.value === '') {
+                event.preventDefault();
+                alert("Parents attended is required when Children's Day happened.");
+                parents.focus();
+                return;
+            }
+            const parentCount = Number(parents.value);
+            if (Number.isNaN(parentCount) || parentCount < 0 || parentCount > studentCount) {
+                event.preventDefault();
+                alert('Parents attendance should be between 0 and students attendance (1 parent per child present).');
+                parents.focus();
+            }
+        }
     });
 
     if (institution.value) loadGradeSections();

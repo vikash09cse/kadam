@@ -135,22 +135,43 @@
             {data:'enrollmentDate',render:value => value ? new Date(value).toLocaleDateString() : ''},
             {data:'age'},
             {data:'currentStatus',render:value => ({1:'Active',2:'Inactive',3:'Completed'}[value] || 'Unknown')},
-            {data:null,orderable:false,render:r => `<div class="btn-group btn-group-sm">
-                <a class="btn btn-outline-primary" href="/StudentPortal/Baseline?studentId=${r.id}"
-                   title="${r.isBaselineAdded ? (r.canEditBaseline ? 'Edit baseline' : 'View baseline') : 'Add baseline'}"
-                   aria-label="${r.isBaselineAdded ? (r.canEditBaseline ? 'Edit baseline' : 'View baseline') : 'Add baseline'}">
-                    <i class="ri-bar-chart-box-line"></i>
-                </a>
-                ${r.canOpenProgress
+            {data:null,orderable:false,render:r => {
+                const isCompleted = r.currentStatus === 3;
+                // Mobile parity (MyInstitutionViewModel):
+                // Baseline: open unless completed (read-only)
+                // Progress: requires IsBaselineAdded
+                // Endline: requires IsBaselineAdded and not already added
+                // Promote: Kadam Plus only
+                // Mainstream: non–Kadam Plus; requires baseline + endline
+                const canOpenBaseline = !isCompleted;
+                const canOpenProgress = !!r.isBaselineAdded;
+                const canAddEndline = !!r.isBaselineAdded && !r.isEndlineAdded;
+                const canOpenMainstream = !r.isKadamPlusStudent && !!r.isBaselineAdded && !!r.isEndlineAdded;
+
+                const baselineBtn = canOpenBaseline
+                    ? `<a class="btn btn-outline-primary" href="/StudentPortal/Baseline?studentId=${r.id}"
+                           title="${r.isBaselineAdded ? (r.canEditBaseline ? 'Edit baseline' : 'View baseline') : 'Add baseline'}"
+                           aria-label="${r.isBaselineAdded ? (r.canEditBaseline ? 'Edit baseline' : 'View baseline') : 'Add baseline'}">
+                            <i class="ri-bar-chart-box-line"></i>
+                       </a>`
+                    : `<span class="btn btn-outline-primary disabled" title="Completed students are read-only"><i class="ri-bar-chart-box-line"></i></span>`;
+
+                const progressBtn = canOpenProgress
                     ? `<a class="btn btn-outline-warning" href="/StudentPortal/Progress?studentId=${r.id}" title="Progress" aria-label="Progress"><i class="ri-funds-line"></i></a>`
-                    : `<span class="btn btn-outline-warning disabled" title="Complete baseline first"><i class="ri-funds-line"></i></span>`}
-                ${r.isBaselineCompleted
-                    ? `<a class="btn btn-outline-danger" href="/StudentPortal/Endline?studentId=${r.id}" title="${r.isEndlineAdded ? 'View endline' : 'Add endline'}" aria-label="${r.isEndlineAdded ? 'View endline' : 'Add endline'}"><i class="ri-flag-line"></i></a>`
-                    : `<span class="btn btn-outline-danger disabled" title="Complete baseline first"><i class="ri-flag-line"></i></span>`}
-                ${r.isKadamPlusStudent
+                    : `<span class="btn btn-outline-warning disabled" title="Baseline data not available for this student"><i class="ri-funds-line"></i></span>`;
+
+                const endlineBtn = canAddEndline
+                    ? `<a class="btn btn-outline-danger" href="/StudentPortal/Endline?studentId=${r.id}" title="Add endline" aria-label="Add endline"><i class="ri-flag-line"></i></a>`
+                    : `<span class="btn btn-outline-danger disabled" title="${r.isEndlineAdded ? 'Endline data can not be update' : 'Baseline data not available for this student'}"><i class="ri-flag-line"></i></span>`;
+
+                const exitBtn = r.isKadamPlusStudent
                     ? `<a class="btn btn-outline-success" href="/StudentPortal/Promotion?studentId=${r.id}" title="Promote student" aria-label="Promote student"><i class="ri-arrow-up-circle-line"></i></a>`
-                    : `<a class="btn btn-outline-success" href="/StudentPortal/Mainstream?studentId=${r.id}" title="Mainstream student" aria-label="Mainstream student"><i class="ri-user-follow-line"></i></a>`}
-            </div>`}
+                    : (canOpenMainstream
+                        ? `<a class="btn btn-outline-success" href="/StudentPortal/Mainstream?studentId=${r.id}" title="Mainstream student" aria-label="Mainstream student"><i class="ri-user-follow-line"></i></a>`
+                        : `<span class="btn btn-outline-success disabled" title="${!r.isBaselineAdded ? 'Baseline data not available for this student' : 'First complete the endline'}"><i class="ri-user-follow-line"></i></span>`);
+
+                return `<div class="btn-group btn-group-sm">${baselineBtn}${progressBtn}${endlineBtn}${exitBtn}</div>`;
+            }}
         ]
     });
 

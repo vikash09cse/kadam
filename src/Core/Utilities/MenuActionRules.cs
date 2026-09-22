@@ -8,8 +8,13 @@ namespace Core.Utilities
             "/Admin/Index",
             "/Admin/Report",
             "/Admin/AttendanceReport",
+            "/Admin/FollowupReport",
             "/Admin/ThemeActivityReport",
-            "/StudentPortal/Dashboard"
+            "/StudentPortal/Dashboard",
+            "/StudentPortal/Report",
+            "/StudentPortal/AttendanceReport",
+            "/StudentPortal/FollowupReport",
+            "/StudentPortal/ThemeActivityReport"
         };
 
         private static readonly Dictionary<string, string> PathAliases = new(StringComparer.OrdinalIgnoreCase)

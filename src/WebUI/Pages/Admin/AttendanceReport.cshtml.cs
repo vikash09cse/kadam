@@ -1,4 +1,3 @@
-using ClosedXML.Excel;
 using Core.DTOs;
 using Core.DTOs.App;
 using Core.Features.Admin;
@@ -6,6 +5,7 @@ using Core.Utilities;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using System.Text.Json;
+using WebUI.Services;
 
 namespace WebUI.Pages.Admin
 {
@@ -41,16 +41,13 @@ namespace WebUI.Pages.Admin
         public IReadOnlyList<StudentAttendanceSummaryReportDTO> ReportRows { get; private set; } = [];
         public bool HasSearched { get; private set; }
 
-        /// <summary>Grade/section map for client cascade (non-admin assigned data; admin loads via handler).</summary>
         public string GradeSectionsJson { get; private set; } = "[]";
 
         public async Task<IActionResult> OnGetAsync()
         {
             var userId = authenticationService.GetCurrentUserId();
             if (userId <= 0)
-            {
                 return RedirectToPage("/Login");
-            }
 
             SetDefaultDateRange();
             await LoadFiltersAsync(userId);
@@ -61,9 +58,7 @@ namespace WebUI.Pages.Admin
         {
             var userId = authenticationService.GetCurrentUserId();
             if (userId <= 0)
-            {
                 return RedirectToPage("/Login");
-            }
 
             if (!await ValidateFiltersAsync(userId))
             {
@@ -80,9 +75,7 @@ namespace WebUI.Pages.Admin
         {
             var userId = authenticationService.GetCurrentUserId();
             if (userId <= 0)
-            {
                 return RedirectToPage("/Login");
-            }
 
             if (!await ValidateFiltersAsync(userId))
             {
@@ -92,42 +85,9 @@ namespace WebUI.Pages.Admin
 
             try
             {
-                var filter = BuildFilter();
-                var data = (await studentService.GetStudentAttendanceSummaryReport(userId, filter)).ToList();
-
-                using var workbook = new XLWorkbook();
-                var worksheet = workbook.Worksheets.Add("Attendance Summary");
-
-                var columns = GetExcelColumns();
-                for (int col = 1; col <= columns.Count; col++)
-                {
-                    worksheet.Cell(1, col).Value = columns[col - 1].Header;
-                }
-
-                worksheet.Row(1).Style.Font.Bold = true;
-                worksheet.Row(1).Style.Fill.BackgroundColor = XLColor.LightGray;
-
-                int row = 2;
-                foreach (var item in data)
-                {
-                    for (int col = 1; col <= columns.Count; col++)
-                    {
-                        worksheet.Cell(row, col).Value = columns[col - 1].Getter(item) ?? string.Empty;
-                    }
-                    row++;
-                }
-
-                worksheet.Columns().AdjustToContents();
-
-                using var stream = new MemoryStream();
-                workbook.SaveAs(stream, false);
-                stream.Position = 0;
-
-                var fileName = $"Student_Attendance_Summary_{DateTime.Now:yyyyMMdd_HHmmss}.xlsx";
-                return File(
-                    stream.ToArray(),
-                    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                    fileName);
+                var data = await studentService.GetStudentAttendanceSummaryReport(userId, BuildFilter());
+                var bytes = AttendanceSummaryReportExcelBuilder.Build(data);
+                return File(bytes, AttendanceSummaryReportExcelBuilder.ContentType, AttendanceSummaryReportExcelBuilder.CreateFileName());
             }
             catch (Exception ex)
             {
@@ -141,9 +101,7 @@ namespace WebUI.Pages.Admin
         {
             var userId = authenticationService.GetCurrentUserId();
             if (userId <= 0)
-            {
                 return new JsonResult(Array.Empty<object>());
-            }
 
             IsAdmin = await studentService.IsAdminUser(userId);
             IEnumerable<AppGradeSectionDTO> gradeSections;
@@ -156,9 +114,7 @@ namespace WebUI.Pages.Admin
             {
                 var institutions = await studentService.GetInstitutionsByUserId(userId);
                 if (!institutions.Any(x => x.Id == institutionId))
-                {
                     return new JsonResult(Array.Empty<object>());
-                }
 
                 gradeSections = institutions
                     .FirstOrDefault(x => x.Id == institutionId)?
@@ -178,8 +134,7 @@ namespace WebUI.Pages.Admin
 
         private async Task LoadReportAsync(int userId)
         {
-            var filter = BuildFilter();
-            ReportRows = (await studentService.GetStudentAttendanceSummaryReport(userId, filter)).ToList();
+            ReportRows = (await studentService.GetStudentAttendanceSummaryReport(userId, BuildFilter())).ToList();
             HasSearched = true;
         }
 
@@ -213,13 +168,9 @@ namespace WebUI.Pages.Admin
             }
 
             if (FromDate == default || ToDate == default)
-            {
                 ModelState.AddModelError(string.Empty, "From Date and To Date are required.");
-            }
             else if (FromDate > ToDate)
-            {
                 ModelState.AddModelError(string.Empty, "From Date cannot be later than To Date.");
-            }
 
             return ModelState.IsValid;
         }
@@ -288,9 +239,7 @@ namespace WebUI.Pages.Admin
             SectionOptions = [];
 
             if (InstitutionId <= 0)
-            {
                 return;
-            }
 
             IEnumerable<AppGradeSectionDTO> gradeSections;
             if (IsAdmin)
@@ -317,9 +266,7 @@ namespace WebUI.Pages.Admin
         private static List<string> SplitSections(string? sections)
         {
             if (string.IsNullOrWhiteSpace(sections))
-            {
                 return [];
-            }
 
             return sections
                 .Split([',', ';', '|'], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
@@ -328,19 +275,5 @@ namespace WebUI.Pages.Admin
                 .OrderBy(s => s)
                 .ToList();
         }
-
-        private static List<(string Header, Func<StudentAttendanceSummaryReportDTO, string?> Getter)> GetExcelColumns() =>
-        [
-            ("Student Id", x => x.StudentId),
-            ("Student Name", x => x.StudentName),
-            ("Institution", x => x.InstitutionName),
-            ("Grade", x => x.GradeName),
-            ("Section", x => x.Section),
-            ("Present", x => x.PresentCount.ToString()),
-            ("Absent", x => x.AbsentCount.ToString()),
-            ("Holiday", x => x.HolidayCount.ToString()),
-            ("Working Days", x => x.WorkingDays.ToString()),
-            ("Attendance %", x => x.AttendancePercent.ToString("0.##"))
-        ];
     }
 }

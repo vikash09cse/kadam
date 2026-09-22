@@ -21,8 +21,7 @@ namespace WebUI.Pages.Admin
 
         public async Task<IActionResult> OnGetMenuPermissionList(int draw, int start, int length, string searchValue)
         {
-            int pageNumber = (start / length) + 1;
-            var result = await _adminService.GetMenuPermissions(draw, pageNumber, length, searchValue);
+            var result = await _adminService.GetMenuPermissions(draw, start, length, searchValue);
             return new JsonResult(result);
         }
 

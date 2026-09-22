@@ -114,6 +114,15 @@
                         Swal.showValidationMessage('Inactive reason and date are required.');
                         return false;
                     }
+                    if (status === 2 && date) {
+                        const today = new Date();
+                        today.setHours(0, 0, 0, 0);
+                        const selected = new Date(date + 'T00:00:00');
+                        if (selected > today) {
+                            Swal.showValidationMessage('Inactive date cannot be in the future.');
+                            return false;
+                        }
+                    }
                     return {studentId:id,status,inActiveReason:reason||'',inActiveDate:date||null,remarks:$('#s-remarks').val()};
                 }
             });

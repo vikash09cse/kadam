@@ -67,7 +67,7 @@
                 <div class="row g-3">
                     <div class="col-md-4">
                         <label asp-for="Mainstream.GradeId" class="form-label">Mainstream Grade <span class="text-danger">*</span></label>
-                        <select asp-for="Mainstream.GradeId" id="mainstream-grade" class="form-select">
+                        <select asp-for="Mainstream.GradeId" id="mainstream-grade" class="form-select" required>
                             <option value="">Select grade</option>
                             @foreach (var item in Model.GradeSections)
                             {
@@ -77,7 +77,7 @@
                     </div>
                     <div class="col-md-4">
                         <label asp-for="Mainstream.Section" class="form-label">Section <span class="text-danger">*</span></label>
-                        <select asp-for="Mainstream.Section" id="mainstream-section" class="form-select">
+                        <select asp-for="Mainstream.Section" id="mainstream-section" class="form-select" required>
                             <option value="">Select section</option>
                         </select>
                     </div>
@@ -87,7 +87,7 @@
                     </div>
                     <div class="col-md-4">
                         <label asp-for="Mainstream.MainstreamDate" class="form-label">Mainstream Date <span class="text-danger">*</span></label>
-                        <input asp-for="Mainstream.MainstreamDate" type="date" class="form-control"
+                        <input asp-for="Mainstream.MainstreamDate" type="date" class="form-control" required
                                min="@Model.Mainstream.EnrollmentDate.ToString("yyyy-MM-dd")"
                                max="@DateTime.Today.ToString("yyyy-MM-dd")" />
                     </div>
@@ -141,6 +141,47 @@
     loadSections(selectedSection);
     document.getElementById('other-institution-fields').classList.toggle('d-none', same.checked);
     [state, district, institution].forEach(x => x.disabled = same.checked);
+
+    document.querySelector('form')?.addEventListener('submit', event => {
+        if (!same.checked) {
+            if (!state.value) {
+                event.preventDefault();
+                alert('State, district, and mainstream institution are required.');
+                state.focus();
+                return;
+            }
+            if (!district.value) {
+                event.preventDefault();
+                alert('State, district, and mainstream institution are required.');
+                district.focus();
+                return;
+            }
+            if (!institution.value) {
+                event.preventDefault();
+                alert('State, district, and mainstream institution are required.');
+                institution.focus();
+                return;
+            }
+        }
+        if (!grade.value) {
+            event.preventDefault();
+            alert('Grade is required.');
+            grade.focus();
+            return;
+        }
+        if (!section.value) {
+            event.preventDefault();
+            alert('Section is required.');
+            section.focus();
+            return;
+        }
+        const dateInput = document.querySelector('[name="Mainstream.MainstreamDate"]');
+        if (!dateInput?.value) {
+            event.preventDefault();
+            alert('Mainstream date is required.');
+            dateInput?.focus();
+        }
+    });
 })();
 </script>
 }

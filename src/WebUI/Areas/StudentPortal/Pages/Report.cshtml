@@ -1,0 +1,201 @@
+@page
+@model WebUI.Areas.StudentPortal.Pages.ReportModel
+@{
+    ViewData["Title"] = "Kadam Programme Report";
+}
+
+<div class="page-content">
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-12">
+                <div class="page-title-box d-sm-flex align-items-center justify-content-between">
+                    <h4 class="mb-sm-0">Kadam Programme Report</h4>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-body">
+                        <p class="text-muted mb-4">
+                            Download the Kadam Programme report in Excel format. The report includes student details, institution information, family details, baseline and endline assessments, and mainstream data.
+                            You receive data only for your assigned institutions or assigned divisions.
+                        </p>
+
+                        <form method="post" asp-page-handler="DownloadReport">
+                            @Html.AntiForgeryToken()
+                            <div asp-validation-summary="All" class="text-danger mb-3"></div>
+
+                            <div class="row g-3">
+                                <div class="col-md-3">
+                                    <label asp-for="StateId" class="form-label">State</label>
+                                    <select asp-for="StateId" id="StateId" class="form-select">
+                                        <option value="">All States</option>
+                                        @foreach (var state in Model.States)
+                                        {
+                                            <option value="@state.Value">@state.Text</option>
+                                        }
+                                    </select>
+                                </div>
+
+                                <div class="col-md-3">
+                                    <label asp-for="FromDate" class="form-label">From Date</label>
+                                    <input asp-for="FromDate" type="date" class="form-control" />
+                                </div>
+
+                                <div class="col-md-3">
+                                    <label asp-for="ToDate" class="form-label">To Date</label>
+                                    <input asp-for="ToDate" type="date" class="form-control" />
+                                </div>
+                            </div>
+
+                            <div class="row g-3 mt-1">
+                                <div class="col-12">
+                                    <label class="form-label d-block">Division</label>
+                                    <div class="d-flex flex-wrap gap-4 mb-2">
+                                        <div class="form-check">
+                                            <input asp-for="IncludeAllDivisions" class="form-check-input" type="checkbox" id="includeAllDivisions" />
+                                            <label class="form-check-label" for="includeAllDivisions">All Divisions</label>
+                                        </div>
+                                    </div>
+                                    <div id="divisionList" class="d-flex flex-wrap gap-3 border rounded p-2" style="max-height: 150px; overflow-y: auto;">
+                                        @foreach (var division in Model.Divisions)
+                                        {
+                                            var isChecked = Model.SelectedDivisionIds.Contains(division.Value);
+                                            <div class="form-check">
+                                                <input type="checkbox"
+                                                       class="form-check-input division-filter"
+                                                       name="SelectedDivisionIds"
+                                                       value="@division.Value"
+                                                       id="division_@division.Value"
+                                                       @(isChecked ? "checked" : null) />
+                                                <label class="form-check-label" for="division_@division.Value">@division.Text</label>
+                                            </div>
+                                        }
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="row g-3 mt-1">
+                                <div class="col-12">
+                                    <label class="form-label d-block">Student Type</label>
+                                    <div class="d-flex flex-wrap gap-4">
+                                        <div class="form-check">
+                                            <input asp-for="IncludeAll" class="form-check-input" type="checkbox" id="includeAll" />
+                                            <label class="form-check-label" for="includeAll">All</label>
+                                        </div>
+                                        <div class="form-check">
+                                            <input asp-for="IncludeKadam" class="form-check-input student-type-filter" type="checkbox" id="includeKadam" />
+                                            <label class="form-check-label" for="includeKadam">Kadam</label>
+                                        </div>
+                                        <div class="form-check">
+                                            <input asp-for="IncludeKadamPlus" class="form-check-input student-type-filter" type="checkbox" id="includeKadamPlus" />
+                                            <label class="form-check-label" for="includeKadamPlus">Kadam Plus</label>
+                                        </div>
+                                    </div>
+                                    <small class="text-muted">Kadam uses students where IsKadamPlusStudent is false; Kadam Plus uses students where IsKadamPlusStudent is true.</small>
+                                </div>
+                            </div>
+
+                            <div class="mt-4">
+                                <button type="submit" class="btn btn-success">
+                                    <i class="mdi mdi-file-excel"></i> Download Excel Report
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        (function () {
+            const includeAllDivisions = document.getElementById('includeAllDivisions');
+            const divisionList = document.getElementById('divisionList');
+            const stateSelect = document.getElementById('StateId');
+
+            function bindExclusiveAllFilter(allCheckboxId, itemSelector) {
+                const includeAll = document.getElementById(allCheckboxId);
+                const itemFilters = document.querySelectorAll(itemSelector);
+
+                function syncFilters() {
+                    if (includeAll.checked) {
+                        itemFilters.forEach(function (checkbox) {
+                            checkbox.checked = false;
+                        });
+                    }
+                }
+
+                includeAll.addEventListener('change', syncFilters);
+                itemFilters.forEach(function (checkbox) {
+                    checkbox.addEventListener('change', function () {
+                        if (checkbox.checked) {
+                            includeAll.checked = false;
+                        }
+                    });
+                });
+
+                syncFilters();
+            }
+
+            function escapeHtml(value) {
+                return String(value ?? '')
+                    .replace(/&/g, '&amp;')
+                    .replace(/</g, '&lt;')
+                    .replace(/>/g, '&gt;')
+                    .replace(/"/g, '&quot;');
+            }
+
+            function resetAllDivisions() {
+                if (!includeAllDivisions) return;
+                includeAllDivisions.checked = true;
+                divisionList.querySelectorAll('.division-filter').forEach(function (checkbox) {
+                    checkbox.checked = false;
+                });
+            }
+
+            includeAllDivisions?.addEventListener('change', function () {
+                if (includeAllDivisions.checked) {
+                    divisionList.querySelectorAll('.division-filter').forEach(function (checkbox) {
+                        checkbox.checked = false;
+                    });
+                }
+            });
+
+            divisionList?.addEventListener('change', function (event) {
+                if (event.target.classList.contains('division-filter') && event.target.checked) {
+                    includeAllDivisions.checked = false;
+                }
+            });
+
+            async function loadDivisionsForState() {
+                const stateId = stateSelect.value || '';
+                const response = await fetch(`?handler=DivisionsByState&stateId=${encodeURIComponent(stateId)}`);
+                if (!response.ok) return;
+                const data = await response.json();
+                divisionList.innerHTML = (data || []).map(function (division) {
+                    const id = division.value;
+                    const text = escapeHtml(division.text);
+                    return `<div class="form-check">
+                        <input type="checkbox" class="form-check-input division-filter" name="SelectedDivisionIds" value="${id}" id="division_${id}" />
+                        <label class="form-check-label" for="division_${id}">${text}</label>
+                    </div>`;
+                }).join('');
+                resetAllDivisions();
+            }
+
+            stateSelect?.addEventListener('change', loadDivisionsForState);
+
+            bindExclusiveAllFilter('includeAll', '.student-type-filter');
+            if (includeAllDivisions?.checked) {
+                divisionList.querySelectorAll('.division-filter').forEach(function (checkbox) {
+                    checkbox.checked = false;
+                });
+            }
+        })();
+    </script>
+}

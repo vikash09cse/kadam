@@ -9,10 +9,10 @@ namespace Core.Entities
         public DateTime AttendanceDate { get; set; }
         public int AttendanceStatus { get; set; }
         public string? AttendanceNote { get; set; }
-        public int CreatedBy { get; set; }
-        public DateTime DateCreated { get; set; }
-        public int ModifyBy { get; set; }
-        public DateTime ModifyDate { get; set; }
+        public int? CreatedBy { get; set; }
+        public DateTime? DateCreated { get; set; }
+        public int? ModifyBy { get; set; }
+        public DateTime? ModifyDate { get; set; }
         public byte DateEntryPoint { get; set; } = 1;
     }
 }

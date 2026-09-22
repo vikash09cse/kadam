@@ -53,7 +53,11 @@ BEGIN
     (29, N'Student Documents', N'Student Portal', N'/StudentPortal/Documents', NULL, NULL),
     (30, N'Student Attendance', N'Student Portal', N'/StudentPortal/Attendance', N'ri-calendar-check-line', NULL),
     (31, N'Student Follow-ups', N'Student Portal', N'/StudentPortal/Followups', N'ri-user-follow-line', NULL),
-    (32, N'Theme Activities', N'Student Portal', N'/StudentPortal/ThemeActivities', N'ri-palette-line', NULL);
+    (32, N'Theme Activities', N'Student Portal', N'/StudentPortal/ThemeActivities', N'ri-palette-line', NULL),
+    (33, N'Student Kadam Programme Report', N'Student Portal', N'/StudentPortal/Report', N'ri-file-excel-2-line', NULL),
+    (34, N'Student Portal Attendance Report', N'Student Portal', N'/StudentPortal/AttendanceReport', N'ri-calendar-check-line', NULL),
+    (35, N'Student Portal Follow-up Report', N'Student Portal', N'/StudentPortal/FollowupReport', N'ri-user-follow-line', NULL),
+    (36, N'Student Portal Theme Activity Report', N'Student Portal', N'/StudentPortal/ThemeActivityReport', N'ri-palette-line', NULL);
 
     UPDATE @Menus
     SET PortalType = 2
@@ -102,9 +106,19 @@ BEGIN
     DECLARE @FollowupMenuId INT;
     DECLARE @AttendanceMenuId INT;
     DECLARE @ThemeActivityReportMenuId INT;
+    DECLARE @StudentMyInstitutionMenuId INT;
+    DECLARE @StudentProgrammeReportMenuId INT;
+    DECLARE @StudentAttendanceReportMenuId INT;
+    DECLARE @StudentFollowupReportMenuId INT;
+    DECLARE @StudentThemeActivityReportMenuId INT;
     SELECT @FollowupMenuId = Id FROM MenuPermissions WHERE IsDeleted = 0 AND MenuUrl = N'/Admin/FollowupReport';
     SELECT @AttendanceMenuId = Id FROM MenuPermissions WHERE IsDeleted = 0 AND MenuUrl = N'/Admin/AttendanceReport';
     SELECT @ThemeActivityReportMenuId = Id FROM MenuPermissions WHERE IsDeleted = 0 AND MenuUrl = N'/Admin/ThemeActivityReport';
+    SELECT @StudentMyInstitutionMenuId = Id FROM MenuPermissions WHERE IsDeleted = 0 AND MenuUrl = N'/StudentPortal/MyInstitution';
+    SELECT @StudentProgrammeReportMenuId = Id FROM MenuPermissions WHERE IsDeleted = 0 AND MenuUrl = N'/StudentPortal/Report';
+    SELECT @StudentAttendanceReportMenuId = Id FROM MenuPermissions WHERE IsDeleted = 0 AND MenuUrl = N'/StudentPortal/AttendanceReport';
+    SELECT @StudentFollowupReportMenuId = Id FROM MenuPermissions WHERE IsDeleted = 0 AND MenuUrl = N'/StudentPortal/FollowupReport';
+    SELECT @StudentThemeActivityReportMenuId = Id FROM MenuPermissions WHERE IsDeleted = 0 AND MenuUrl = N'/StudentPortal/ThemeActivityReport';
 
     IF @FollowupMenuId IS NOT NULL AND @AttendanceMenuId IS NOT NULL
     BEGIN
@@ -160,6 +174,48 @@ BEGIN
               FROM UserMenuPermissions existing
               WHERE existing.UserId = ump.UserId
                 AND existing.MenuId = @ThemeActivityReportMenuId
+                AND ISNULL(existing.IsDeleted, 0) = 0
+          );
+    END
+
+    IF @StudentMyInstitutionMenuId IS NOT NULL
+    BEGIN
+        DECLARE @StudentReportMenus TABLE (MenuId INT NOT NULL);
+        INSERT INTO @StudentReportMenus (MenuId)
+        SELECT MenuId
+        FROM (VALUES
+            (@StudentProgrammeReportMenuId),
+            (@StudentAttendanceReportMenuId),
+            (@StudentFollowupReportMenuId),
+            (@StudentThemeActivityReportMenuId)
+        ) AS src(MenuId)
+        WHERE MenuId IS NOT NULL;
+
+        INSERT INTO RolePermissions (RoleId, MenuId, CurrentStatus, CreatedBy, DateCreated, CanAddEdit, CanDelete)
+        SELECT rp.RoleId, rm.MenuId, 1, ISNULL(rp.CreatedBy, 0), GETDATE(), 0, 0
+        FROM RolePermissions rp
+        CROSS JOIN @StudentReportMenus rm
+        WHERE rp.MenuId = @StudentMyInstitutionMenuId
+          AND ISNULL(rp.IsDeleted, 0) = 0
+          AND NOT EXISTS (
+              SELECT 1
+              FROM RolePermissions existing
+              WHERE existing.RoleId = rp.RoleId
+                AND existing.MenuId = rm.MenuId
+                AND ISNULL(existing.IsDeleted, 0) = 0
+          );
+
+        INSERT INTO UserMenuPermissions (UserId, MenuId, CurrentStatus, CreatedBy, DateCreated, CanAddEdit, CanDelete)
+        SELECT ump.UserId, rm.MenuId, 1, ISNULL(ump.CreatedBy, 0), GETDATE(), 0, 0
+        FROM UserMenuPermissions ump
+        CROSS JOIN @StudentReportMenus rm
+        WHERE ump.MenuId = @StudentMyInstitutionMenuId
+          AND ISNULL(ump.IsDeleted, 0) = 0
+          AND NOT EXISTS (
+              SELECT 1
+              FROM UserMenuPermissions existing
+              WHERE existing.UserId = ump.UserId
+                AND existing.MenuId = rm.MenuId
                 AND ISNULL(existing.IsDeleted, 0) = 0
           );
     END

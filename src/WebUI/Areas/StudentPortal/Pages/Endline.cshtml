@@ -22,7 +22,7 @@
                     <div class="col-md-2"><label class="form-label">Age</label><input class="form-control" value="@Model.Details.Age" readonly /></div>
                     <div class="col-md-4">
                         <label asp-for="Assessment.CompletedDate" class="form-label">Completed Date <span class="text-danger">*</span></label>
-                        <input asp-for="Assessment.CompletedDate" type="date" class="form-control"
+                        <input asp-for="Assessment.CompletedDate" type="date" class="form-control" required
                                min="@Model.Details.BaselineCompletedDate?.ToString("yyyy-MM-dd")"
                                max="@DateTime.Today.ToString("yyyy-MM-dd")" readonly="@Model.Details.IsLocked" />
                     </div>
@@ -38,7 +38,8 @@
                                 <td>@subject.SubjectName<input asp-for="Assessment.Scores[index].SubjectId" type="hidden" value="@subject.SubjectId" /></td>
                                 <td>@(subject.BaselineObtainedMarks?.ToString("0.##") ?? "-")</td>
                                 <td><input asp-for="Assessment.Scores[index].ObtainedMarks" class="form-control assessment-mark" type="number"
-                                           min="0" max="@subject.TotalMarks" step="0.01" data-total="@subject.TotalMarks" readonly="@Model.Details.IsLocked" /></td>
+                                           min="0" max="@subject.TotalMarks" step="0.01" data-total="@subject.TotalMarks"
+                                           data-subject="@subject.SubjectName" required readonly="@Model.Details.IsLocked" /></td>
                                 <td>@subject.TotalMarks.ToString("0.##")</td>
                                 <td><span class="assessment-percentage">@((subject.PercentageMarks.HasValue ? $"{subject.PercentageMarks:0}%" : "-"))</span></td>
                             </tr>
@@ -65,6 +66,33 @@ document.querySelectorAll('.assessment-mark').forEach(input => {
             input.value !== '' && total > 0 ? `${Math.round(value / total * 100)}%` : '-';
     };
     input.addEventListener('input', update); update();
+});
+
+document.querySelector('form')?.addEventListener('submit', event => {
+    const dateInput = document.querySelector('[name="Assessment.CompletedDate"]');
+    if (dateInput && !dateInput.value) {
+        event.preventDefault();
+        alert('Completed Date is required');
+        dateInput.focus();
+        return;
+    }
+    for (const input of document.querySelectorAll('.assessment-mark:not([readonly])')) {
+        const total = Number(input.dataset.total);
+        const subject = input.dataset.subject || 'Subject';
+        if (input.value === '') {
+            event.preventDefault();
+            alert(`${subject} marks are required.`);
+            input.focus();
+            return;
+        }
+        const value = Number(input.value);
+        if (Number.isNaN(value) || value < 0 || value > total) {
+            event.preventDefault();
+            alert(`Obt. Marks cannot be greater than Total Marks for ${subject}`);
+            input.focus();
+            return;
+        }
+    }
 });
 </script>
 }

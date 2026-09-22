@@ -109,9 +109,10 @@ BEGIN
                            AND mainstream.StudentId IS NULL
                       THEN 1 ELSE 0 END AS BIT) IsMainstreamEligible,
             CAST(CASE WHEN s.CurrentStatus <> 3 AND p.LastProgressStepId IS NULL THEN 1 ELSE 0 END AS BIT) CanEditBaseline,
-            CAST(CASE WHEN s.CurrentStatus <> 3 AND ISNULL(a.IsBaselineCompleted, 0) = 1 THEN 1 ELSE 0 END AS BIT) CanOpenProgress,
-            CAST(CASE WHEN s.CurrentStatus <> 3
-                           AND ISNULL(a.IsBaselineCompleted, 0) = 1
+            -- Mobile parity: Progress opens when baseline rows exist (IsBaselineAdded)
+            CAST(CASE WHEN ISNULL(a.IsBaselineAdded, 0) = 1 THEN 1 ELSE 0 END AS BIT) CanOpenProgress,
+            -- Mobile parity: Endline opens when baseline exists and endline not yet added
+            CAST(CASE WHEN ISNULL(a.IsBaselineAdded, 0) = 1
                            AND ISNULL(a.IsEndlineAdded, 0) = 0
                       THEN 1 ELSE 0 END AS BIT) CanAddEndline
         FROM dbo.Students s

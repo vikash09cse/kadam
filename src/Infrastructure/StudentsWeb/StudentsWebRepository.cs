@@ -180,6 +180,8 @@ public sealed class StudentsWebRepository(IDbSession db, DatabaseContext context
                 }
                 else
                 {
+                    if (!attendance.CreatedBy.HasValue || attendance.CreatedBy == 0)
+                        attendance.CreatedBy = userId;
                     attendance.ModifyBy = userId;
                     attendance.ModifyDate = DateTime.UtcNow;
                 }
@@ -615,6 +617,8 @@ public sealed class StudentsWebRepository(IDbSession db, DatabaseContext context
                 }
                 else
                 {
+                    if (!detail.CreatedBy.HasValue || detail.CreatedBy == 0)
+                        detail.CreatedBy = userId;
                     detail.ModifyBy = userId;
                     detail.ModifyDate = DateTime.UtcNow;
                 }
@@ -703,6 +707,8 @@ public sealed class StudentsWebRepository(IDbSession db, DatabaseContext context
         foreach (var detail in details)
         {
             detail.CompletedDate = date;
+            if (!detail.CreatedBy.HasValue || detail.CreatedBy == 0)
+                detail.CreatedBy = userId;
             detail.ModifyBy = userId;
             detail.ModifyDate = DateTime.UtcNow;
             detail.DateEntryPoint = StudentsWebEntryPoint.Web;

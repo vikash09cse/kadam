@@ -15,7 +15,7 @@ namespace Core.Entities
 
     public abstract class BaseAuditableEntity : BaseEntity
     {
-        public int CreatedBy { get; set; }
+        public int? CreatedBy { get; set; }
         public DateTime DateCreated { get; set; } = DateTime.Now;
         public int? ModifyBy { get; set; }
         public DateTime? ModifyDate { get; set; }

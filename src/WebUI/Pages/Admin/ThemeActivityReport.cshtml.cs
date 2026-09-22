@@ -1,9 +1,9 @@
-using ClosedXML.Excel;
 using Core.DTOs;
 using Core.DTOs.App;
 using Core.Features.Admin;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
+using WebUI.Services;
 
 namespace WebUI.Pages.Admin
 {
@@ -94,41 +94,9 @@ namespace WebUI.Pages.Admin
 
             try
             {
-                var data = (await themeActivityService.GetThemeActivityReport(userId, BuildFilter())).ToList();
-
-                using var workbook = new XLWorkbook();
-                var worksheet = workbook.Worksheets.Add("Theme Activity");
-
-                var columns = GetExcelColumns();
-                for (int col = 1; col <= columns.Count; col++)
-                {
-                    worksheet.Cell(1, col).Value = columns[col - 1].Header;
-                }
-
-                worksheet.Row(1).Style.Font.Bold = true;
-                worksheet.Row(1).Style.Fill.BackgroundColor = XLColor.LightGray;
-
-                int row = 2;
-                foreach (var item in data)
-                {
-                    for (int col = 1; col <= columns.Count; col++)
-                    {
-                        worksheet.Cell(row, col).Value = columns[col - 1].Getter(item) ?? string.Empty;
-                    }
-                    row++;
-                }
-
-                worksheet.Columns().AdjustToContents();
-
-                using var stream = new MemoryStream();
-                workbook.SaveAs(stream, false);
-                stream.Position = 0;
-
-                var fileName = $"Theme_Activity_Report_{DateTime.Now:yyyyMMdd_HHmmss}.xlsx";
-                return File(
-                    stream.ToArray(),
-                    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                    fileName);
+                var data = await themeActivityService.GetThemeActivityReport(userId, BuildFilter());
+                var bytes = ThemeActivityReportExcelBuilder.Build(data);
+                return File(bytes, ThemeActivityReportExcelBuilder.ContentType, ThemeActivityReportExcelBuilder.CreateFileName());
             }
             catch (Exception ex)
             {
@@ -296,23 +264,5 @@ namespace WebUI.Pages.Admin
                 .OrderBy(s => s)
                 .ToList();
         }
-
-        private static string FormatActivityDate(DateTime? value) =>
-            value.HasValue ? value.Value.ToString("dd-MMM-yyyy") : string.Empty;
-
-        private static List<(string Header, Func<ThemeActivityReportDTO, string?> Getter)> GetExcelColumns() =>
-        [
-            ("Activity Date", x => FormatActivityDate(x.ThemeActivityDate)),
-            ("Institution", x => x.InstitutionName),
-            ("Theme", x => x.ThemeName),
-            ("Grades / Sections", x => x.GradeSectionsText),
-            ("Eligible students", x => x.TotalStudents.ToString()),
-            ("Students attended", x => x.StudentAttended.ToString()),
-            ("Children's Day", x => x.DidChildrenDayHappen ? "Yes" : "No"),
-            ("Parents attended", x => x.TotalParentsAttended?.ToString()),
-            ("Total participants", x => x.TotalParticipants.ToString()),
-            ("Source", x => x.EntryPointText),
-            ("Created By", x => x.CreatedByName)
-        ];
     }
 }

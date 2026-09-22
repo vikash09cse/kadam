@@ -17,8 +17,8 @@
                 <div class="row g-3 mb-4">
                     <div class="col-md-6"><label class="form-label">Student</label><input class="form-control" value="@Model.Details.StudentName (@Model.Details.StudentCode)" readonly /></div>
                     <div class="col-md-3">
-                        <label asp-for="GradeTest.CompletedDate" class="form-label">Completed Date</label>
-                        <input asp-for="GradeTest.CompletedDate" type="date" class="form-control"
+                        <label asp-for="GradeTest.CompletedDate" class="form-label">Completed Date <span class="text-danger">*</span></label>
+                        <input asp-for="GradeTest.CompletedDate" type="date" class="form-control" required
                                min="@Model.Details.EnrollmentDate.ToString("yyyy-MM-dd")" max="@DateTime.Today.ToString("yyyy-MM-dd")" />
                     </div>
                 </div>
@@ -58,6 +58,43 @@ document.querySelectorAll('.test-mark').forEach(input => {
             input.value !== '' && total > 0 ? `${Math.round(value / total * 100)}%` : '-';
     };
     input.addEventListener('input', update); update();
+});
+
+document.querySelector('form')?.addEventListener('submit', event => {
+    const dateInput = document.querySelector('[name="GradeTest.CompletedDate"]');
+    if (!dateInput?.value) {
+        event.preventDefault();
+        alert('Completed Date is required');
+        dateInput?.focus();
+        return;
+    }
+    let obtained = 0;
+    let total = 0;
+    for (const input of document.querySelectorAll('.test-mark')) {
+        const subjectTotal = Number(input.dataset.total);
+        const value = Number(input.value);
+        if (input.value === '' || !(value > 0)) {
+            event.preventDefault();
+            alert('Obt. Marks required and must be > 0');
+            input.focus();
+            return;
+        }
+        if (value > subjectTotal) {
+            event.preventDefault();
+            alert('Obt. Marks cannot be greater than Total Marks');
+            input.focus();
+            return;
+        }
+        obtained += value;
+        total += subjectTotal;
+    }
+    if (total > 0) {
+        const aggregate = Math.round(obtained / total * 100);
+        if (aggregate < 60) {
+            event.preventDefault();
+            alert(`Grade Test cannot be submitted. Overall achievement must be 60%. Current: ${aggregate}%`);
+        }
+    }
 });
 </script>
 }

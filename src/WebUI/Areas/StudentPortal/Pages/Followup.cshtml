@@ -189,6 +189,102 @@
     document.querySelectorAll('.count-input').forEach(input => input.addEventListener('input', calculate));
     if (institution.value) loadGrades(selectedGrade, selectedSection);
     calculate();
+
+    if (!isView) {
+        document.querySelector('form')?.addEventListener('submit', event => {
+            if (!document.getElementById('visitDate')?.value) {
+                event.preventDefault();
+                alert('Visit date is required.');
+                document.getElementById('visitDate')?.focus();
+                return;
+            }
+            if (!institution.value) {
+                event.preventDefault();
+                alert('Please select an institution.');
+                institution.focus();
+                return;
+            }
+            if (!grade.value) {
+                event.preventDefault();
+                alert('Please select a grade.');
+                grade.focus();
+                return;
+            }
+            if (!section.value) {
+                event.preventDefault();
+                alert('Please select a section.');
+                section.focus();
+                return;
+            }
+            const teacherName = document.querySelector('[name="Input.TeacherName"]')?.value?.trim() || '';
+            if (!teacherName) {
+                event.preventDefault();
+                alert('Please enter the grade teacher incharge name.');
+                document.querySelector('[name="Input.TeacherName"]')?.focus();
+                return;
+            }
+            const teacherContact = document.querySelector('[name="Input.TeacherContact"]')?.value?.trim() || '';
+            if (!/^\d{10}$/.test(teacherContact)) {
+                event.preventDefault();
+                alert('Teacher contact must contain exactly 10 digits.');
+                document.querySelector('[name="Input.TeacherContact"]')?.focus();
+                return;
+            }
+            const male = Number(document.getElementById('maleCount')?.value);
+            const female = Number(document.getElementById('femaleCount')?.value);
+            if (Number.isNaN(male) || male < 0) {
+                event.preventDefault();
+                alert('Male student count cannot be negative.');
+                document.getElementById('maleCount')?.focus();
+                return;
+            }
+            if (Number.isNaN(female) || female < 0) {
+                event.preventDefault();
+                alert('Female student count cannot be negative.');
+                document.getElementById('femaleCount')?.focus();
+                return;
+            }
+            const total = male + female;
+            if (total <= 0) {
+                event.preventDefault();
+                alert('Total student count must be greater than 0.');
+                document.getElementById('maleCount')?.focus();
+                return;
+            }
+            const present = Number(document.getElementById('presentToday')?.value || 0);
+            if (present < 0 || present > total) {
+                event.preventDefault();
+                alert("Today's student present count should be between 0 and total students.");
+                document.getElementById('presentToday')?.focus();
+                return;
+            }
+            const daysValue = document.getElementById('lastWorkingDays')?.value;
+            const attendanceValue = document.getElementById('lastAttendance')?.value;
+            const hasDays = daysValue !== '';
+            const hasAttendance = attendanceValue !== '';
+            if (hasDays !== hasAttendance) {
+                event.preventDefault();
+                alert('Last-month working days and attendance must be entered together.');
+                (hasDays ? document.getElementById('lastAttendance') : document.getElementById('lastWorkingDays'))?.focus();
+                return;
+            }
+            if (hasDays) {
+                const days = Number(daysValue);
+                const attendance = Number(attendanceValue);
+                if (days < 1 || days > 31) {
+                    event.preventDefault();
+                    alert('Last-month working days must be between 1 and 31.');
+                    document.getElementById('lastWorkingDays')?.focus();
+                    return;
+                }
+                if (attendance < 0 || attendance > total * days) {
+                    event.preventDefault();
+                    alert('Last-month attendance cannot exceed total students multiplied by working days.');
+                    document.getElementById('lastAttendance')?.focus();
+                }
+            }
+        });
+    }
 })();
 </script>
 }

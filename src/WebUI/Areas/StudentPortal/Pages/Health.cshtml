@@ -31,15 +31,15 @@
                 </div>
                 <div id="challengeFields" class="row g-3">
                     <div class="col-md-4">
-                        <label asp-for="Health.PhysicallyChallengedType" class="form-label">Challenge Type</label>
-                        <select asp-for="Health.PhysicallyChallengedType" asp-items="Model.ChallengeTypes" class="form-select"><option value="">Select</option></select>
+                        <label asp-for="Health.PhysicallyChallengedType" class="form-label">Challenge Type <span class="text-danger">*</span></label>
+                        <select asp-for="Health.PhysicallyChallengedType" id="challengeType" asp-items="Model.ChallengeTypes" class="form-select"><option value="">Select</option></select>
                     </div>
                     <div class="col-md-4">
-                        <label asp-for="Health.PercentagePhysicallyChallenged" class="form-label">% of Physically Challenged</label>
-                        <input asp-for="Health.PercentagePhysicallyChallenged" type="number" min="1" max="100" step="0.01" class="form-control" />
+                        <label asp-for="Health.PercentagePhysicallyChallenged" class="form-label">% of Physically Challenged <span class="text-danger">*</span></label>
+                        <input asp-for="Health.PercentagePhysicallyChallenged" id="challengePercent" type="number" min="1" max="100" step="0.01" class="form-control" />
                     </div>
                     <div class="col-md-4">
-                        <label asp-for="Certificate" class="form-label">Disability Certificate</label>
+                        <label asp-for="Certificate" class="form-label">Disability Certificate <span class="text-danger">*</span></label>
                         <input asp-for="Certificate" type="file" accept=".pdf,.jpg,.jpeg,.png" class="form-control" />
                         @if (!string.IsNullOrWhiteSpace(Model.Health.DisabilityCertificatePath))
                         {
@@ -62,15 +62,40 @@
 <partial name="_ValidationScriptsPartial" />
 <style>.validation-summary-valid { display: none; }</style>
 <script>
+    const hasExistingCertificate = @(!string.IsNullOrWhiteSpace(Model.Health.DisabilityCertificatePath) ? "true" : "false");
     const toggleFields = () => {
         const challenged = document.getElementById('challengedYes').checked;
         document.getElementById('challengeFields').classList.toggle('d-none', !challenged);
         if (!challenged) {
-            document.getElementById('Health_PhysicallyChallengedType').value = '';
-            document.getElementById('Health_PercentagePhysicallyChallenged').value = '';
+            document.getElementById('challengeType').value = '';
+            document.getElementById('challengePercent').value = '';
             document.getElementById('Certificate').value = '';
         }
     };
     document.querySelectorAll('.challenged-option').forEach(x => x.addEventListener('change', toggleFields));
     toggleFields();
+
+    document.querySelector('form')?.addEventListener('submit', event => {
+        if (!document.getElementById('challengedYes').checked) return;
+        const type = document.getElementById('challengeType')?.value;
+        const percent = Number(document.getElementById('challengePercent')?.value || 0);
+        const file = document.getElementById('Certificate');
+        if (!type || type === '0') {
+            event.preventDefault();
+            alert('Physical challenge type is required.');
+            document.getElementById('challengeType')?.focus();
+            return;
+        }
+        if (!(percent > 0 && percent <= 100)) {
+            event.preventDefault();
+            alert('Please enter the percentage of physical challenge (must be greater than 0).');
+            document.getElementById('challengePercent')?.focus();
+            return;
+        }
+        if (!hasExistingCertificate && (!file || !file.files || file.files.length === 0)) {
+            event.preventDefault();
+            alert('Please upload the disability certificate document.');
+            file?.focus();
+        }
+    });
 </script>

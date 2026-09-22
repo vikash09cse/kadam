@@ -20,7 +20,7 @@
                     <div class="col-md-3"><label class="form-label">Current Grade</label><input class="form-control" value="@Model.Promotion.CurrentGradeName / @Model.Promotion.CurrentSection" readonly /></div>
                     <div class="col-md-3">
                         <label asp-for="Promotion.DestinationGradeId" class="form-label">Promoted Grade <span class="text-danger">*</span></label>
-                        <select asp-for="Promotion.DestinationGradeId" id="promotion-grade" class="form-select">
+                        <select asp-for="Promotion.DestinationGradeId" id="promotion-grade" class="form-select" required>
                             <option value="0">Select grade</option>
                             @foreach (var grade in Model.Promotion.Grades)
                             {
@@ -30,11 +30,11 @@
                     </div>
                     <div class="col-md-3">
                         <label asp-for="Promotion.DestinationSection" class="form-label">Promoted Section <span class="text-danger">*</span></label>
-                        <select asp-for="Promotion.DestinationSection" id="promotion-section" class="form-select"><option value="">Select section</option></select>
+                        <select asp-for="Promotion.DestinationSection" id="promotion-section" class="form-select" required><option value="">Select section</option></select>
                     </div>
                     <div class="col-md-3">
                         <label asp-for="Promotion.PromotionDate" class="form-label">Promotion Date <span class="text-danger">*</span></label>
-                        <input asp-for="Promotion.PromotionDate" type="date" class="form-control"
+                        <input asp-for="Promotion.PromotionDate" type="date" class="form-control" required
                                min="@Model.Promotion.EnrollmentDate.ToString("yyyy-MM-dd")"
                                max="@DateTime.Today.ToString("yyyy-MM-dd")" />
                     </div>
@@ -61,6 +61,27 @@
     };
     grade.addEventListener('change', () => { loadSections(); section.value = ''; });
     loadSections();
+
+    document.querySelector('form')?.addEventListener('submit', event => {
+        if (!grade.value || grade.value === '0') {
+            event.preventDefault();
+            alert('Please select a promotion grade');
+            grade.focus();
+            return;
+        }
+        if (!section.value) {
+            event.preventDefault();
+            alert('Please select a promotion section');
+            section.focus();
+            return;
+        }
+        const dateInput = document.querySelector('[name="Promotion.PromotionDate"]');
+        if (!dateInput?.value) {
+            event.preventDefault();
+            alert('Promotion date is required.');
+            dateInput?.focus();
+        }
+    });
 })();
 </script>
 }

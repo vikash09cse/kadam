@@ -1,6 +1,68 @@
 @model List<Core.DTOs.NavigationMenuDTO>
 @{
-    var currentPath = Context.Request.Path.Value ?? string.Empty;
+    var currentPath = (Context.Request.Path.Value ?? string.Empty).TrimEnd('/');
+    if (string.IsNullOrEmpty(currentPath))
+        currentPath = "/";
+
+    bool IsPathActive(string? menuUrl)
+    {
+        if (string.IsNullOrWhiteSpace(menuUrl))
+            return false;
+
+        var url = menuUrl.TrimEnd('/');
+        if (string.IsNullOrEmpty(url))
+            return false;
+
+        // Exact match: /StudentPortal/Directory
+        if (currentPath.Equals(url, StringComparison.OrdinalIgnoreCase))
+            return true;
+
+        // Nested under menu url: /Admin/States/Edit under /Admin/States
+        if (currentPath.StartsWith(url + "/", StringComparison.OrdinalIgnoreCase))
+            return true;
+
+        return false;
+    }
+
+    bool IsStudentPortalDetailPath()
+    {
+        // Detail pages that are not themselves menu items (Endline, Baseline, etc.)
+        return currentPath.StartsWith("/StudentPortal/", StringComparison.OrdinalIgnoreCase);
+    }
+
+    bool IsMenuGroupActive(Core.DTOs.NavigationMenuDTO menu)
+    {
+        if (menu.Children.Any(child => IsPathActive(child.MenuUrl)))
+            return true;
+
+        // Keep Student Portal expanded on sibling detail pages (e.g. Endline, Baseline)
+        var isStudentPortalGroup =
+            menu.MenuName.Equals("Student Portal", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(menu.MenuKey, "studentportal", StringComparison.OrdinalIgnoreCase);
+        return isStudentPortalGroup && IsStudentPortalDetailPath();
+    }
+
+    bool IsChildActive(Core.DTOs.NavigationMenuDTO child)
+    {
+        if (IsPathActive(child.MenuUrl))
+            return true;
+
+        // Highlight Student List while on student assessment / profile detail pages
+        if (!string.Equals(child.MenuUrl?.TrimEnd('/'), "/StudentPortal/Directory", StringComparison.OrdinalIgnoreCase))
+            return false;
+
+        string[] detailPages =
+        [
+            "/StudentPortal/Endline",
+            "/StudentPortal/Baseline",
+            "/StudentPortal/GradeTest",
+            "/StudentPortal/Mainstream",
+            "/StudentPortal/Promotion",
+            "/StudentPortal/Health",
+            "/StudentPortal/Documents"
+        ];
+        return detailPages.Any(p => currentPath.Equals(p, StringComparison.OrdinalIgnoreCase));
+    }
 }
 
 <ul class="navbar-nav" id="navbar-nav">
@@ -9,9 +71,7 @@
         if (menu.Children.Any())
         {
             var collapseId = menu.MenuKey ?? $"menu-{menu.Id}";
-            var isMenuActive = menu.Children.Any(child =>
-                !string.IsNullOrWhiteSpace(child.MenuUrl)
-                && currentPath.Equals(child.MenuUrl, StringComparison.OrdinalIgnoreCase));
+            var isMenuActive = IsMenuGroupActive(menu);
             <li class="nav-item">
                 <a class="nav-link menu-link @(isMenuActive ? "active" : "")" href="#@collapseId" data-bs-toggle="collapse" role="button" aria-expanded="@(isMenuActive ? "true" : "false")" aria-controls="@collapseId">
                     @if (!string.IsNullOrWhiteSpace(menu.IconClass))
@@ -24,8 +84,7 @@
                     <ul class="nav nav-sm flex-column">
                         @foreach (var child in menu.Children)
                         {
-                            var isChildActive = !string.IsNullOrWhiteSpace(child.MenuUrl)
-                                && currentPath.Equals(child.MenuUrl, StringComparison.OrdinalIgnoreCase);
+                            var isChildActive = IsChildActive(child);
                             <li class="nav-item">
                                 <a href="@child.MenuUrl" class="nav-link @(isChildActive ? "active" : "")">
                                     @if (!string.IsNullOrWhiteSpace(child.IconClass))
@@ -42,8 +101,9 @@
         }
         else
         {
+            var isLeafActive = IsPathActive(menu.MenuUrl);
             <li class="nav-item">
-                <a class="nav-link menu-link" href="@menu.MenuUrl">
+                <a class="nav-link menu-link @(isLeafActive ? "active" : "")" href="@menu.MenuUrl">
                     @if (!string.IsNullOrWhiteSpace(menu.IconClass))
                     {
                         <i class="@menu.IconClass"></i>
