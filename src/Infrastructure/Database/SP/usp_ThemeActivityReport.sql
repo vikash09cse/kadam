@@ -52,6 +52,8 @@ BEGIN
         ta.ThemeActivityDate,
         ta.InstitutionId,
         i.InstitutionName,
+        ISNULL(st.StateName, '') AS StateName,
+        ISNULL(d.DivisionName, '') AS DivisionName,
         ta.ThemeId,
         t.ThemeName,
         ISNULL(summary.GradeSectionsText, '') AS GradeSectionsText,
@@ -66,6 +68,8 @@ BEGIN
         LTRIM(RTRIM(CONCAT(ISNULL(u.FirstName, ''), ' ', ISNULL(u.LastName, '')))) AS CreatedByName
     FROM dbo.ThemeActivities ta
     INNER JOIN dbo.Institutions i ON i.Id = ta.InstitutionId AND i.IsDeleted = 0
+    LEFT JOIN dbo.States st ON st.Id = i.StateId AND st.IsDeleted = 0
+    LEFT JOIN dbo.Divisions d ON d.Id = i.DivisionId AND d.IsDeleted = 0
     INNER JOIN dbo.Themes t ON t.Id = ta.ThemeId AND t.IsDeleted = 0
     LEFT JOIN dbo.Users u ON u.Id = ta.CreatedBy
     OUTER APPLY

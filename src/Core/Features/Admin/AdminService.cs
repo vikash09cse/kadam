@@ -27,7 +27,8 @@ namespace Core.Features.Admin
             Users user,
             string? password = null,
             bool autoGeneratePassword = false,
-            IEnumerable<int>? divisionIds = null)
+            IEnumerable<int>? divisionIds = null,
+            bool allowEmptyDivisions = false)
         {
             if (await _adminRepository.CheckUserExist(user.Email, user.Id))
             {
@@ -50,7 +51,7 @@ namespace Core.Features.Admin
                 .Distinct()
                 .ToList();
 
-            if (isDivisionScoped && selectedDivisionIds.Count == 0)
+            if (isDivisionScoped && selectedDivisionIds.Count == 0 && !allowEmptyDivisions)
             {
                 return new ServiceResponseDTO(false, AppStatusCodes.BadRequest, false, "Please select at least one division for this role.");
             }
@@ -129,10 +130,13 @@ namespace Core.Features.Admin
             {
                 if (isDivisionScoped)
                 {
-                    var divisionsSaved = await _adminRepository.SavePeopleDivisions(user.Id, selectedDivisionIds);
-                    if (!divisionsSaved)
+                    if (selectedDivisionIds.Count > 0)
                     {
-                        return new ServiceResponseDTO(false, AppStatusCodes.BadRequest, false, "User saved, but division assignment failed. Please assign divisions again.");
+                        var divisionsSaved = await _adminRepository.SavePeopleDivisions(user.Id, selectedDivisionIds);
+                        if (!divisionsSaved)
+                        {
+                            return new ServiceResponseDTO(false, AppStatusCodes.BadRequest, false, "User saved, but division assignment failed. Please assign divisions again.");
+                        }
                     }
                     await _adminRepository.ClearPeopleInstitutions(user.Id);
                 }
@@ -146,6 +150,245 @@ namespace Core.Features.Admin
                 ? new { generatedPassword = plainPasswordForReturn }
                 : false;
             return new ServiceResponseDTO(isSaved, isSaved ? AppStatusCodes.Success : AppStatusCodes.Unauthorized, resultPayload, isSaved ? MessageSuccess.Saved : MessageError.CodeIssue);
+        }
+
+        public async Task<ServiceResponseDTO> BulkImportPeople(IEnumerable<PeopleImportRowDTO> rows, int currentUserId)
+        {
+            var rowList = rows?.ToList() ?? [];
+            var result = new PeopleImportResultDTO();
+            if (rowList.Count == 0)
+            {
+                return new ServiceResponseDTO(false, AppStatusCodes.BadRequest, result,
+                    "No data rows found in the file.");
+            }
+
+            var roles = (await _adminRepository.GetRolesDropDown()).ToList();
+            var roleByName = roles
+                .GroupBy(r => r.Text.Trim(), StringComparer.OrdinalIgnoreCase)
+                .ToDictionary(g => g.Key, g => g.First(), StringComparer.OrdinalIgnoreCase);
+
+            var genderByName = EnumHelper<Enums.Gender>.GetEnumList()
+                .ToDictionary(g => g.Description, g => (int)(object)g.Value, StringComparer.OrdinalIgnoreCase);
+
+            // Track first Excel row for each email/username within the file
+            var emailFirstRow = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+            var userNameFirstRow = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+
+            foreach (var row in rowList)
+            {
+                ValidatePeopleImportRow(row, roleByName, genderByName, emailFirstRow, userNameFirstRow, result.Errors);
+            }
+
+            // DB uniqueness for values that passed file-level uniqueness
+            var emailsToCheck = rowList
+                .Where(r => !string.IsNullOrWhiteSpace(r.Email))
+                .Select(r => r.Email.Trim())
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .ToList();
+            var userNamesToCheck = rowList
+                .Where(r => !string.IsNullOrWhiteSpace(r.UserName))
+                .Select(r => r.UserName.Trim())
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .ToList();
+
+            var existingEmails = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            foreach (var email in emailsToCheck)
+            {
+                if (await _adminRepository.CheckUserExist(email, 0))
+                    existingEmails.Add(email);
+            }
+
+            var existingUserNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            foreach (var userName in userNamesToCheck)
+            {
+                if (await _adminRepository.CheckUserNameExist(userName, 0))
+                    existingUserNames.Add(userName);
+            }
+
+            foreach (var row in rowList)
+            {
+                var email = row.Email?.Trim() ?? string.Empty;
+                var userName = row.UserName?.Trim() ?? string.Empty;
+                if (!string.IsNullOrEmpty(email) && existingEmails.Contains(email)
+                    && !result.Errors.Any(e => e.RowNumber == row.RowNumber && e.ErrorMessage.Contains("Email", StringComparison.OrdinalIgnoreCase)))
+                {
+                    result.Errors.Add(new PeopleImportErrorDTO
+                    {
+                        RowNumber = row.RowNumber,
+                        ErrorMessage = MessageError.DuplicateEmail
+                    });
+                }
+                if (!string.IsNullOrEmpty(userName) && existingUserNames.Contains(userName)
+                    && !result.Errors.Any(e => e.RowNumber == row.RowNumber && e.ErrorMessage.Contains("Username", StringComparison.OrdinalIgnoreCase)))
+                {
+                    result.Errors.Add(new PeopleImportErrorDTO
+                    {
+                        RowNumber = row.RowNumber,
+                        ErrorMessage = MessageError.DuplicateUserName
+                    });
+                }
+            }
+
+            if (result.HasErrors)
+            {
+                result.Errors = result.Errors.OrderBy(e => e.RowNumber).ThenBy(e => e.ErrorMessage).ToList();
+                return new ServiceResponseDTO(false, AppStatusCodes.BadRequest, result.Errors,
+                    $"{result.Errors.Count} validation error(s) found. No records were imported.");
+            }
+
+            foreach (var row in rowList)
+            {
+                var role = roleByName[row.Role.Trim()];
+                var reporteeRole = roleByName[row.ReporteeRole.Trim()];
+                var genderId = genderByName[row.Gender.Trim()];
+
+                var user = new Users
+                {
+                    Id = 0,
+                    FirstName = row.FirstName.Trim(),
+                    LastName = row.LastName.Trim(),
+                    Email = row.Email.Trim(),
+                    UserName = row.UserName.Trim(),
+                    Phone = row.Phone.Trim(),
+                    AlternatePhone = row.AlternatePhone?.Trim() ?? string.Empty,
+                    Gender = genderId,
+                    RoleId = role.Value,
+                    ReporteeRoleId = reporteeRole.Value,
+                    DateCreated = DateTime.UtcNow,
+                    CreatedBy = currentUserId
+                };
+
+                var saveResponse = await SaveUser(
+                    user,
+                    password: null,
+                    autoGeneratePassword: true,
+                    divisionIds: null,
+                    allowEmptyDivisions: true);
+
+                if (!saveResponse.Success)
+                {
+                    result.Errors.Add(new PeopleImportErrorDTO
+                    {
+                        RowNumber = row.RowNumber,
+                        ErrorMessage = saveResponse.Message
+                    });
+                    // All-or-nothing already validated; unexpected save failure — stop and report
+                    return new ServiceResponseDTO(false, AppStatusCodes.BadRequest, result.Errors,
+                        $"Import stopped at Excel row {row.RowNumber}: {saveResponse.Message}");
+                }
+
+                var generatedPassword = string.Empty;
+                if (saveResponse.Result != null)
+                {
+                    var prop = saveResponse.Result.GetType().GetProperty("generatedPassword");
+                    generatedPassword = prop?.GetValue(saveResponse.Result)?.ToString() ?? string.Empty;
+                }
+
+                result.Credentials.Add(new PeopleImportCredentialDTO
+                {
+                    UserName = user.UserName,
+                    Email = user.Email,
+                    GeneratedPassword = generatedPassword
+                });
+                result.Inserted++;
+            }
+
+            return new ServiceResponseDTO(true, AppStatusCodes.Success, result,
+                $"{result.Inserted} people imported successfully. Download the credentials file for generated passwords.");
+        }
+
+        private static void ValidatePeopleImportRow(
+            PeopleImportRowDTO row,
+            Dictionary<string, DropdownDTO> roleByName,
+            Dictionary<string, int> genderByName,
+            Dictionary<string, int> emailFirstRow,
+            Dictionary<string, int> userNameFirstRow,
+            List<PeopleImportErrorDTO> errors)
+        {
+            void AddError(string message) =>
+                errors.Add(new PeopleImportErrorDTO { RowNumber = row.RowNumber, ErrorMessage = message });
+
+            var firstName = row.FirstName?.Trim() ?? string.Empty;
+            var lastName = row.LastName?.Trim() ?? string.Empty;
+            var email = row.Email?.Trim() ?? string.Empty;
+            var userName = row.UserName?.Trim() ?? string.Empty;
+            var phone = row.Phone?.Trim() ?? string.Empty;
+            var alternatePhone = row.AlternatePhone?.Trim() ?? string.Empty;
+            var gender = row.Gender?.Trim() ?? string.Empty;
+            var roleName = row.Role?.Trim() ?? string.Empty;
+            var reporteeRoleName = row.ReporteeRole?.Trim() ?? string.Empty;
+
+            if (string.IsNullOrWhiteSpace(firstName))
+                AddError("First Name is required.");
+            else if (firstName.Length > 50)
+                AddError("First Name cannot exceed 50 characters.");
+            else if (!System.Text.RegularExpressions.Regex.IsMatch(firstName, @"^[a-zA-Z\s]+$"))
+                AddError("First Name allows only alphabets and spaces.");
+
+            if (string.IsNullOrWhiteSpace(lastName))
+                AddError("Last Name is required.");
+            else if (lastName.Length > 50)
+                AddError("Last Name cannot exceed 50 characters.");
+            else if (!System.Text.RegularExpressions.Regex.IsMatch(lastName, @"^[a-zA-Z\s]+$"))
+                AddError("Last Name allows only alphabets and spaces.");
+
+            if (string.IsNullOrWhiteSpace(email))
+                AddError("Email is required.");
+            else if (email.Length > 100)
+                AddError("Email cannot exceed 100 characters.");
+            else if (!IsValidEmail(email))
+                AddError("Email is not valid.");
+            else if (emailFirstRow.TryGetValue(email, out var emailRow))
+                AddError($"Duplicate Email in file (also on Excel row {emailRow}).");
+            else
+                emailFirstRow[email] = row.RowNumber;
+
+            if (string.IsNullOrWhiteSpace(userName))
+                AddError("UserName is required.");
+            else if (userName.Length > 50)
+                AddError("UserName cannot exceed 50 characters.");
+            else if (!System.Text.RegularExpressions.Regex.IsMatch(userName, @"^[a-zA-Z0-9]+$"))
+                AddError("UserName allows only alphabets and numbers.");
+            else if (userNameFirstRow.TryGetValue(userName, out var userNameRow))
+                AddError($"Duplicate UserName in file (also on Excel row {userNameRow}).");
+            else
+                userNameFirstRow[userName] = row.RowNumber;
+
+            if (string.IsNullOrWhiteSpace(phone))
+                AddError("Phone is required.");
+            else if (phone.Length > 15)
+                AddError("Phone cannot exceed 15 characters.");
+
+            if (!string.IsNullOrWhiteSpace(alternatePhone) && alternatePhone.Length > 15)
+                AddError("Alternate Phone cannot exceed 15 characters.");
+
+            if (string.IsNullOrWhiteSpace(gender))
+                AddError("Gender is required.");
+            else if (!genderByName.ContainsKey(gender))
+                AddError("Gender must be Male or Female.");
+
+            if (string.IsNullOrWhiteSpace(roleName))
+                AddError("Role is required.");
+            else if (!roleByName.ContainsKey(roleName))
+                AddError($"Role \"{roleName}\" was not found.");
+
+            if (string.IsNullOrWhiteSpace(reporteeRoleName))
+                AddError("Reportee Role is required.");
+            else if (!roleByName.ContainsKey(reporteeRoleName))
+                AddError($"Reportee Role \"{reporteeRoleName}\" was not found.");
+        }
+
+        private static bool IsValidEmail(string email)
+        {
+            try
+            {
+                var addr = new System.Net.Mail.MailAddress(email);
+                return addr.Address.Equals(email, StringComparison.OrdinalIgnoreCase);
+            }
+            catch
+            {
+                return false;
+            }
         }
 
         public async Task<IEnumerable<int>> GetPeopleDivisionIds(int userId)

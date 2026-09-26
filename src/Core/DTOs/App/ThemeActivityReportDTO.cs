@@ -6,6 +6,8 @@ namespace Core.DTOs.App
         public DateTime? ThemeActivityDate { get; set; }
         public int InstitutionId { get; set; }
         public string InstitutionName { get; set; } = string.Empty;
+        public string StateName { get; set; } = string.Empty;
+        public string DivisionName { get; set; } = string.Empty;
         public int ThemeId { get; set; }
         public string ThemeName { get; set; } = string.Empty;
         public string GradeSectionsText { get; set; } = string.Empty;

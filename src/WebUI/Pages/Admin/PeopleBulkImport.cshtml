@@ -1,0 +1,112 @@
+@page
+@model WebUI.Pages.Admin.PeopleBulkImportModel
+@{
+    ViewData["Title"] = "People Bulk Import";
+}
+
+<div class="page-content">
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-12">
+                <div class="page-title-box d-sm-flex align-items-center justify-content-between">
+                    <h4 class="mb-sm-0">People Bulk Import</h4>
+                    <div class="text-end">
+                        <a href="/Admin/Peoples" class="btn btn-light">
+                            <i class="mdi mdi-arrow-left"></i> Back to Peoples
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-body">
+                        @if (!string.IsNullOrWhiteSpace(Model.SuccessMessage))
+                        {
+                            <div class="alert alert-success">
+                                @Model.SuccessMessage
+                                @if (Model.HasCredentials)
+                                {
+                                    <div class="mt-2">
+                                        <a href="?handler=DownloadCredentials" class="btn btn-sm btn-outline-success">
+                                            <i class="mdi mdi-download"></i> Download Generated Passwords
+                                        </a>
+                                    </div>
+                                }
+                            </div>
+                        }
+                        @if (!string.IsNullOrWhiteSpace(Model.ErrorMessage))
+                        {
+                            <div class="alert alert-danger">@Model.ErrorMessage</div>
+                        }
+
+                        <p class="text-muted mb-4">
+                            Upload an Excel file to create people in bulk. Passwords are generated automatically to meet system requirements.
+                            Email and UserName must be unique. Divisions and institutions can be assigned after import.
+                        </p>
+
+                        <div class="mb-4">
+                            <a href="?handler=DownloadTemplate" class="btn btn-outline-primary">
+                                <i class="mdi mdi-download"></i> Download Excel Template
+                            </a>
+                        </div>
+
+                        <form method="post" enctype="multipart/form-data" asp-page-handler="Import">
+                            @Html.AntiForgeryToken()
+                            <div class="row g-3 align-items-end">
+                                <div class="col-md-6">
+                                    <label for="excelFile" class="form-label">Excel File</label>
+                                    <input type="file" class="form-control" id="excelFile" name="excelFile" accept=".xlsx,.xls" required />
+                                </div>
+                                <div class="col-md-6">
+                                    <button type="submit" class="btn btn-success js-requires-add-edit">
+                                        <i class="mdi mdi-file-excel"></i> Upload and Import
+                                    </button>
+                                </div>
+                            </div>
+                        </form>
+
+                        @if (Model.ImportErrors.Count > 0)
+                        {
+                            <div class="mt-4">
+                                <h5 class="text-danger">Validation Errors</h5>
+                                <div class="table-responsive">
+                                    <table class="table table-bordered table-sm">
+                                        <thead class="table-light">
+                                            <tr>
+                                                <th style="width: 120px;">Excel Row</th>
+                                                <th>Error</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            @foreach (var error in Model.ImportErrors)
+                                            {
+                                                <tr>
+                                                    <td>@error.RowNumber</td>
+                                                    <td>@error.ErrorMessage</td>
+                                                </tr>
+                                            }
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        }
+
+                        <div class="mt-4">
+                            <h6>Template Notes</h6>
+                            <ul class="text-muted mb-0">
+                                <li><strong>Gender:</strong> Male or Female</li>
+                                <li><strong>Role / Reportee Role:</strong> Must match an existing role name exactly</li>
+                                <li><strong>Email</strong> and <strong>UserName</strong> must be unique in the file and not already used</li>
+                                <li><strong>Password:</strong> Auto-generated (6–15 chars; upper, lower, number, special @@$!%*?&amp;)</li>
+                                <li>Divisions and institutions are assigned after import from Peoples</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

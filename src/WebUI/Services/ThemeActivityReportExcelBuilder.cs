@@ -42,6 +42,8 @@ public static class ThemeActivityReportExcelBuilder
     private static List<(string Header, Func<ThemeActivityReportDTO, string?> Getter)> GetExcelColumns() =>
     [
         ("Activity Date", x => FormatActivityDate(x.ThemeActivityDate)),
+        ("State", x => x.StateName),
+        ("Division", x => x.DivisionName),
         ("Institution", x => x.InstitutionName),
         ("Theme", x => x.ThemeName),
         ("Grades / Sections", x => x.GradeSectionsText),

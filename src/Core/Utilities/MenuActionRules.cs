@@ -22,6 +22,7 @@ namespace Core.Utilities
             ["/Admin/AssignDivision"] = "/Admin/Peoples",
             ["/Admin/AssignInstitution"] = "/Admin/Peoples",
             ["/Admin/UserMenuPermissions"] = "/Admin/Peoples",
+            ["/Admin/PeopleBulkImport"] = "/Admin/Peoples",
             ["/Admin/InstitutionBulkImport"] = "/Admin/Institutions"
         };
 
