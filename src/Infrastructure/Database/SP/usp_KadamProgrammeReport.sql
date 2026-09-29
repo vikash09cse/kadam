@@ -114,7 +114,11 @@ BEGIN
         CAST(baselineTotal.ObtainedTotal AS VARCHAR) AS BaselineTotal,
         CAST(baselineTotal.SubjectTotalMarks AS VARCHAR) AS BaselineTotalMarks,
         CAST(baselineTotal.Pct AS VARCHAR) AS BaselinePercentage,
-        CONVERT(VARCHAR(10), baselineTotal.CompletedDate, 120) AS BaselineDate,
+        CASE
+            WHEN s.IsKadamPlusStudent = 1
+                THEN CONVERT(VARCHAR(10), s.EnrollmentDate, 120)
+            ELSE CONVERT(VARCHAR(10), baselineTotal.CompletedDate, 120)
+        END AS BaselineDate,
         CAST(sge.EntryStepId AS VARCHAR) AS EntryLevelStep,
         CAST(sge.ExitStepId AS VARCHAR) AS ExitLevelStep,
         CAST(ongoing.LastStepId AS VARCHAR) AS OngoingStep,

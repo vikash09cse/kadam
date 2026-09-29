@@ -1450,8 +1450,11 @@ public sealed class StudentsWebRepository(IDbSession db, DatabaseContext context
             : string.Empty;
         target.InstitutionId = source.InstitutionId;
         target.GradeId = source.GradeId;
-        target.Section = source.Section.Trim();
-        target.StudentRegistratioNumber = source.StudentRegistratioNumber.Trim();
+        target.Section = source.Section?.Trim() ?? string.Empty;
+        // Kadam STC hides registration number (same as mobile); store blank
+        target.StudentRegistratioNumber = source.IsKadamPlusStudent
+            ? source.StudentRegistratioNumber?.Trim() ?? string.Empty
+            : string.Empty;
         target.ChildStatudBeforeKadamSTC = source.ChildStatudBeforeKadamSTC;
         target.HowLongPlaningToStayThisArea = source.HowLongPlaningToStayThisArea;
         target.Class = source.Class;
