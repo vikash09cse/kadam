@@ -83,12 +83,14 @@
                     </div>
                     <div class="col-md-4">
                         <label asp-for="Mainstream.ChildSRNumber" class="form-label">Child SR Number</label>
-                        <input asp-for="Mainstream.ChildSRNumber" class="form-control" maxlength="100" />
+                        <input asp-for="Mainstream.ChildSRNumber" id="childSRNumber" class="form-control"
+                               maxlength="100" inputmode="numeric" pattern="[0-9]*" title="Numbers only"
+                               autocomplete="off" />
                     </div>
                     <div class="col-md-4">
                         <label asp-for="Mainstream.MainstreamDate" class="form-label">Mainstream Date <span class="text-danger">*</span></label>
-                        <input asp-for="Mainstream.MainstreamDate" type="date" class="form-control" required
-                               min="@Model.Mainstream.EnrollmentDate.ToString("yyyy-MM-dd")"
+                        <input asp-for="Mainstream.MainstreamDate" id="mainstreamDate" type="date" class="form-control" required
+                               min="@Model.MinimumMainstreamDate.ToString("yyyy-MM-dd")"
                                max="@DateTime.Today.ToString("yyyy-MM-dd")" />
                     </div>
                 </div>
@@ -175,12 +177,58 @@
             section.focus();
             return;
         }
-        const dateInput = document.querySelector('[name="Mainstream.MainstreamDate"]');
+        const dateInput = document.getElementById('mainstreamDate') ||
+            document.querySelector('[name="Mainstream.MainstreamDate"]');
         if (!dateInput?.value) {
             event.preventDefault();
             alert('Mainstream date is required.');
             dateInput?.focus();
+            return;
         }
+        const minDate = dateInput.min ? new Date(dateInput.min + 'T00:00:00') : null;
+        const maxDate = dateInput.max ? new Date(dateInput.max + 'T00:00:00') : null;
+        const selectedDate = new Date(dateInput.value + 'T00:00:00');
+        if (minDate && selectedDate < minDate) {
+            event.preventDefault();
+            alert(`Mainstream date cannot be earlier than ${dateInput.min} (one session/year prior to the current session).`);
+            dateInput.focus();
+            return;
+        }
+        if (maxDate && selectedDate > maxDate) {
+            event.preventDefault();
+            alert('Mainstream date cannot be in the future.');
+            dateInput.focus();
+            return;
+        }
+        const childSr = document.getElementById('childSRNumber');
+        const childSrValue = (childSr?.value || '').replace(/\D/g, '');
+        if (childSr) childSr.value = childSrValue;
+        if (childSr?.value && !/^\d+$/.test(childSr.value)) {
+            event.preventDefault();
+            alert('Child SR number must contain numbers only. Alphabetic characters are not allowed.');
+            childSr.focus();
+        }
+    });
+
+    const childSrInput = document.getElementById('childSRNumber');
+    const stripNonDigits = el => {
+        const digitsOnly = (el.value || '').replace(/\D/g, '');
+        if (el.value !== digitsOnly) el.value = digitsOnly;
+    };
+    childSrInput?.addEventListener('input', event => stripNonDigits(event.target));
+    childSrInput?.addEventListener('blur', event => stripNonDigits(event.target));
+    childSrInput?.addEventListener('keypress', event => {
+        if (event.key && event.key.length === 1 && !/[0-9]/.test(event.key))
+            event.preventDefault();
+    });
+    childSrInput?.addEventListener('paste', event => {
+        event.preventDefault();
+        const text = (event.clipboardData || window.clipboardData)?.getData('text') || '';
+        const digits = text.replace(/\D/g, '');
+        const el = event.target;
+        const start = el.selectionStart ?? el.value.length;
+        const end = el.selectionEnd ?? el.value.length;
+        el.value = el.value.slice(0, start) + digits + el.value.slice(end);
     });
 })();
 </script>

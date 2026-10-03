@@ -71,7 +71,9 @@
                             </select>
                         </div>
                         <div class="col-lg-3 col-md-6">
-                            <label asp-for="Input.ParentsAttended" class="form-label">Parents Attended</label>
+                            <label asp-for="Input.ParentsAttended" class="form-label">
+                                Parents Attended <span id="parentsRequired" class="text-danger" style="display:none">*</span>
+                            </label>
                             <input asp-for="Input.ParentsAttended" id="parentsAttended" type="number"
                                    min="0" class="form-control participant-input" disabled="@disabled" />
                         </div>
@@ -126,11 +128,14 @@
         section: input.dataset.section
     }));
     const calculateParticipants = () => {
-        const studentCount = Number(students.value || 0);
-        const parentCount = childrensDay.value === 'true' ? Number(parents.value || 0) : 0;
+        const studentCount = students.value === '' ? 0 : Number(students.value || 0);
+        const parentCount = childrensDay.value === 'true' && parents.value !== ''
+            ? Number(parents.value || 0) : 0;
         document.getElementById('totalParticipants').value = studentCount + parentCount;
-        parents.disabled = isView || childrensDay.value !== 'true';
-        if (childrensDay.value !== 'true') parents.value = '';
+        const childrensDayYes = childrensDay.value === 'true';
+        parents.disabled = isView || !childrensDayYes;
+        document.getElementById('parentsRequired').style.display = childrensDayYes ? '' : 'none';
+        if (!childrensDayYes) parents.value = '';
         parents.max = String(Math.max(studentCount, 0));
     };
     const refreshEligible = async () => {
@@ -257,10 +262,16 @@
             alert('Please select at least one grade and section.');
             return;
         }
+        if (students.value === '' || students.value == null) {
+            event.preventDefault();
+            alert('Please enter the number of students attended.');
+            students.focus();
+            return;
+        }
         const studentCount = Number(students.value);
         if (Number.isNaN(studentCount) || studentCount < 0) {
             event.preventDefault();
-            alert('Please enter a valid number of total students.');
+            alert('Please enter a valid number of students attended.');
             students.focus();
             return;
         }
@@ -272,7 +283,7 @@
             return;
         }
         if (childrensDay.value === 'true') {
-            if (parents.value === '') {
+            if (parents.value === '' || parents.value == null) {
                 event.preventDefault();
                 alert("Parents attended is required when Children's Day happened.");
                 parents.focus();

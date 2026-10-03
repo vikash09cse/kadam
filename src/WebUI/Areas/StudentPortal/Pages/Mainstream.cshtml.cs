@@ -1,4 +1,5 @@
 using Core.Features.StudentsWeb;
+using Core.Utilities;
 using Microsoft.AspNetCore.Mvc;
 
 namespace WebUI.Areas.StudentPortal.Pages;
@@ -15,6 +16,9 @@ public sealed class MainstreamModel(
     public IReadOnlyList<StudentsWebLookupDTO> Districts { get; private set; } = [];
     public IReadOnlyList<StudentsWebLookupDTO> Institutions { get; private set; } = [];
     public IReadOnlyList<StudentsWebLookupDTO> GradeSections { get; private set; } = [];
+
+    public DateTime MinimumMainstreamDate =>
+        AcademicSessionHelper.GetMinimumMainstreamDate(DateTime.Today, Mainstream.EnrollmentDate);
 
     public async Task<IActionResult> OnGetAsync(int studentId)
     {

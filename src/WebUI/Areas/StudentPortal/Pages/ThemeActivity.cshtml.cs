@@ -100,6 +100,18 @@ public sealed class ThemeActivityModel(
         var denied = await RequirePageAsync(PageUrl);
         if (denied is not null) return denied;
 
+        if (!Input.StudentsAttended.HasValue)
+            ModelState.AddModelError(nameof(Input.StudentsAttended), "Students attended is required.");
+        if (Input.DidChildrensDayHappen && !Input.ParentsAttended.HasValue)
+            ModelState.AddModelError(nameof(Input.ParentsAttended),
+                "Parents attended is required when Children's Day happened.");
+
+        if (!ModelState.IsValid)
+        {
+            await LoadSelectionsAsync();
+            return Page();
+        }
+
         var result = await StudentsService.SaveThemeActivity(Input, CurrentUserId);
         if (!result.Success)
         {

@@ -93,7 +93,7 @@
                                 @if (Model.Student.IsBaselineAdded) { <input asp-for="Student.GradeId" type="hidden" /> }
                             </div>
                             <div class="col-md-4" id="sectionGroup"><label asp-for="Student.Section" class="form-label">Section <span class="text-danger">*</span></label><select asp-for="Student.Section" id="section" class="form-select" required><option value="@Model.Student.Section">@(!string.IsNullOrWhiteSpace(Model.Student.Section) ? Model.Student.Section : "Select")</option></select></div>
-                            <div class="col-md-4" id="registrationNumberGroup"><label asp-for="Student.StudentRegistratioNumber" class="form-label">Student Registration Number</label><input asp-for="Student.StudentRegistratioNumber" id="registrationNumber" class="form-control" maxlength="50" /></div>
+                            <div class="col-md-4" id="registrationNumberGroup"><label asp-for="Student.StudentRegistratioNumber" class="form-label">Student Registration Number</label><input asp-for="Student.StudentRegistratioNumber" id="registrationNumber" class="form-control" maxlength="50" inputmode="numeric" pattern="[0-9]+" title="Numbers only" /></div>
 
                             <div id="kadamFields" class="col-12">
                                 <div class="row g-3">
@@ -103,7 +103,7 @@
                                     <div id="droppedOutFields" class="col-12">
                                         <div class="row g-3">
                                             <div class="col-md-4"><label asp-for="Student.ReasonId" class="form-label">Reason</label><select asp-for="Student.ReasonId" asp-items="Model.Reasons" class="form-select"><option value="0">Select</option></select></div>
-                                            <div class="col-md-4"><label asp-for="Student.DropoutClass" class="form-label">Dropped-out Class</label><input asp-for="Student.DropoutClass" class="form-control" /></div>
+                                            <div class="col-md-4"><label asp-for="Student.DropoutClass" class="form-label">Dropped-out Class</label><input asp-for="Student.DropoutClass" type="number" min="1" max="8" class="form-control" inputmode="numeric" /></div>
                                             <div class="col-md-4"><label asp-for="Student.DropoutYear" class="form-label">Dropped-out Year</label><input asp-for="Student.DropoutYear" type="number" min="1900" max="9999" class="form-control" /></div>
                                         </div>
                                     </div>
@@ -256,6 +256,11 @@
             kadamFields.classList.toggle('d-none', !isKadamStc);
             registrationNumberGroup.classList.toggle('d-none', isKadamStc);
             if (isKadamPlusEl) isKadamPlusEl.value = (!isKadamStc).toString();
+            // Kadam STC: registration number is hidden and must remain blank (mobile parity)
+            if (isKadamStc) {
+                const regEl = document.getElementById('registrationNumber');
+                if (regEl) regEl.value = '';
+            }
             updateStatusFields();
         }
 
@@ -464,6 +469,7 @@
                 const regNo = regEl?.value?.trim() || '';
                 if (!regNo) mark(regEl, 'Required');
                 else if (regNo.length > 50) mark(regEl, 'Cannot exceed 50 characters');
+                else if (!/^\d+$/.test(regNo)) mark(regEl, 'Numbers only');
             } else if (!kadamFields.classList.contains('d-none')) {
                 if (!requireField(childStatus, 'Required')) { firstInvalid ??= childStatus; ok = false; }
                 const stayEl = document.querySelector('[name="Student.HowLongPlaningToStayThisArea"]');
@@ -481,11 +487,18 @@
                     const dropoutYearEl = document.querySelector('[name="Student.DropoutYear"]');
                     if (!requireField(reasonEl, 'Required')) { firstInvalid ??= reasonEl; ok = false; }
                     if (!requireField(dropoutClassEl, 'Required')) { firstInvalid ??= dropoutClassEl; ok = false; }
+                    else {
+                        const dropoutClass = Number(dropoutClassEl.value);
+                        if (!Number.isInteger(dropoutClass) || dropoutClass < 1 || dropoutClass > 8)
+                            mark(dropoutClassEl, 'Must be Class 1 to Class 8');
+                    }
                     if (!requireField(dropoutYearEl, 'Required')) { firstInvalid ??= dropoutYearEl; ok = false; }
                     else if (dob && enrollment) {
                         const year = Number(dropoutYearEl.value);
-                        if (year < dob.getFullYear() || year > enrollment.getFullYear())
-                            mark(dropoutYearEl, 'Must be between birth year and enrollment year');
+                        if (year < dob.getFullYear())
+                            mark(dropoutYearEl, 'Cannot be earlier than date of birth year');
+                        else if (year > enrollment.getFullYear())
+                            mark(dropoutYearEl, 'Cannot be later than enrollment year');
                     }
                 }
             }
@@ -639,6 +652,13 @@
                 unlockFamilyTab();
                 unlockProfileTab();
             }
+        });
+
+        // Restrict Student Registration Number to digits only
+        document.getElementById('registrationNumber')?.addEventListener('input', event => {
+            const el = event.target;
+            const digitsOnly = (el.value || '').replace(/\D/g, '');
+            if (el.value !== digitsOnly) el.value = digitsOnly;
         });
 
         // Clear error when user edits a field

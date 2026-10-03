@@ -15,7 +15,7 @@
                 <div class="col-md-2"><label class="form-label" for="studentName">Student Name</label><input id="studentName" class="form-control" /></div>
                 <div class="col-md-2"><label class="form-label" for="studentId">Student ID</label><input id="studentId" class="form-control" /></div>
                 <div class="col-md-2"><label class="form-label" for="aadhaarNumber">Aadhaar Number</label><input id="aadhaarNumber" class="form-control" maxlength="12" /></div>
-                <div class="col-md-2"><label class="form-label" for="status">Status</label><select id="status" class="form-select"><option value="">All</option><option value="1">Active</option><option value="2">Inactive</option><option value="3">Completed</option></select></div>
+                <div class="col-md-2"><label class="form-label" for="statusFilter">Status</label><select id="statusFilter" class="form-select"><option value="">All</option><option value="1">Active</option><option value="2">Inactive</option><option value="3">Completed</option></select></div>
                 <div class="col-md-4"><button id="search" class="btn btn-primary">Search</button> <button id="clear" class="btn btn-secondary">Clear</button></div>
             </div>
             <div class="table-responsive"><table id="studentsTable" class="table table-nowrap w-100">
@@ -41,7 +41,7 @@
             headers,
             data: d => {
                 d.studentName = $('#studentName').val(); d.studentId = $('#studentId').val();
-                d.aadhaarNumber = $('#aadhaarNumber').val(); d.status = $('#status').val();
+                d.aadhaarNumber = $('#aadhaarNumber').val(); d.status = $('#statusFilter').val();
             }
         },
         columns: [
@@ -59,7 +59,7 @@
         ]
     });
     $('#search').on('click', () => table.ajax.reload());
-    $('#clear').on('click', () => { $('#studentName,#studentId,#aadhaarNumber,#status').val(''); table.ajax.reload(); });
+    $('#clear').on('click', () => { $('#studentName,#studentId,#aadhaarNumber,#statusFilter').val(''); table.ajax.reload(); });
     $('#studentsTable').on('click', 'button[data-action]', async function() {
         const id = Number(this.dataset.id);
         const studentName = decode(this.dataset.name);
