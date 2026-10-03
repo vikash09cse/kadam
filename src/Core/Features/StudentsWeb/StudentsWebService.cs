@@ -1,3 +1,5 @@
+using Core.Utilities;
+
 namespace Core.Features.StudentsWeb;
 
 public sealed class StudentsWebService(
@@ -267,7 +269,10 @@ public sealed class StudentsWebService(
             errors.Add("Every grade and section selection must be valid.");
         if (model.GradeSections.Any(x => x.Section.Length > 100))
             errors.Add("Section cannot exceed 100 characters.");
-        if (model.StudentsAttended < 0) errors.Add("Students attended cannot be negative.");
+        if (!model.StudentsAttended.HasValue)
+            errors.Add("Students attended is required.");
+        else if (model.StudentsAttended < 0)
+            errors.Add("Students attended cannot be negative.");
 
         if (!model.DidChildrensDayHappen)
         {
@@ -277,7 +282,8 @@ public sealed class StudentsWebService(
         {
             errors.Add("Parents attended is required when Children's Day happened.");
         }
-        else if (model.ParentsAttended < 0 || model.ParentsAttended > model.StudentsAttended)
+        else if (model.StudentsAttended.HasValue &&
+                 (model.ParentsAttended < 0 || model.ParentsAttended > model.StudentsAttended))
         {
             errors.Add("Parents attended must be between zero and students attended.");
         }
@@ -696,12 +702,40 @@ public sealed class StudentsWebService(
     {
         var errors = new List<string>();
         if (model.StudentId <= 0) errors.Add("Student is required.");
+
+        var current = model.StudentId > 0
+            ? await repository.GetMainstream(model.StudentId, userId)
+            : null;
+        if (current is not null)
+            model.EnrollmentDate = current.EnrollmentDate;
+
         if (!model.MainstreamDate.HasValue) errors.Add("Mainstream date is required.");
-        else if (model.MainstreamDate.Value.Date > DateTime.Today) errors.Add("Mainstream date cannot be in the future.");
+        else if (model.MainstreamDate.Value.Date > DateTime.Today)
+            errors.Add("Mainstream date cannot be in the future.");
+        else if (current is not null)
+        {
+            var minimumDate = AcademicSessionHelper.GetMinimumMainstreamDate(
+                DateTime.Today, model.EnrollmentDate);
+            if (model.MainstreamDate.Value.Date < minimumDate)
+                errors.Add(
+                    $"Mainstream date cannot be earlier than {minimumDate:dd-MMM-yyyy} (one session/year prior to the current session, or enrollment date if later).");
+        }
         if (!model.GradeId.HasValue || model.GradeId <= 0) errors.Add("Grade is required.");
         if (string.IsNullOrWhiteSpace(model.Section)) errors.Add("Section is required.");
         else if (model.Section.Trim().Length > 25) errors.Add("Section cannot exceed 25 characters.");
-        if ((model.ChildSRNumber?.Trim().Length ?? 0) > 100) errors.Add("Child SR number cannot exceed 100 characters.");
+        if (!string.IsNullOrWhiteSpace(model.ChildSRNumber))
+        {
+            var childSrNumber = model.ChildSRNumber.Trim();
+            model.ChildSRNumber = childSrNumber;
+            if (childSrNumber.Length > 100)
+                errors.Add("Child SR number cannot exceed 100 characters.");
+            else if (childSrNumber.Any(c => !char.IsDigit(c)))
+                errors.Add("Child SR number must contain numbers only.");
+        }
+        else
+        {
+            model.ChildSRNumber = null;
+        }
         if (!model.IsMainstreamInstitutionSame &&
             (!model.MainstreamInstitutionId.HasValue || !model.StateId.HasValue || !model.DistrictId.HasValue))
             errors.Add("State, district, and mainstream institution are required.");

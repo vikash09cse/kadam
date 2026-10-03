@@ -14,7 +14,7 @@ public sealed class StudentsWebThemeActivitySaveDTO
     public int InstitutionId { get; set; }
     public int ThemeId { get; set; }
     public List<StudentsWebThemeActivityGradeSectionDTO> GradeSections { get; set; } = [];
-    public int StudentsAttended { get; set; }
+    public int? StudentsAttended { get; set; }
     public bool DidChildrensDayHappen { get; set; }
     public int? ParentsAttended { get; set; }
 }

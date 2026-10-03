@@ -488,7 +488,7 @@ public sealed class StudentsWebRepository(IDbSession db, DatabaseContext context
             activity.ThemeId = model.ThemeId;
             activity.InstitutionId = model.InstitutionId;
             activity.TotalStudents = totalStudents;
-            activity.StudentAttended = model.StudentsAttended;
+            activity.StudentAttended = model.StudentsAttended ?? 0;
             activity.DidChildrenDayHappen = model.DidChildrensDayHappen;
             activity.TotalParentsAttended = model.DidChildrensDayHappen
                 ? model.ParentsAttended

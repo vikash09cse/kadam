@@ -25,7 +25,13 @@ namespace Core.Features.Admin
 
             if (!string.IsNullOrEmpty(student.StudentRegistratioNumber))
             {
-                if (await _studentRepository.CheckDuplicateStudentRegistrationNumber(student.StudentRegistratioNumber, student.InstitutionId, student.Id))
+                var registrationNumber = student.StudentRegistratioNumber.Trim();
+                if (registrationNumber.Length == 0 || !registrationNumber.All(char.IsDigit))
+                {
+                    return new ServiceResponseDTO(false, AppStatusCodes.BadRequest, true, MessageError.InvalidStudentRegistrationNumber);
+                }
+
+                if (await _studentRepository.CheckDuplicateStudentRegistrationNumber(registrationNumber, student.InstitutionId, student.Id))
                 {
                     return new ServiceResponseDTO(false, AppStatusCodes.BadRequest, true, MessageError.DuplicateStudentRegistrationNumber);
                 }
@@ -35,6 +41,37 @@ namespace Core.Features.Admin
                 await _studentRepository.CheckDuplicateAadhaarNumber(student.AadhaarCardNumber, student.Id))
             {
                 return new ServiceResponseDTO(false, AppStatusCodes.BadRequest, true, MessageError.DuplicateAadhaarNumber);
+            }
+
+            if (student.ChildStatudBeforeKadamSTC == (int)ChildStatusBeforKadamType.DroppedOut)
+            {
+                if (string.IsNullOrWhiteSpace(student.DropoutClass) ||
+                    !int.TryParse(student.DropoutClass.Trim(), out var dropoutClass) ||
+                    dropoutClass is < 1 or > 8)
+                {
+                    return new ServiceResponseDTO(false, AppStatusCodes.BadRequest, true,
+                        "Dropout class must be between Class 1 and Class 8.");
+                }
+
+                if (!student.DropoutYear.HasValue || student.DropoutYear.Value == 0)
+                {
+                    return new ServiceResponseDTO(false, AppStatusCodes.BadRequest, true,
+                        "Dropout year is required.");
+                }
+
+                if (student.DateOfBirth != default &&
+                    student.DropoutYear.Value < student.DateOfBirth.Year)
+                {
+                    return new ServiceResponseDTO(false, AppStatusCodes.BadRequest, true,
+                        "Dropout year cannot be earlier than the student's date of birth year.");
+                }
+
+                if (student.EnrollmentDate != default &&
+                    student.DropoutYear.Value > student.EnrollmentDate.Year)
+                {
+                    return new ServiceResponseDTO(false, AppStatusCodes.BadRequest, true,
+                        "Dropout year cannot be later than the student's enrollment year.");
+                }
             }
 
             bool isSaved = await _studentRepository.SaveStudent(student);
@@ -212,6 +249,44 @@ namespace Core.Features.Admin
 
         public async Task<ServiceResponseDTO> SaveStudentMainstream(StudentMainstream studentMainstream)
         {
+            if (!string.IsNullOrWhiteSpace(studentMainstream.ChildSRNumber))
+            {
+                var childSrNumber = studentMainstream.ChildSRNumber.Trim();
+                studentMainstream.ChildSRNumber = childSrNumber;
+                if (childSrNumber.Any(c => !char.IsDigit(c)))
+                {
+                    return new ServiceResponseDTO(false, AppStatusCodes.BadRequest, true, MessageError.InvalidChildSRNumber);
+                }
+            }
+            else
+            {
+                studentMainstream.ChildSRNumber = null;
+            }
+
+            if (!studentMainstream.MainstreamDate.HasValue)
+            {
+                return new ServiceResponseDTO(false, AppStatusCodes.BadRequest, true, "Mainstream date is required.");
+            }
+
+            if (studentMainstream.MainstreamDate.Value.Date > DateTime.Today)
+            {
+                return new ServiceResponseDTO(false, AppStatusCodes.BadRequest, true, "Mainstream date cannot be in the future.");
+            }
+
+            var student = await _studentRepository.GetStudent(studentMainstream.StudentId);
+            if (student is null || student.Id <= 0)
+            {
+                return new ServiceResponseDTO(false, AppStatusCodes.BadRequest, true, "Student was not found.");
+            }
+
+            var minimumDate = AcademicSessionHelper.GetMinimumMainstreamDate(
+                DateTime.Today, student.EnrollmentDate);
+            if (studentMainstream.MainstreamDate.Value.Date < minimumDate)
+            {
+                return new ServiceResponseDTO(false, AppStatusCodes.BadRequest, true,
+                    $"Mainstream date cannot be earlier than {minimumDate:dd-MMM-yyyy} (one session/year prior to the current session, or enrollment date if later).");
+            }
+
             bool isSaved = await _studentRepository.SaveStudentMainstream(studentMainstream);
             return new ServiceResponseDTO(isSaved, isSaved ? AppStatusCodes.Success : AppStatusCodes.Unauthorized, result: studentMainstream.Id, isSaved ? MessageSuccess.Saved : MessageError.CodeIssue);
         }

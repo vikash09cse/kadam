@@ -53,10 +53,14 @@ public sealed partial class StudentsWebValidator
              model.AadhaarCardNumber.Length != 12 || !model.AadhaarCardNumber.All(char.IsDigit)))
             errors.Add("Aadhaar number must contain exactly 12 digits.");
 
-        if (model.IsKadamPlusStudent &&
-            (string.IsNullOrWhiteSpace(model.StudentRegistratioNumber) ||
-             model.StudentRegistratioNumber.Trim().Length > 50))
-            errors.Add("Student registration number is required and cannot exceed 50 characters.");
+        if (model.IsKadamPlusStudent)
+        {
+            var registrationNumber = model.StudentRegistratioNumber?.Trim() ?? string.Empty;
+            if (string.IsNullOrWhiteSpace(registrationNumber) || registrationNumber.Length > 50)
+                errors.Add("Student registration number is required and cannot exceed 50 characters.");
+            else if (!registrationNumber.All(char.IsDigit))
+                errors.Add("Student registration number must contain numbers only.");
+        }
 
         if (!model.IsKadamPlusStudent)
         {
@@ -69,11 +73,18 @@ public sealed partial class StudentsWebValidator
             if (model.ChildStatudBeforeKadamSTC == 3)
             {
                 if (model.ReasonId <= 0) errors.Add("Dropout reason is required.");
-                if (string.IsNullOrWhiteSpace(model.DropoutClass)) errors.Add("Dropout class is required.");
-                if (!model.DropoutYear.HasValue ||
-                    model.DropoutYear < model.DateOfBirth.Year ||
-                    model.DropoutYear > model.EnrollmentDate.Year)
-                    errors.Add("Dropout year must be between the birth year and enrollment year.");
+                if (string.IsNullOrWhiteSpace(model.DropoutClass))
+                    errors.Add("Dropout class is required.");
+                else if (!int.TryParse(model.DropoutClass.Trim(), out var dropoutClass) ||
+                         dropoutClass is < 1 or > 8)
+                    errors.Add("Dropout class must be between 1 and 8.");
+
+                if (!model.DropoutYear.HasValue)
+                    errors.Add("Dropout year is required.");
+                else if (model.DropoutYear < model.DateOfBirth.Year)
+                    errors.Add("Dropout year cannot be earlier than the student's date of birth year.");
+                else if (model.DropoutYear > model.EnrollmentDate.Year)
+                    errors.Add("Dropout year cannot be later than the student's enrollment year.");
             }
         }
 

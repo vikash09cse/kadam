@@ -18,6 +18,25 @@ namespace Core.Features.Admin
 
         public async Task<ServiceResponseDTO> SaveThemeActivity(ThemeActivitySaveDTO themeActivity)
         {
+            if (themeActivity.StudentAttended < 0)
+                return new ServiceResponseDTO(false, AppStatusCodes.BadRequest, result: 0, "Students attended cannot be negative.");
+
+            if (!themeActivity.DidChildrenDayHappen)
+            {
+                themeActivity.TotalParentsAttended = null;
+            }
+            else if (!themeActivity.TotalParentsAttended.HasValue)
+            {
+                return new ServiceResponseDTO(false, AppStatusCodes.BadRequest, result: 0,
+                    "Parents attended is required when Children's Day happened.");
+            }
+            else if (themeActivity.TotalParentsAttended < 0 ||
+                     themeActivity.TotalParentsAttended > themeActivity.StudentAttended)
+            {
+                return new ServiceResponseDTO(false, AppStatusCodes.BadRequest, result: 0,
+                    "Parents attended must be between zero and students attended.");
+            }
+
             int savedId = await _themeActivityRepository.SaveThemeActivity(themeActivity);
             bool isSaved = savedId > 0;
             return new ServiceResponseDTO(isSaved, isSaved ? AppStatusCodes.Success : AppStatusCodes.Unauthorized, result: savedId, isSaved ? MessageSuccess.Saved : MessageError.CodeIssue);
