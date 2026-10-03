@@ -6,6 +6,7 @@
 **/bin/
 **/obj/
 **/artifacts/
+**/_build_check*/
 
 # Project / user-specific
 **/Properties/
