@@ -9,7 +9,7 @@ namespace Core.Abstractions
         Task<IEnumerable<StudentBaselineDetailWithSubjectDTO>> GetStudentBaselineDetailWithSubjects(int studentId);
         Task<bool> SaveStudentProgress(StudentProgressStep studentProgress);
         Task<bool> SaveStudentGradeTestDetail(StudentGradeTestDetailSaveDTO studentGradeTestDetail);
-        Task<IEnumerable<StudentGradeTestDetail>> GetStudentGradeTestDetailsWithSubjects(int studentId, int gradeLevelId);
+        Task<IEnumerable<StudentGradeTestDetailWithSubjectDTO>> GetStudentGradeTestDetailsWithSubjects(int studentId, int gradeLevelId);
         Task<StudentPreviousGradeMarksDTO> CheckStudentPreviousGradeMarks(int studentId, int gradeLevelId);
     }
 }

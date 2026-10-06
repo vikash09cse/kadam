@@ -54,21 +54,23 @@ BEGIN
     -- END
 
     SELECT 
-        ROW_NUMBER() OVER (ORDER BY sb.SubjectName) AS RowNo,
-        sbd.Id,
-        sbd.StudentId,
-        sb.Id As SubjectId,
+        ROW_NUMBER() OVER (ORDER BY sb.DisplayOrder, sb.SubjectName) AS RowNo,
+        ISNULL(sbd.Id, 0) AS Id,
+        ISNULL(sbd.StudentId, @StudentId) AS StudentId,
+        ISNULL(sbd.GradeLevelId, @GradeLevelId) AS GradeLevelId,
+        sb.Id AS SubjectId,
         sbd.StudentAge,
         sbd.ObtainedMarks,
         sbd.PercentageMarks,
-        sb.GradeTestTotalMarks AS TotalMarks,
+        CASE WHEN sb.GradeTestTotalMarks > 0 THEN sb.GradeTestTotalMarks ELSE 50 END AS TotalMarks,
         sb.SubjectName,
-		sbd.CompletedDate
-    FROM  Subjects sb 
+        sbd.CompletedDate
+    FROM Subjects sb 
     LEFT JOIN StudentGradeTestDetails sbd 
-		ON sbd.SubjectId = sb.Id AND sbd.StudentId = @StudentId 
-		AND sbd.GradeLevelId = COALESCE(@GradeLevelId, sbd.GradeLevelId)
-    
-    WHERE  sb.CurrentStatus = 1 AND sb.IsDeleted = 0 
-    ORDER BY sb.DisplayOrder
+        ON sbd.SubjectId = sb.Id
+       AND sbd.StudentId = @StudentId 
+       AND sbd.GradeLevelId = @GradeLevelId
+       AND ISNULL(sbd.IsDeleted, 0) = 0
+    WHERE sb.CurrentStatus = 1 AND sb.IsDeleted = 0 
+    ORDER BY sb.DisplayOrder, sb.Id
 END

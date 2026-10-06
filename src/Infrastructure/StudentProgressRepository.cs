@@ -161,13 +161,13 @@ namespace Infrastructure
                 return false;
             }
         }
-        public async Task<IEnumerable<StudentGradeTestDetail>> GetStudentGradeTestDetailsWithSubjects(int studentId, int gradeLevelId)
+        public async Task<IEnumerable<StudentGradeTestDetailWithSubjectDTO>> GetStudentGradeTestDetailsWithSubjects(int studentId, int gradeLevelId)
         {
             var parameters = new DynamicParameters();
             parameters.Add("@StudentId", studentId);
             parameters.Add("@GradeLevelId", gradeLevelId);
 
-            var result = await _db.Connection.QueryAsync<StudentGradeTestDetail>(
+            var result = await _db.Connection.QueryAsync<StudentGradeTestDetailWithSubjectDTO>(
                 "usp_GetStudentGradeTestDetailsWithSubjects",
                 parameters,
                 commandType: CommandType.StoredProcedure);
