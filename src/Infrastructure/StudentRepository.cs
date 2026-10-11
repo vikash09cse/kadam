@@ -348,6 +348,63 @@ namespace Infrastructure
                 commandType: CommandType.StoredProcedure);
         }
 
+        public async Task<StudentAnalyticsSummaryDTO> GetStudentAnalyticsSummary(int userId, KadamProgrammeReportFilterDTO? filter = null)
+        {
+            var parameters = BuildAnalyticsFilterParameters(userId, filter);
+
+            return await _db.Connection.QuerySingleAsync<StudentAnalyticsSummaryDTO>(
+                "dbo.usp_GetStudentAnalyticsSummary",
+                parameters,
+                _db.Transaction,
+                null,
+                CommandType.StoredProcedure);
+        }
+
+        public async Task<IEnumerable<StudentAnalyticsBreakdownDTO>> GetStudentAnalyticsBreakdown(int userId, StudentExceptionFilterDTO? filter = null)
+        {
+            var parameters = BuildAnalyticsFilterParameters(userId, filter);
+            parameters.Add("@GroupBy", string.IsNullOrWhiteSpace(filter?.GroupBy) ? "DIVISION" : filter.GroupBy);
+
+            return await _db.Connection.QueryAsync<StudentAnalyticsBreakdownDTO>(
+                "dbo.usp_GetStudentAnalyticsBreakdown",
+                parameters,
+                _db.Transaction,
+                null,
+                CommandType.StoredProcedure);
+        }
+
+        public async Task<IEnumerable<StudentExceptionListItemDTO>> GetStudentExceptions(int userId, StudentExceptionFilterDTO? filter = null)
+        {
+            var parameters = BuildAnalyticsFilterParameters(userId, filter);
+            parameters.Add("@ExceptionCode", string.IsNullOrWhiteSpace(filter?.ExceptionCode) ? null : filter.ExceptionCode.Trim());
+            parameters.Add("@DaysNoBaseline", filter?.DaysNoBaseline ?? 30);
+            parameters.Add("@DaysStuck", filter?.DaysStuck ?? 14);
+            parameters.Add("@DaysInactive", filter?.DaysInactive ?? 30);
+            parameters.Add("@Page", filter?.Page > 0 ? filter.Page : 1);
+            parameters.Add("@PageSize", filter?.PageSize > 0 ? filter.PageSize : 50);
+
+            return await _db.Connection.QueryAsync<StudentExceptionListItemDTO>(
+                "dbo.usp_GetStudentExceptions",
+                parameters,
+                _db.Transaction,
+                null,
+                CommandType.StoredProcedure);
+        }
+
+        private DynamicParameters BuildAnalyticsFilterParameters(int userId, KadamProgrammeReportFilterDTO? filter)
+        {
+            var parameters = new DynamicParameters();
+            parameters.Add("@UserId", userId);
+            parameters.Add("@StateId", filter?.StateId);
+            parameters.Add("@DivisionIds", GetDivisionIdsParam(filter));
+            parameters.Add("@FromDate", filter?.FromDate);
+            parameters.Add("@ToDate", filter?.ToDate);
+            parameters.Add("@IncludeAll", filter?.IncludeAll ?? true);
+            parameters.Add("@IncludeKadam", filter?.IncludeKadam ?? false);
+            parameters.Add("@IncludeKadamPlus", filter?.IncludeKadamPlus ?? false);
+            return parameters;
+        }
+
         private static string? GetDivisionIdsParam(KadamProgrammeReportFilterDTO? filter)
         {
             if (filter?.DivisionIds?.Count > 0)

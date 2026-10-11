@@ -33,5 +33,8 @@ namespace Core.Abstractions
         Task<IEnumerable<StudentAdminListDTO>> GetStudents(int pageNumber, int pageSize, string? studentName, string? studentId, int? status, int userId);
         Task<IEnumerable<StudentAttendanceSummaryReportDTO>> GetStudentAttendanceSummaryReport(int userId, StudentAttendanceSummaryReportFilterDTO filter);
         Task<IEnumerable<AppGradeSectionDTO>> GetGradeSectionsByInstitutionId(int institutionId);
+        Task<StudentAnalyticsSummaryDTO> GetStudentAnalyticsSummary(int userId, KadamProgrammeReportFilterDTO? filter = null);
+        Task<IEnumerable<StudentAnalyticsBreakdownDTO>> GetStudentAnalyticsBreakdown(int userId, StudentExceptionFilterDTO? filter = null);
+        Task<IEnumerable<StudentExceptionListItemDTO>> GetStudentExceptions(int userId, StudentExceptionFilterDTO? filter = null);
     }
 }

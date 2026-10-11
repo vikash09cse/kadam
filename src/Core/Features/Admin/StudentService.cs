@@ -333,5 +333,33 @@ namespace Core.Features.Admin
         {
             return await _studentRepository.GetGradeSectionsByInstitutionId(institutionId);
         }
+
+        public async Task<StudentAnalyticsSummaryDTO> GetStudentAnalyticsSummary(int userId, KadamProgrammeReportFilterDTO? filter = null)
+        {
+            return await _studentRepository.GetStudentAnalyticsSummary(userId, filter);
+        }
+
+        public async Task<IEnumerable<StudentAnalyticsBreakdownDTO>> GetStudentAnalyticsBreakdown(int userId, StudentExceptionFilterDTO? filter = null)
+        {
+            return await _studentRepository.GetStudentAnalyticsBreakdown(userId, filter);
+        }
+
+        public async Task<IEnumerable<StudentExceptionListItemDTO>> GetStudentExceptions(int userId, StudentExceptionFilterDTO? filter = null)
+        {
+            return await _studentRepository.GetStudentExceptions(userId, filter);
+        }
+
+        public static IReadOnlyList<StudentAnalyticsFunnelItemDTO> BuildStudentAnalyticsFunnel(StudentAnalyticsSummaryDTO summary)
+        {
+            return
+            [
+                new StudentAnalyticsFunnelItemDTO { StepKey = "enrolled", Label = "Enrolled", Count = summary.TotalStudents },
+                new StudentAnalyticsFunnelItemDTO { StepKey = "baseline", Label = "Baseline completed", Count = summary.BaselineCompletedCount },
+                new StudentAnalyticsFunnelItemDTO { StepKey = "progress", Label = "Progress started", Count = summary.ProgressStartedCount },
+                new StudentAnalyticsFunnelItemDTO { StepKey = "steps", Label = "Steps completed", Count = summary.StepsCompletedCount },
+                new StudentAnalyticsFunnelItemDTO { StepKey = "endline", Label = "Endline completed", Count = summary.EndlineCompletedCount },
+                new StudentAnalyticsFunnelItemDTO { StepKey = "mainstream", Label = "Mainstreamed", Count = summary.MainstreamedCount }
+            ];
+        }
     }
 }

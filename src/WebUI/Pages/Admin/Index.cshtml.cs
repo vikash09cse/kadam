@@ -12,6 +12,8 @@ namespace WebUI.Pages.Admin
         public int ActiveCount { get; private set; }
         public int InactiveCount { get; private set; }
         public int CompletedCount { get; private set; }
+        public StudentAnalyticsSummaryDTO Summary { get; private set; } = new();
+        public IReadOnlyList<StudentAnalyticsFunnelItemDTO> FunnelItems { get; private set; } = [];
 
         public IEnumerable<DropdownDTO> States { get; set; } = [];
         public IEnumerable<DropdownDTO> Divisions { get; set; } = [];
@@ -54,13 +56,12 @@ namespace WebUI.Pages.Admin
                 return Page();
             }
 
-            var response = await studentService.GetAdminDashboardCount(userId, BuildFilter());
-            if (response.Result is DashboardDTO counts)
-            {
-                ActiveCount = counts.ActiveCount;
-                InactiveCount = counts.InactiveCount;
-                CompletedCount = counts.CompletedCount;
-            }
+            var filter = BuildFilter();
+            Summary = await studentService.GetStudentAnalyticsSummary(userId, filter);
+            ActiveCount = Summary.ActiveCount;
+            InactiveCount = Summary.InactiveCount;
+            CompletedCount = Summary.CompletedCount;
+            FunnelItems = StudentService.BuildStudentAnalyticsFunnel(Summary);
 
             return Page();
         }

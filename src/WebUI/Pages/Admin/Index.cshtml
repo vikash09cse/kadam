@@ -2,6 +2,8 @@
 @model WebUI.Pages.Admin.IndexModel
 @{
     ViewData["Title"] = "Dashboard";
+    var funnelLabels = System.Text.Json.JsonSerializer.Serialize(Model.FunnelItems.Select(x => x.Label));
+    var funnelCounts = System.Text.Json.JsonSerializer.Serialize(Model.FunnelItems.Select(x => x.Count));
 }
 
 <div class="page-content">
@@ -11,6 +13,17 @@
             <div class="col-12">
                 <div class="page-title-box d-sm-flex align-items-center justify-content-between">
                     <h4 class="mb-sm-0">Dashboard</h4>
+                    <a class="btn btn-soft-primary btn-sm"
+                       asp-page="/Admin/StudentAnalytics"
+                               asp-route-StateId="@Model.StateId"
+                               asp-route-DivisionId="@Model.DivisionId"
+                               asp-route-FromDate="@(Model.FromDate?.ToString("yyyy-MM-dd"))"
+                               asp-route-ToDate="@(Model.ToDate?.ToString("yyyy-MM-dd"))"
+                               asp-route-IncludeAll="@Model.IncludeAll"
+                               asp-route-IncludeKadam="@Model.IncludeKadam"
+                               asp-route-IncludeKadamPlus="@Model.IncludeKadamPlus">
+                        View full analytics
+                    </a>
                 </div>
             </div>
         </div>
@@ -125,13 +138,81 @@
             </div>
         </div>
 
+        <div class="row g-3 mt-1">
+            <div class="col-md-4 col-xl-2">
+                <div class="card shadow-sm h-100">
+                    <div class="card-body">
+                        <div class="text-muted small">Baseline %</div>
+                        <div class="fs-4 fw-semibold">@Model.Summary.BaselineCompletedPercent.ToString("0.##")%</div>
+                        <div class="text-muted small">@Model.Summary.BaselineCompletedCount of @Model.Summary.TotalStudents</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4 col-xl-2">
+                <div class="card shadow-sm h-100">
+                    <div class="card-body">
+                        <div class="text-muted small">Progress started</div>
+                        <div class="fs-4 fw-semibold">@Model.Summary.ProgressStartedCount</div>
+                        <div class="text-muted small">@Model.Summary.ProgressStartedPercent.ToString("0.##")%</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4 col-xl-2">
+                <div class="card shadow-sm h-100">
+                    <div class="card-body">
+                        <div class="text-muted small">Steps done</div>
+                        <div class="fs-4 fw-semibold">@Model.Summary.StepsCompletedCount</div>
+                        <div class="text-muted small">@Model.Summary.StepsCompletedPercent.ToString("0.##")%</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4 col-xl-2">
+                <div class="card shadow-sm h-100">
+                    <div class="card-body">
+                        <div class="text-muted small">Endline %</div>
+                        <div class="fs-4 fw-semibold">@Model.Summary.EndlineCompletedPercent.ToString("0.##")%</div>
+                        <div class="text-muted small">@Model.Summary.EndlineCompletedCount of @Model.Summary.TotalStudents</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4 col-xl-2">
+                <div class="card shadow-sm h-100">
+                    <div class="card-body">
+                        <div class="text-muted small">Mainstreamed</div>
+                        <div class="fs-4 fw-semibold">@Model.Summary.MainstreamedCount</div>
+                        <div class="text-muted small">@Model.Summary.MainstreamedPercent.ToString("0.##")%</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4 col-xl-2">
+                <div class="card shadow-sm h-100">
+                    <div class="card-body">
+                        <div class="text-muted small">Mainstream eligible</div>
+                        <div class="fs-4 fw-semibold">@Model.Summary.MainstreamEligibleCount</div>
+                        <a class="small"
+                           asp-page="/Admin/StudentExceptions"
+                                   asp-route-ExceptionCode="READY_FOR_MAINSTREAM"
+                                   asp-route-StateId="@Model.StateId"
+                                   asp-route-DivisionId="@Model.DivisionId"
+                                   asp-route-FromDate="@(Model.FromDate?.ToString("yyyy-MM-dd"))"
+                                   asp-route-ToDate="@(Model.ToDate?.ToString("yyyy-MM-dd"))"
+                                   asp-route-IncludeAll="@Model.IncludeAll"
+                                   asp-route-IncludeKadam="@Model.IncludeKadam"
+                                   asp-route-IncludeKadamPlus="@Model.IncludeKadamPlus">View list</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <div class="row mt-4">
             <div class="col-12">
                 <div class="card shadow-sm">
                     <div class="card-body">
-                        <h5 class="card-title text-primary mb-3">Recent Activity</h5>
-                        <hr class="mt-0" />
-                        <p class="text-muted text-center mb-0 py-4">No recent activity</p>
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h5 class="card-title text-primary mb-0">Student journey funnel</h5>
+                            <small class="text-muted">Stages are cumulative journey counts, not mutually exclusive groups.</small>
+                        </div>
+                        <div id="studentJourneyFunnel" style="min-height: 320px;"></div>
                     </div>
                 </div>
             </div>
@@ -141,6 +222,7 @@
 </div>
 
 @section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
     <script>
         (function () {
             const includeAll = document.getElementById('includeAll');
@@ -191,6 +273,19 @@
             }
 
             stateSelect?.addEventListener('change', loadDivisionsForState);
+
+            const labels = @Html.Raw(funnelLabels);
+            const counts = @Html.Raw(funnelCounts);
+            const chart = new ApexCharts(document.querySelector('#studentJourneyFunnel'), {
+                chart: { type: 'bar', height: 320, toolbar: { show: false } },
+                series: [{ name: 'Students', data: counts }],
+                plotOptions: { bar: { horizontal: true, borderRadius: 4, barHeight: '60%' } },
+                dataLabels: { enabled: true },
+                xaxis: { categories: labels },
+                colors: ['#405189'],
+                tooltip: { y: { formatter: function (val) { return val + ' students'; } } }
+            });
+            chart.render();
         })();
     </script>
 }
