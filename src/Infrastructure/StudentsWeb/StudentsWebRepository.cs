@@ -553,7 +553,11 @@ public sealed class StudentsWebRepository(IDbSession db, DatabaseContext context
             commandType: CommandType.StoredProcedure);
         var assessment = await result.ReadSingleOrDefaultAsync<StudentsWebAssessmentDTO>();
         if (assessment is null) return null;
-        assessment.Subjects = (await result.ReadAsync<StudentsWebAssessmentSubjectDTO>()).AsList();
+        // Dedupe in case legacy duplicate StudentBaselineDetails rows multiply the subject join.
+        assessment.Subjects = (await result.ReadAsync<StudentsWebAssessmentSubjectDTO>())
+            .GroupBy(x => x.SubjectId)
+            .Select(g => g.First())
+            .AsList();
         return assessment;
     }
 
@@ -736,7 +740,9 @@ public sealed class StudentsWebRepository(IDbSession db, DatabaseContext context
             var baselineDate = await context.StudentBaselineDetails
                 .Where(x => x.StudentId == model.StudentId && !x.IsDeleted &&
                             x.BaselineType == "baselinepreAssessment")
-                .MaxAsync(x => x.CompletedDate);
+                .Select(x => x.CompletedDate)
+                .DefaultIfEmpty()
+                .MaxAsync();
             if (!baselineDate.HasValue ||
                 await context.StudentBaselineDetails.AnyAsync(x =>
                     x.StudentId == model.StudentId && !x.IsDeleted &&

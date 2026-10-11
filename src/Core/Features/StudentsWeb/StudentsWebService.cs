@@ -379,9 +379,9 @@ public sealed class StudentsWebService(
                 errors.Add("Baseline date cannot be in the future.");
         }
 
-        var subjectMap = assessment.Subjects.ToDictionary(x => x.SubjectId);
+        model.Scores = DeduplicateScores(model.Scores);
+        var subjectMap = ToSubjectMap(assessment.Subjects);
         if (model.Scores.Count != subjectMap.Count ||
-            model.Scores.Select(x => x.SubjectId).Distinct().Count() != subjectMap.Count ||
             model.Scores.Any(x => !subjectMap.ContainsKey(x.SubjectId)))
             errors.Add("Scores are required for every active subject.");
         foreach (var score in model.Scores.Where(x => subjectMap.ContainsKey(x.SubjectId)))
@@ -468,9 +468,9 @@ public sealed class StudentsWebService(
                 errors.Add("Endline date cannot be in the future.");
         }
 
-        var subjectMap = assessment.Subjects.ToDictionary(x => x.SubjectId);
+        model.Scores = DeduplicateScores(model.Scores);
+        var subjectMap = ToSubjectMap(assessment.Subjects);
         if (model.Scores.Count != subjectMap.Count ||
-            model.Scores.Select(x => x.SubjectId).Distinct().Count() != subjectMap.Count ||
             model.Scores.Any(x => !subjectMap.ContainsKey(x.SubjectId)))
             errors.Add("All active subjects must be submitted.");
         foreach (var score in model.Scores.Where(x => subjectMap.ContainsKey(x.SubjectId)))
@@ -536,9 +536,9 @@ public sealed class StudentsWebService(
                  model.CompletedDate.Value.Date > DateTime.Today)
             errors.Add("Completed date must be between enrollment date and today.");
 
-        var subjects = gradeTest.Subjects.ToDictionary(x => x.SubjectId);
+        model.Scores = DeduplicateScores(model.Scores);
+        var subjects = ToSubjectMap(gradeTest.Subjects);
         if (model.Scores.Count != subjects.Count ||
-            model.Scores.Select(x => x.SubjectId).Distinct().Count() != subjects.Count ||
             model.Scores.Any(x => !subjects.ContainsKey(x.SubjectId)))
             errors.Add("Marks are required for every active subject.");
         foreach (var score in model.Scores.Where(x => subjects.ContainsKey(x.SubjectId)))
@@ -551,7 +551,7 @@ public sealed class StudentsWebService(
         if (errors.Count == 0)
         {
             var obtained = model.Scores.Sum(x => x.ObtainedMarks!.Value);
-            var total = gradeTest.Subjects.Sum(x => x.TotalMarks);
+            var total = subjects.Values.Sum(x => x.TotalMarks);
             var aggregate = Math.Round(obtained / total * 100m, 0, MidpointRounding.ToEven);
             if (aggregate < 60) errors.Add("A minimum aggregate score of 60% is required.");
         }
@@ -793,4 +793,17 @@ public sealed class StudentsWebService(
         var deleted = documentId > 0 && await repository.DeleteDocument(documentId, userId);
         return new StudentsWebSaveResult { Success = deleted, Id = documentId, Message = deleted ? "Document deleted." : "Document could not be deleted." };
     }
+
+    private static List<StudentsWebAssessmentScoreInputDTO> DeduplicateScores(
+        IEnumerable<StudentsWebAssessmentScoreInputDTO>? scores) =>
+        (scores ?? [])
+            .GroupBy(x => x.SubjectId)
+            .Select(g => g.Last())
+            .ToList();
+
+    private static Dictionary<int, StudentsWebAssessmentSubjectDTO> ToSubjectMap(
+        IEnumerable<StudentsWebAssessmentSubjectDTO>? subjects) =>
+        (subjects ?? [])
+            .GroupBy(x => x.SubjectId)
+            .ToDictionary(g => g.Key, g => g.First());
 }

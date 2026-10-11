@@ -36,17 +36,17 @@ public static class StudentsWebAssessmentCalculator
         };
     }
 
-    private static int GetLevel(bool isKadamPlusStudent, string gradeName, int age)
+    private static int GetLevel(bool isKadamPlusStudent, string? gradeName, int age)
     {
         if (!isKadamPlusStudent)
             return age switch { <= 6 => 1, 7 => 2, 8 => 3, 9 => 4, _ => 5 };
 
-        var normalized = gradeName.Trim().ToLowerInvariant();
+        // Match usp_WebStudents_GetAssessment: grades 1–5 map to level; anything else defaults to 5 (50 marks).
+        var normalized = (gradeName ?? string.Empty).Trim().ToLowerInvariant();
         if (normalized.StartsWith("1")) return 1;
         if (normalized.StartsWith("2")) return 2;
         if (normalized.StartsWith("3")) return 3;
         if (normalized.StartsWith("4")) return 4;
-        if (normalized.StartsWith("5")) return 5;
-        throw new InvalidOperationException("The student's grade is not supported for baseline assessment.");
+        return 5;
     }
 }

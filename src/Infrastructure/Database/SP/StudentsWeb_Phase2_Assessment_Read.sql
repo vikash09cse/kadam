@@ -154,16 +154,25 @@ BEGIN
     FROM dbo.Students s
     CROSS JOIN dbo.Subjects subject
     LEFT JOIN dbo.Grades g ON g.Id = s.GradeId AND g.IsDeleted = 0
-    LEFT JOIN dbo.StudentBaselineDetails detail
-        ON detail.StudentId = s.Id
-       AND detail.SubjectId = subject.Id
-       AND detail.BaselineType = @AssessmentType
-       AND detail.IsDeleted = 0
-    LEFT JOIN dbo.StudentBaselineDetails baseline
-        ON baseline.StudentId = s.Id
-       AND baseline.SubjectId = subject.Id
-       AND baseline.BaselineType = 'baselinepreAssessment'
-       AND baseline.IsDeleted = 0
+    -- OUTER APPLY avoids duplicate subject rows when legacy duplicate assessment details exist
+    OUTER APPLY (
+        SELECT TOP (1) d.Id, d.ObtainedMarks, d.PercentageMarks
+        FROM dbo.StudentBaselineDetails d
+        WHERE d.StudentId = s.Id
+          AND d.SubjectId = subject.Id
+          AND d.BaselineType = @AssessmentType
+          AND d.IsDeleted = 0
+        ORDER BY d.Id DESC
+    ) detail
+    OUTER APPLY (
+        SELECT TOP (1) d.ObtainedMarks
+        FROM dbo.StudentBaselineDetails d
+        WHERE d.StudentId = s.Id
+          AND d.SubjectId = subject.Id
+          AND d.BaselineType = 'baselinepreAssessment'
+          AND d.IsDeleted = 0
+        ORDER BY d.Id DESC
+    ) baseline
     WHERE s.Id = @StudentId
       AND s.IsDeleted = 0
       AND subject.IsDeleted = 0
